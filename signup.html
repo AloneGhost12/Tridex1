@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up</title>
+    <link rel="stylesheet" href="auth.css">
+    <style>
+        .signup-container {
+            max-width: 400px;
+            margin: 40px auto;
+            padding: 32px 24px;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .signup-container h2 {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+        .signup-form {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+        }
+        .signup-container label {
+            display: block;
+            margin-top: 14px;
+            margin-bottom: 6px;
+            font-weight: 500;
+        }
+        .signup-container input,
+        .signup-container select {
+            width: 100%;
+            padding: 8px 10px;
+            margin-bottom: 8px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 1rem;
+            box-sizing: border-box;
+        }
+        .signup-container button {
+            width: 100%;
+            padding: 10px;
+            background: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            font-size: 1rem;
+            cursor: pointer;
+            margin-top: 12px;
+        }
+        .signup-container button:hover {
+            background: #0056b3;
+        }
+        .signup-container a {
+            color: #007bff;
+            text-decoration: none;
+        }
+        .signup-container a:hover {
+            text-decoration: underline;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg);}
+            100% { transform: rotate(360deg);}
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading animation overlay -->
+    <div id="loading-overlay" style="display:flex; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(255,255,255,0.7); z-index:99999; align-items:center; justify-content:center;">
+        <div style="border:6px solid #f3f3f3; border-top:6px solid #007bff; border-radius:50%; width:48px; height:48px; animation:spin 1s linear infinite;"></div>
+    </div>
+    <div class="login-container signup-container">
+        <h2>Sign Up</h2>
+        <form id="signup-form" action="javascript:void(0);" method="post" class="signup-form">
+            <label for="name">Name</label>
+            <input type="text" id="name" name="name" required>
+            <label for="age">Age</label>
+            <input type="number" id="age" name="age" min="1" required>
+            <label for="gender">Gender</label>
+            <select id="gender" name="gender" required>
+                <option value="">Select Gender</option>
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+                <option value="other">Other</option>
+            </select>
+            <label for="new-username">Username</label>
+            <input type="text" id="new-username" name="username" required>
+            <label for="new-password">Password</label>
+            <input type="password" id="new-password" name="password" required>
+            <label for="confirm-password">Confirm Password</label>
+            <input type="password" id="confirm-password" name="confirm-password" required>
+            <label for="email">Email</label>
+            <input type="email" id="signup-email" name="email" required>
+            <label for="phone">Phone Number</label>
+            <input type="tel" id="signup-phone" name="phone" required pattern="[0-9]{10,15}">
+            <button type="submit">Create Account</button>
+        </form>
+        <div id="signup-success" style="color:green; margin-top:10px; display:none;">Account created! <a href="login.html">Go to Login</a></div>
+        <a href="login.html" style="display:block;text-align:center;margin-top:12px;">Already have an account? Login</a>
+    </div>
+    <script>
+        let generatedOTP = null;
+        let pendingUser = null;
+
+        document.getElementById('signup-form').onsubmit = async function(e) {
+            e.preventDefault();
+            const oldOtp = document.getElementById('otp-section');
+            if (oldOtp) oldOtp.remove();
+
+            const username = document.getElementById('new-username').value.trim();
+            const password = document.getElementById('new-password').value;
+            const confirmPassword = document.getElementById('confirm-password').value;
+            const email = document.getElementById('signup-email').value.trim().toLowerCase();
+            const phone = document.getElementById('signup-phone').value.trim();
+            const age = document.getElementById('age').value.trim();
+            const name = document.getElementById('name').value.trim();
+            const gender = document.getElementById('gender').value;
+            if (!username || !password) return false;
+            if (password !== confirmPassword) {
+                alert('Passwords do not match!');
+                return false;
+            }
+            let users = [];
+            try {
+                users = JSON.parse(localStorage.getItem('users')) || [];
+            } catch (e) {
+                users = [];
+            }
+            const usernameExists = users.some(u => (u.username || '').toLowerCase() === username.toLowerCase());
+            const exists = users.some(u => (u.email || '').toLowerCase() === email || u.phone === phone);
+            if (usernameExists) {
+                alert("This username is already registered. Please enter another.");
+                return;
+            }
+            if (exists) {
+                alert("This number and gmail already registered. Please login.");
+                return;
+            }
+
+            // Send OTP to email using backend
+            try {
+                const res = await fetch('http://localhost:3000/send-otp', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    pendingUser = { username, password, email, phone, age, name, gender };
+                    showOtpInput();
+                    alert("OTP sent to your email. Please check your inbox.");
+                } else {
+                    alert(data.message || "Failed to send OTP. Please try again.");
+                }
+            } catch (err) {
+                alert("Network error. Please try again.");
+            }
+        };
+
+        function showOtpInput() {
+            const oldOtp = document.getElementById('otp-section');
+            if (oldOtp) oldOtp.remove();
+
+            const otpDiv = document.createElement('div');
+            otpDiv.id = 'otp-section';
+            otpDiv.innerHTML = `
+                <label for="otp-input">Enter OTP</label>
+                <input type="text" id="otp-input" maxlength="6" style="width:100%;padding:8px;margin-bottom:8px;">
+                <button id="verify-otp-btn" type="button" style="width:100%;padding:10px;background:#007bff;color:#fff;border:none;border-radius:5px;font-size:1rem;cursor:pointer;">Verify OTP</button>
+                <div id="otp-error" style="color:red; margin-top:8px; display:none;"></div>
+            `;
+            document.querySelector('.signup-container').appendChild(otpDiv);
+            document.getElementById('verify-otp-btn').onclick = verifyOtp;
+        }
+
+        async function verifyOtp() {
+            const enteredOtp = document.getElementById('otp-input').value.trim();
+            const otpError = document.getElementById('otp-error');
+            const email = document.getElementById('signup-email').value.trim().toLowerCase();
+            try {
+                const res = await fetch('http://localhost:3000/verify-otp', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, otp: enteredOtp })
+                });
+                const data = await res.json();
+                if (res.ok && data.success) {
+                    // Save user to localStorage
+                    let users = [];
+                    try {
+                        users = JSON.parse(localStorage.getItem('users')) || [];
+                    } catch (e) {
+                        users = [];
+                    }
+                    users.push(pendingUser);
+                    localStorage.setItem('users', JSON.stringify(users));
+                    alert("Sign up successful! Please login.");
+                    window.location.href = 'login.html';
+                } else {
+                    otpError.textContent = "Invalid or expired OTP. Please try again.";
+                    otpError.style.display = 'block';
+                }
+            } catch (err) {
+                otpError.textContent = "Network error. Please try again.";
+                otpError.style.display = 'block';
+            }
+        }
+
+        function showLoading() {
+            document.getElementById('loading-overlay').style.display = 'flex';
+        }
+        function hideLoading() {
+            document.getElementById('loading-overlay').style.display = 'none';
+        }
+        window.addEventListener('load', function() {
+            hideLoading();
+        });
+        window.addEventListener('beforeunload', function() {
+            showLoading();
+        });
+    </script>
+</body>
+</html>

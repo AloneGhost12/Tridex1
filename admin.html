@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Panel</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        table { border-collapse: collapse; width: 100%; margin-top: 24px; }
+        th, td { border: 1px solid #ccc; padding: 8px 12px; text-align: left; }
+        th { background: #f8f8f8; }
+        .ban-btn, .unban-btn, .delete-btn {
+            padding: 5px 14px;
+            border: none;
+            border-radius: 4px;
+            color: #fff;
+            cursor: pointer;
+            margin-right: 6px;
+        }
+        .ban-btn { background: #dc3545; }
+        .unban-btn { background: #28a745; }
+        .delete-btn { background: #888; }
+        /* Modal styles */
+        #user-detail-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.3);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+        #user-detail-modal > div {
+            background: #fff;
+            padding: 32px 24px;
+            border-radius: 8px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+            min-width: 300px;
+            max-width: 90vw;
+        }
+        /* Product admin styles */
+        #product-form input, #product-form textarea { margin-bottom: 8px; display: block; width: 100%; }
+        #product-list img { max-width: 60px; max-height: 60px; }
+        .edit-btn { background: #007bff; color: #fff; border: none; border-radius: 4px; padding: 5px 14px; cursor: pointer; margin-right: 6px; }
+        .admin-nav-btn {
+            padding: 8px 18px;
+            margin-right: 10px;
+            background: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+        .admin-nav-btn.active {
+            background: #0056b3;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg);}
+            100% { transform: rotate(360deg);}
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading animation overlay -->
+    <div id="loading-overlay" style="display:flex; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(255,255,255,0.7); z-index:99999; align-items:center; justify-content:center;">
+        <div style="border:6px solid #f3f3f3; border-top:6px solid #007bff; border-radius:50%; width:48px; height:48px; animation:spin 1s linear infinite;"></div>
+    </div>
+    <h1>Admin Panel</h1>
+    <!-- Admin navigation buttons -->
+    <div style="margin-bottom:24px;">
+        <button class="admin-nav-btn active" id="show-users-btn">User Details</button>
+        <button class="admin-nav-btn" id="show-products-btn">Product Management</button>
+        <button class="admin-nav-btn" id="show-mail-btn" title="Send Announcement">&#9993; Mail</button>
+    </div>
+
+    <!-- User Details Section -->
+    <div id="user-section">
+        <table id="user-table">
+            <thead>
+                <tr>
+                    <th>Username</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>Age</th>
+                    <th>Password</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- User rows will be rendered here -->
+            </tbody>
+        </table>
+        <!-- User detail modal -->
+        <div id="user-detail-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.3); z-index:2000; align-items:center; justify-content:center;">
+            <div style="background:#fff; padding:32px 24px; border-radius:8px; box-shadow:0 2px 12px rgba(0,0,0,0.15); min-width:300px; max-width:90vw;">
+                <h2>User Details</h2>
+                <div id="user-detail-content"></div>
+                <button id="close-user-detail" style="margin-top:18px; padding:8px 18px; background:#007bff; color:#fff; border:none; border-radius:5px; font-size:1rem; cursor:pointer;">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Product Management Section -->
+    <div id="product-section" style="display:none;">
+        <form id="product-form">
+            <input type="hidden" id="product-id">
+            <label>Product Name: <input type="text" id="product-name" required></label>
+            <!-- Image upload and preview -->
+            <label>Image: <input type="file" id="product-image-file" accept="image/*"></label>
+            <input type="hidden" id="product-image">
+            <img id="product-image-preview" src="" alt="Preview" style="display:none;max-width:80px;max-height:80px;margin-bottom:8px;">
+            <label>Description: <textarea id="product-desc" required></textarea></label>
+            <label>Price: <input type="number" id="product-price" min="1" required></label>
+            <button type="submit" id="product-save-btn">Add Product</button>
+            <button type="button" id="product-cancel-btn" style="display:none;">Cancel</button>
+        </form>
+        <table id="product-list">
+            <thead>
+                <tr>
+                    <th>Photo</th>
+                    <th>Name</th>
+                    <th>Description</th>
+                    <th>Price</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Product rows will be rendered here -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Mailbox Modal for Admin -->
+    <div id="admin-mail-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.3); z-index:3000; align-items:center; justify-content:center;">
+        <div style="background:#fff; padding:32px 24px; border-radius:8px; box-shadow:0 2px 12px rgba(0,0,0,0.15); min-width:320px; max-width:90vw;">
+            <h2 style="margin-top:0;">Send Announcement</h2>
+            <form id="admin-mail-form">
+                <label>Title: <input type="text" id="mail-title" required></label><br>
+                <label>Message:<br>
+                    <textarea id="mail-body" required style="width:100%;height:80px;"></textarea>
+                </label><br>
+                <button type="submit" style="padding:8px 18px; background:#007bff; color:#fff; border:none; border-radius:5px; font-size:1rem; cursor:pointer;">Send</button>
+                <button type="button" id="close-admin-mail" style="padding:8px 18px; background:#888; color:#fff; border:none; border-radius:5px; font-size:1rem; cursor:pointer; margin-left:10px;">Cancel</button>
+            </form>
+            <hr style="margin:18px 0;">
+            <h3>All Announcements</h3>
+            <div id="admin-mailbox-messages" style="max-height:300px; overflow-y:auto; margin-bottom:10px;"></div>
+        </div>
+    </div>
+
+    <script>
+        // Load users from localStorage
+        let users = [];
+        try {
+            users = JSON.parse(localStorage.getItem('users')) || [];
+        } catch (e) {
+            users = [];
+        }
+
+        function saveUsers() {
+            localStorage.setItem('users', JSON.stringify(users));
+        }
+
+        function getBannedUsers() {
+            return JSON.parse(localStorage.getItem('bannedUsers') || '[]');
+        }
+        function setBannedUsers(arr) {
+            localStorage.setItem('bannedUsers', JSON.stringify(arr));
+        }
+
+        function getVerifiedUsers() {
+            return JSON.parse(localStorage.getItem('verifiedUsers') || '[]');
+        }
+        function setVerifiedUsers(arr) {
+            localStorage.setItem('verifiedUsers', JSON.stringify(arr));
+        }
+
+        function renderUsers() {
+            const bannedUsers = getBannedUsers();
+            const verifiedUsers = getVerifiedUsers();
+            const tbody = document.querySelector('#user-table tbody');
+            tbody.innerHTML = '';
+            users.forEach(user => {
+                const isBanned = bannedUsers.includes(user.username);
+                const isVerified = verifiedUsers.includes(user.username);
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="username-link" style="color:#007bff; cursor:pointer; text-decoration:underline;">
+                        ${user.username || ''} ${isVerified ? '<span title="Verified" style="color:#1da1f2; font-size:1.1em;vertical-align:middle;">&#10004;&#65039;</span>' : ''}
+                    </td>
+                    <td>${user.email || ''}</td>
+                    <td>${user.phone || ''}</td>
+                    <td>${user.age || ''}</td>
+                    <td>${user.password || ''}</td>
+                    <td>${isBanned ? '<span style="color:red;">Banned</span>' : 'Active'}</td>
+                    <td>
+                        <button type="button" class="ban-btn"${isBanned ? ' style="display:none;"' : ''}>Ban</button>
+                        <button type="button" class="unban-btn"${!isBanned ? ' style="display:none;"' : ''}>Unban</button>
+                        <button type="button" class="delete-btn">Delete</button>
+                        <button type="button" class="verify-btn"${isVerified ? ' style="display:none;"' : ''}>Verify</button>
+                    </td>
+                `;
+                // Show user details on username click
+                tr.querySelector('.username-link').onclick = function() {
+                    showUserDetail(user);
+                };
+                // Ban
+                tr.querySelector('.ban-btn').onclick = function() {
+                    if (confirm(`Ban ${user.username}?`)) {
+                        const banned = getBannedUsers();
+                        if (!banned.includes(user.username)) {
+                            banned.push(user.username);
+                            setBannedUsers(banned);
+                            renderUsers();
+                        }
+                    }
+                };
+                // Unban
+                tr.querySelector('.unban-btn').onclick = function() {
+                    if (confirm(`Unban ${user.username}?`)) {
+                        let banned = getBannedUsers();
+                        banned = banned.filter(u => u !== user.username);
+                        setBannedUsers(banned);
+                        renderUsers();
+                    }
+                };
+                // Delete
+                tr.querySelector('.delete-btn').onclick = function() {
+                    if (confirm(`Delete ${user.username}?`)) {
+                        users = users.filter(u => u.username !== user.username);
+                        saveUsers();
+                        // Also remove from banned list if present
+                        let banned = getBannedUsers();
+                        banned = banned.filter(u => u !== user.username);
+                        setBannedUsers(banned);
+                        // Remove from verified list if present
+                        let verified = getVerifiedUsers();
+                        verified = verified.filter(u => u !== user.username);
+                        setVerifiedUsers(verified);
+                        renderUsers();
+                    }
+                };
+                // Verify button logic
+                tr.querySelector('.verify-btn').onclick = function() {
+                    let verified = getVerifiedUsers();
+                    if (!verified.includes(user.username)) {
+                        verified.push(user.username);
+                        setVerifiedUsers(verified);
+                        renderUsers();
+                    }
+                };
+                tbody.appendChild(tr);
+            });
+        }
+
+        function showUserDetail(user) {
+            const modal = document.getElementById('user-detail-modal');
+            const content = document.getElementById('user-detail-content');
+            // Show all fields dynamically
+            let html = '';
+            for (const key in user) {
+                if (user.hasOwnProperty(key)) {
+                    html += `<p><strong>${key.charAt(0).toUpperCase() + key.slice(1)}:</strong> ${user[key]}</p>`;
+                }
+            }
+            content.innerHTML = html;
+            modal.style.display = 'flex';
+        }
+
+        document.getElementById('close-user-detail').onclick = function() {
+            document.getElementById('user-detail-modal').style.display = 'none';
+        };
+
+        // --- Product Management ---
+        function getProducts() {
+            return JSON.parse(localStorage.getItem('products') || '[]');
+        }
+        function setProducts(arr) {
+            localStorage.setItem('products', JSON.stringify(arr));
+        }
+
+        function renderProducts() {
+            const products = getProducts();
+            const tbody = document.querySelector('#product-list tbody');
+            tbody.innerHTML = '';
+            products.forEach((product, idx) => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><img src="${product.image}" alt="${product.name}" style="cursor:pointer;" class="product-img" data-id="${product.id}"></td>
+                    <td>${product.name}</td>
+                    <td>${product.desc}</td>
+                    <td>₹${product.price}</td>
+                    <td>
+                        <button class="edit-btn" data-id="${product.id}">Edit</button>
+                        <button class="delete-btn" data-id="${product.id}">Delete</button>
+                    </td>
+                `;
+                // Image click: go to product details page
+                tr.querySelector('.product-img').onclick = function() {
+                    window.location.href = `product-details.html?id=${product.id}`;
+                };
+                // Edit
+                tr.querySelector('.edit-btn').onclick = function() {
+                    setProductForm(product);
+                };
+                // Delete
+                tr.querySelector('.delete-btn').onclick = function() {
+                    if (confirm('Delete this product?')) {
+                        const products = getProducts().filter(p => p.id !== product.id);
+                        setProducts(products);
+                        renderProducts();
+                    }
+                };
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Handle image file upload and convert to base64, show preview
+        document.getElementById('product-image-file').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                document.getElementById('product-image').value = evt.target.result;
+                document.getElementById('product-image-preview').src = evt.target.result;
+                document.getElementById('product-image-preview').style.display = '';
+            };
+            reader.readAsDataURL(file);
+        });
+
+        // Set form fields for editing, including image preview
+        function setProductForm(product) {
+            document.getElementById('product-id').value = product.id;
+            document.getElementById('product-name').value = product.name;
+            document.getElementById('product-image').value = product.image;
+            document.getElementById('product-desc').value = product.desc;
+            document.getElementById('product-price').value = product.price;
+            document.getElementById('product-save-btn').textContent = 'Update Product';
+            document.getElementById('product-cancel-btn').style.display = '';
+            // Show image preview
+            if (product.image) {
+                document.getElementById('product-image-preview').src = product.image;
+                document.getElementById('product-image-preview').style.display = '';
+            } else {
+                document.getElementById('product-image-preview').style.display = 'none';
+            }
+            // Clear file input
+            document.getElementById('product-image-file').value = '';
+        }
+
+        // Add/Edit Product
+        document.getElementById('product-form').onsubmit = function(e) {
+            e.preventDefault();
+            const id = document.getElementById('product-id').value || Date.now().toString();
+            const name = document.getElementById('product-name').value.trim();
+            let image = document.getElementById('product-image').value.trim();
+            const desc = document.getElementById('product-desc').value.trim();
+            const price = document.getElementById('product-price').value.trim();
+            let products = getProducts();
+            const idx = products.findIndex(p => p.id === id);
+            if (idx > -1) {
+                // If no new image uploaded, keep the old image
+                if (!image) image = products[idx].image;
+                products[idx] = { id, name, image, desc, price };
+            } else {
+                products.push({ id, name, image, desc, price });
+            }
+            setProducts(products);
+            renderProducts();
+            this.reset();
+            document.getElementById('product-save-btn').textContent = 'Add Product';
+            document.getElementById('product-cancel-btn').style.display = 'none';
+            document.getElementById('product-image-preview').style.display = 'none';
+            document.getElementById('product-image').value = '';
+        };
+        // Cancel edit
+        document.getElementById('product-cancel-btn').onclick = function() {
+            document.getElementById('product-form').reset();
+            document.getElementById('product-save-btn').textContent = 'Add Product';
+            this.style.display = 'none';
+            document.getElementById('product-image-preview').style.display = 'none';
+            document.getElementById('product-image').value = '';
+        };
+
+        // Section switching logic
+        const userSection = document.getElementById('user-section');
+        const productSection = document.getElementById('product-section');
+        const usersBtn = document.getElementById('show-users-btn');
+        const productsBtn = document.getElementById('show-products-btn');
+        usersBtn.onclick = function() {
+            userSection.style.display = '';
+            productSection.style.display = 'none';
+            usersBtn.classList.add('active');
+            productsBtn.classList.remove('active');
+        };
+        productsBtn.onclick = function() {
+            userSection.style.display = 'none';
+            productSection.style.display = '';
+            usersBtn.classList.remove('active');
+            productsBtn.classList.add('active');
+        };
+
+        // Mailbox modal logic for admin
+        document.getElementById('show-mail-btn').onclick = function() {
+            document.getElementById('admin-mail-modal').style.display = 'flex';
+            renderAdminMessages();
+        };
+        document.getElementById('close-admin-mail').onclick = function() {
+            document.getElementById('admin-mail-modal').style.display = 'none';
+        };
+        document.getElementById('admin-mail-form').onsubmit = function(e) {
+            e.preventDefault();
+            const title = document.getElementById('mail-title').value.trim();
+            const body = document.getElementById('mail-body').value.trim();
+            const date = new Date().toLocaleString();
+            let messages = [];
+            try {
+                messages = JSON.parse(localStorage.getItem('adminMessages')) || [];
+            } catch (e) {
+                messages = [];
+            }
+            messages.unshift({ title, body, date });
+            localStorage.setItem('adminMessages', JSON.stringify(messages));
+            alert('Announcement sent!');
+            document.getElementById('admin-mail-modal').style.display = 'none';
+            this.reset();
+        };
+
+        // Show all messages in admin modal with delete option
+        function renderAdminMessages() {
+            const messagesDiv = document.getElementById('admin-mailbox-messages');
+            let messages = [];
+            try {
+                messages = JSON.parse(localStorage.getItem('adminMessages')) || [];
+            } catch (e) {
+                messages = [];
+            }
+            if (messages.length === 0) {
+                messagesDiv.innerHTML = '<p style="color:#888;">No messages.</p>';
+            } else {
+                messagesDiv.innerHTML = messages.map((msg, idx) =>
+                    `<div style="border-bottom:1px solid #eee; padding:8px 0;">
+                        <strong>${msg.title || 'Announcement'}</strong>
+                        <div style="font-size:0.97em; margin-top:4px;">${msg.body}</div>
+                        <div style="font-size:0.85em; color:#888; margin-top:2px;">${msg.date || ''}</div>
+                        <button class="delete-msg-btn" data-idx="${idx}" style="margin-top:6px; padding:4px 12px; background:#dc3545; color:#fff; border:none; border-radius:4px; font-size:0.95em; cursor:pointer;">Delete</button>
+                    </div>`
+                ).join('');
+                // Add delete handlers
+                messagesDiv.querySelectorAll('.delete-msg-btn').forEach(btn => {
+                    btn.onclick = function() {
+                        const idx = parseInt(this.getAttribute('data-idx'));
+                        if (confirm('Delete this message?')) {
+                            messages.splice(idx, 1);
+                            localStorage.setItem('adminMessages', JSON.stringify(messages));
+                            renderAdminMessages();
+                        }
+                    };
+                });
+            }
+        }
+
+        function showLoading() {
+            document.getElementById('loading-overlay').style.display = 'flex';
+        }
+        function hideLoading() {
+            document.getElementById('loading-overlay').style.display = 'none';
+        }
+        window.addEventListener('load', function() {
+            hideLoading();
+        });
+        window.addEventListener('beforeunload', function() {
+            showLoading();
+        });
+
+        renderUsers();
+        renderProducts();
+    </script>
+</body>
+</html>

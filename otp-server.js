@@ -1,0 +1,56 @@
+require('dotenv').config({ path: './demo.env' });
+const express = require('express');
+const nodemailer = require('nodemailer');
+const cors = require('cors');
+const app = express();
+app.use(express.json());
+app.use(cors());
+
+let otpStore = {};
+
+function generateOTP() {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+app.post('/send-otp', async (req, res) => {
+  const { email } = req.body;
+  const otp = generateOTP();
+  otpStore[email] = { otp, expires: Date.now() + 5 * 60 * 1000 };
+
+  let transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS,
+    },
+  });
+
+  await transporter.sendMail({
+    from: process.env.EMAIL_USER,
+    to: email,
+    subject: 'Your OTP Code',
+    text: `Your OTP is: ${otp}`,
+  });
+
+  res.json({ message: 'OTP sent' });
+});
+
+app.post('/verify-otp', (req, res) => {
+  const { email, otp } = req.body;
+  const record = otpStore[email];
+  if (record && record.otp === otp && Date.now() < record.expires) {
+    delete otpStore[email];
+    return res.json({ success: true, message: 'OTP verified' });
+  }
+  res.status(400).json({ success: false, message: 'Invalid or expired OTP' });
+});
+
+app.listen(3000, () => console.log('Server running on port 3000'));
+AloneGhost12
+ok this is working now i want to implement this to my main project
+
+GitHub Copilot
+Great! To integrate OTP verification into your main project, follow these steps:
+
+1. Copy the OTP Logic
+Move the relevant code (routes, OTP generation, and email sending) from otp-server.js into your main project's backend codebase.

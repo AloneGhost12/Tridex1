@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Your Cart</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body { font-family: Arial, sans-serif; background: #f4f4f9; margin: 0; }
+        .cart-container { max-width: 700px; margin: 40px auto; background: #fff; border-radius: 10px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); padding: 32px 24px; }
+        .cart-title { text-align: center; margin-bottom: 24px; color: #007bff; }
+        .cart-item { display: flex; align-items: center; gap: 18px; border-bottom: 1px solid #eee; padding: 18px 0; }
+        .cart-item img { max-width: 80px; max-height: 80px; border-radius: 8px; }
+        .cart-item-details { flex: 1; }
+        .cart-item-name { font-weight: 600; font-size: 1.1em; }
+        .cart-item-price { color: #007bff; margin-top: 4px; }
+        .cart-remove-btn { background: #dc3545; color: #fff; border: none; border-radius: 5px; padding: 6px 14px; cursor: pointer; }
+        .cart-empty { text-align: center; color: #888; margin: 40px 0; }
+        .cart-total { text-align: right; font-size: 1.2em; font-weight: 600; margin-top: 24px; }
+        .cart-actions { text-align: right; margin-top: 18px; }
+        .cart-actions button { background: #28a745; color: #fff; border: none; border-radius: 5px; padding: 10px 22px; font-size: 1rem; cursor: pointer; }
+        @keyframes spin {
+            0% { transform: rotate(0deg);}
+            100% { transform: rotate(360deg);}
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading animation overlay -->
+    <div id="loading-overlay" style="display:flex; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(255,255,255,0.7); z-index:99999; align-items:center; justify-content:center;">
+        <div style="border:6px solid #f3f3f3; border-top:6px solid #007bff; border-radius:50%; width:48px; height:48px; animation:spin 1s linear infinite;"></div>
+    </div>
+    <div class="cart-container">
+        <h1 class="cart-title">Your Cart</h1>
+        <div id="cart-items"></div>
+        <div class="cart-total" id="cart-total"></div>
+        <div class="cart-actions" id="cart-actions"></div>
+        <div style="text-align:center; margin-top:24px;">
+            <button onclick="window.location.href='index.html'" style="background:#007bff;">Continue Shopping</button>
+        </div>
+    </div>
+    <script>
+        function renderCart() {
+            // Ensure cart is isolated per user
+            const username = localStorage.getItem('currentUser');
+            const cartUser = localStorage.getItem('cartUser');
+            if (cartUser !== username) {
+                const userCart = localStorage.getItem('cart_' + username);
+                if (userCart) {
+                    localStorage.setItem('cart', userCart);
+                } else {
+                    localStorage.removeItem('cart');
+                }
+                localStorage.setItem('cartUser', username);
+            }
+            let cart = [];
+            try { cart = JSON.parse(localStorage.getItem('cart')) || []; } catch (e) { cart = []; }
+            const cartItemsDiv = document.getElementById('cart-items');
+            const cartTotalDiv = document.getElementById('cart-total');
+            const cartActionsDiv = document.getElementById('cart-actions');
+            if (cart.length === 0) {
+                cartItemsDiv.innerHTML = '<div class="cart-empty">Your cart is empty.</div>';
+                cartTotalDiv.textContent = '';
+                cartActionsDiv.innerHTML = '';
+                return;
+            }
+            let total = 0;
+            cartItemsDiv.innerHTML = cart.map((item, idx) => {
+                total += Number(item.price) || 0;
+                return `
+                    <div class="cart-item">
+                        <img src="${item.image}" alt="${item.name}">
+                        <div class="cart-item-details">
+                            <div class="cart-item-name">${item.name}</div>
+                            <div class="cart-item-price">₹${item.price}</div>
+                        </div>
+                        <button class="cart-remove-btn" data-idx="${idx}">Remove</button>
+                    </div>
+                `;
+            }).join('');
+            cartTotalDiv.textContent = `Total: ₹${total}`;
+            cartActionsDiv.innerHTML = `<button onclick="alert('Proceed to checkout (not implemented)')">Checkout</button>`;
+            // Remove button logic
+            document.querySelectorAll('.cart-remove-btn').forEach(btn => {
+                btn.onclick = function() {
+                    const idx = parseInt(this.getAttribute('data-idx'));
+                    cart.splice(idx, 1);
+                    localStorage.setItem('cart', JSON.stringify(cart));
+                    renderCart();
+                    // Update cart count on index.html if open
+                    if (window.opener && window.opener.updateCartCount) window.opener.updateCartCount();
+                };
+            });
+        }
+        function showLoading() {
+            document.getElementById('loading-overlay').style.display = 'flex';
+        }
+        function hideLoading() {
+            document.getElementById('loading-overlay').style.display = 'none';
+        }
+        window.addEventListener('load', function() {
+            hideLoading();
+        });
+        window.addEventListener('beforeunload', function() {
+            showLoading();
+        });
+        renderCart();
+    </script>
+</body>
+</html>

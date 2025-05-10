@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login Page</title>
+    <link rel="stylesheet" href="auth.css">
+</head>
+<body>
+    <!-- Loading animation overlay -->
+    <div id="loading-overlay" style="display:flex; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(255,255,255,0.7); z-index:99999; align-items:center; justify-content:center;">
+        <div style="border:6px solid #f3f3f3; border-top:6px solid #007bff; border-radius:50%; width:48px; height:48px; animation:spin 1s linear infinite;"></div>
+    </div>
+    <style>
+        @keyframes spin {
+            0% { transform: rotate(0deg);}
+            100% { transform: rotate(360deg);}
+        }
+    </style>
+    <div class="login-container">
+        <h2>Login</h2>
+        <form id="login-form" action="index.html" method="get">
+            <label for="username">Username</label>
+            <input type="text" id="username" name="username" required placeholder="Username / Email / Phone Number">
+            <label for="password">Password</label>
+            <div style="display:flex; align-items:center; position:relative;">
+                <input type="password" id="password" name="password" required style="padding-right:32px; flex:1;">
+                <span id="toggle-login-password"
+                    style="position:absolute; right:12px; top:50%; transform:translateY(-50%); cursor:pointer; user-select:none; font-size:1.1em; color:#888;">
+                    👁️
+                </span>
+            </div>
+            <button type="submit">Login</button>
+        </form>
+        <div id="login-error" style="color:red; margin-top:10px; display:none;">
+            Incorrect username or password.
+        </div>
+        <a href="#" id="forgot-password-link" style="display:block; margin-top:10px; text-align:right; color:#007bff; text-decoration:underline; cursor:pointer;">Forgot Password?</a>
+        <a href="signup.html"><button class="signup-btn" type="button">Sign Up</button></a>
+        <div id="signup-form" style="display:none; margin-top:20px;">
+            <h2>Sign Up</h2>
+            <form id="signup-inner-form" action="#" method="post">
+                <label for="new-username">Username</label>
+                <input type="text" id="new-username" name="new-username" required>
+                <label for="new-password">Password</label>
+                <div style="display:flex; align-items:center; position:relative;">
+                    <input type="password" id="new-password" required style="padding-right:32px; flex:1;">
+                    <span id="toggle-signup-password"
+                        style="position:absolute; right:12px; top:50%; transform:translateY(-50%); cursor:pointer; user-select:none; font-size:1.1em; color:#888;">
+                        👁️
+                    </span>
+                </div>
+                <button type="submit">Create Account</button>
+            </form>
+            <div id="signup-success" style="color:green; margin-top:10px; display:none;">Account created! Please login.</div>
+        </div>
+    </div>
+    <script>
+    function showSignup() {
+        document.getElementById('signup-form').style.display = 'block';
+    }
+
+    document.getElementById('login-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const userInput = document.getElementById('username').value.trim().toLowerCase();
+        const password = document.getElementById('password').value;
+        // Multiple users logic
+        const users = JSON.parse(localStorage.getItem('users') || '[]');
+        // Accept username, email, or phone number
+        const user = users.find(u =>
+            (u.username && u.username.toLowerCase() === userInput) ||
+            (u.email && u.email.toLowerCase() === userInput) ||
+            (u.phone && u.phone === userInput)
+        && u.password === password);
+        if (user) {
+            localStorage.setItem('isLoggedIn', 'true');
+            localStorage.setItem('currentUser', user.username);
+            window.location.href = 'index.html';
+        } else {
+            document.getElementById('login-error').style.display = 'block';
+        }
+    });
+
+    // Toggle password visibility for login
+    document.getElementById('toggle-login-password').addEventListener('click', function() {
+        const pwd = document.getElementById('password');
+        if (pwd.type === 'password') {
+            pwd.type = 'text';
+            this.textContent = '🙈';
+        } else {
+            pwd.type = 'password';
+            this.textContent = '👁️';
+        }
+    });
+
+    // Toggle password visibility for signup
+    document.getElementById('toggle-signup-password').addEventListener('click', function() {
+        const pwd = document.getElementById('new-password');
+        if (pwd.type === 'password') {
+            pwd.type = 'text';
+            this.textContent = '🙈';
+        } else {
+            pwd.type = 'password';
+            this.textContent = '👁️';
+        }
+    });
+
+    // Forgot password link
+    document.getElementById('forgot-password-link').onclick = function(e) {
+        e.preventDefault();
+        window.location.href = 'forgotpassword.html';
+    };
+
+    // Sign up logic for the embedded form
+    document.getElementById('signup-inner-form').onsubmit = function(e) {
+        e.preventDefault();
+        const username = document.getElementById('new-username').value.trim();
+        const password = document.getElementById('new-password').value;
+        if (username && password) {
+            localStorage.setItem('profileUsername', username);
+            localStorage.setItem('profilePassword', password);
+            document.getElementById('signup-success').style.display = 'block';
+            setTimeout(() => {
+                document.getElementById('signup-form').style.display = 'none';
+                document.getElementById('signup-success').style.display = 'none';
+            }, 1500);
+        }
+    };
+
+    function showLoading() {
+        document.getElementById('loading-overlay').style.display = 'flex';
+    }
+    function hideLoading() {
+        document.getElementById('loading-overlay').style.display = 'none';
+    }
+    window.addEventListener('load', function() {
+        hideLoading();
+    });
+    window.addEventListener('beforeunload', function() {
+        showLoading();
+    });
+    </script>
+</body>
+</html>

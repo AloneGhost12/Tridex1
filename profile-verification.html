@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile Verification</title>
+    <link rel="stylesheet" href="auth.css">
+    <style>
+        .verify-container {
+            max-width: 400px;
+            margin: 40px auto;
+            padding: 32px 24px;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        }
+        .verify-container h2 {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+        .verify-container label {
+            display: block;
+            margin-top: 14px;
+            margin-bottom: 6px;
+            font-weight: 500;
+        }
+        .verify-container input {
+            width: 100%;
+            padding: 8px 10px;
+            margin-bottom: 8px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 1rem;
+            box-sizing: border-box;
+        }
+        .verify-container button {
+            width: 100%;
+            padding: 10px;
+            background: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            font-size: 1rem;
+            cursor: pointer;
+            margin-top: 12px;
+        }
+        .verify-container button:hover {
+            background: #0056b3;
+        }
+        .verify-container .error {
+            color: red;
+            margin-top: 10px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="verify-container">
+        <h2>Profile Verification</h2>
+        <form id="verify-form">
+            <label for="verify-name">Name</label>
+            <input type="text" id="verify-name" required>
+            <label for="verify-phone">Phone Number</label>
+            <input type="text" id="verify-phone" required>
+            <label for="verify-secret">Secret Code</label>
+            <input type="text" id="verify-secret" required>
+            <button type="submit">Verify</button>
+        </form>
+        <div id="verify-error" class="error" style="display:none;">Incorrect details. Please try again.</div>
+    </div>
+    <script>
+        document.getElementById('verify-form').onsubmit = function(e) {
+            e.preventDefault();
+            const name = document.getElementById('verify-name').value.trim().toLowerCase();
+            const phone = document.getElementById('verify-phone').value.trim();
+            const secret = document.getElementById('verify-secret').value.trim().toLowerCase();
+            if (name === 'adharsh' && phone === '8589838547' && secret === 'i love you') {
+                window.location.href = 'password-reset.html';
+            } else {
+                document.getElementById('verify-error').style.display = 'block';
+            }
+        };
+    </script>
+</body>
+</html>
