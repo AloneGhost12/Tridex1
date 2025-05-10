@@ -1,8 +1,13 @@
- const express = require('express');
+const express = require('express');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
+
+// Root route
+app.get('/', (req, res) => {
+    res.send('Welcome to Tridex API!');
+});
 
 // Dummy signup endpoint
 app.post('/signup', (req, res) => {
@@ -19,7 +24,3 @@ app.post('/login', (req, res) => {
 app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
 });
-    
-
-
-
