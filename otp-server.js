@@ -3,12 +3,18 @@ const express = require('express');
 const nodemailer = require('nodemailer');
 const cors = require('cors');
 const app = express();
-app.use(express.json());
+
+// CORS middleware at the very top
 app.use(cors({
   origin: '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
+
+// Explicitly handle preflight requests for all routes
+app.options('*', cors());
+
+app.use(express.json());
 
 let otpStore = {};
 
