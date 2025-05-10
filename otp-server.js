@@ -46,11 +46,3 @@ app.post('/verify-otp', (req, res) => {
 });
 
 app.listen(3000, () => console.log('Server running on port 3000'));
-AloneGhost12
-ok this is working now i want to implement this to my main project
-
-GitHub Copilot
-Great! To integrate OTP verification into your main project, follow these steps:
-
-1. Copy the OTP Logic
-Move the relevant code (routes, OTP generation, and email sending) from otp-server.js into your main project's backend codebase.
