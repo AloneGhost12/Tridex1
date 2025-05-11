@@ -291,155 +291,126 @@
         &copy; 2025 Tridex. All rights reserved. Made with <span style="color:#e25555;">&#10084;&#65039;</span> by Tridex.
     </footer>
     <script>
-        // Ban check logic (must be first in script)
-        const username = localStorage.getItem('username');
-        const bannedUsers = JSON.parse(localStorage.getItem('bannedUsers') || '[]');
-        if (username && bannedUsers.includes(username)) {
-            document.getElementById('ban-message').style.display = 'flex';
-            document.body.style.overflow = 'hidden';
-            document.getElementById('ban-ok-btn').onclick = function() {
-                localStorage.removeItem('isLoggedIn');
-                window.location.href = 'login.html';
-            };
-            // Stop further script execution
-            throw new Error('User is banned');
+        // --- withLoading helper for loading overlay ---
+function withLoading(action) {
+    return async function(...args) {
+        const loadingOverlay = document.getElementById('loading-overlay');
+        if (loadingOverlay) loadingOverlay.style.display = 'flex';
+        try {
+            await action(...args);
+        } catch (error) {
+            console.error('Error during action:', error);
+        } finally {
+            if (loadingOverlay) loadingOverlay.style.display = 'none';
         }
+    };
+}
 
-        // Show/hide buttons based on login status
-        const isLoggedIn = localStorage.getItem('isLoggedIn');
-        // Display username if available
-        if (isLoggedIn && username) {
-            document.getElementById('username-display').innerHTML =
-                `Welcome, ${username} ${verifiedUsers.includes(username) ? '<span title="Verified" style="color:#1da1f2; font-size:1.1em;">&#10004;&#65039;</span>' : ''}`;
-        }
-        // Hide or show logout button
-        document.getElementById('logout-btn').style.display = isLoggedIn ? 'block' : 'none';
-        // Hide or show login/signup in dropdown and handle profile icon click
-        document.addEventListener('DOMContentLoaded', function() {
-            const userIcon = document.getElementById('userIcon');
-            const dropdown = document.getElementById('userDropdown');
-            if (isLoggedIn) {
-                // Remove login and signup links if logged in
-                dropdown.innerHTML = '';
-                // Redirect to profile page on profile icon click
-                userIcon.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    window.location.href = 'profile.html';
-                });
-            } else {
-                userIcon.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
-                });
-            }
-            document.addEventListener('click', function(e) {
-                if (!userIcon.contains(e.target) && !dropdown.contains(e.target)) {
-                    dropdown.style.display = 'none';
-                }
-            });
+// Ban check logic (must be first in script)
+const username = localStorage.getItem('username');
+const bannedUsers = JSON.parse(localStorage.getItem('bannedUsers') || '[]');
+if (username && bannedUsers.includes(username)) {
+    document.getElementById('ban-message').style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+    document.getElementById('ban-ok-btn').onclick = function() {
+        localStorage.removeItem('isLoggedIn');
+        window.location.href = 'login.html';
+    };
+    // Stop further script execution
+    throw new Error('User is banned');
+}
+
+// Show/hide buttons based on login status
+const isLoggedIn = localStorage.getItem('isLoggedIn');
+// Display username if available
+if (isLoggedIn && username) {
+    document.getElementById('username-display').innerHTML =
+        `Welcome, ${username} ${verifiedUsers.includes(username) ? '<span title="Verified" style="color:#1da1f2; font-size:1.1em;">&#10004;&#65039;</span>' : ''}`;
+}
+// Hide or show logout button
+document.getElementById('logout-btn').style.display = isLoggedIn ? 'block' : 'none';
+// Hide or show login/signup in dropdown and handle profile icon click
+document.addEventListener('DOMContentLoaded', function() {
+    const userIcon = document.getElementById('userIcon');
+    const dropdown = document.getElementById('userDropdown');
+    if (isLoggedIn) {
+        // Remove login and signup links if logged in
+        dropdown.innerHTML = '';
+        // Redirect to profile page on profile icon click
+        userIcon.addEventListener('click', function(e) {
+            e.preventDefault();
+            window.location.href = 'profile.html';
         });
-
-        // Redirect to login if not logged in
-        if (!isLoggedIn) {
-            document.getElementById('logout-btn').style.display = 'none';
+    } else {
+        userIcon.addEventListener('click', function(e) {
+            e.preventDefault();
+            dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+        });
+    }
+    document.addEventListener('click', function(e) {
+        if (!userIcon.contains(e.target) && !dropdown.contains(e.target)) {
+            dropdown.style.display = 'none';
         }
-        // Logout button with popup confirmation
-        document.getElementById('logout-btn').onclick = function() {
-            document.getElementById('logout-popup').style.display = 'flex';
-        };
-        document.getElementById('popup-logout-no').onclick = function() {
-            document.getElementById('logout-popup').style.display = 'none';
-        };
-        document.getElementById('popup-logout-yes').onclick = function() {
-            localStorage.removeItem('isLoggedIn');
-            window.location.href = 'login.html';
-        };
+    });
+});
 
-        // Render products from localStorage, with optional filter
-        function renderProducts(filter = "") {
-            const grid = document.getElementById('product-grid');
-            let products = [];
+// Redirect to login if not logged in
+if (!isLoggedIn) {
+    document.getElementById('logout-btn').style.display = 'none';
+}
+// Logout button with popup confirmation
+document.getElementById('logout-btn').onclick = function() {
+    document.getElementById('logout-popup').style.display = 'flex';
+};
+document.getElementById('popup-logout-no').onclick = function() {
+    document.getElementById('logout-popup').style.display = 'none';
+};
+document.getElementById('popup-logout-yes').onclick = function() {
+    localStorage.removeItem('isLoggedIn');
+    window.location.href = 'login.html';
+};
+
+// Fetch products from backend and render
+        async function fetchAndRenderProducts(filter = "") {
             try {
-                products = JSON.parse(localStorage.getItem('products')) || [];
-            } catch (e) {
-                products = [];
-            }
-            grid.innerHTML = '';
-            const filtered = products.filter(product =>
-                !filter ||
-                product.name.toLowerCase().includes(filter) ||
-                (product.desc && product.desc.toLowerCase().includes(filter))
-            );
-            if (filtered.length === 0) {
-                grid.innerHTML = '<div style="text-align:center; color:#888; font-size:1.2em; padding:32px 0;">No results found.</div>';
-                return;
-            }
-            filtered.forEach(product => {
-                const div = document.createElement('div');
-                div.className = 'product-card';
-                div.innerHTML = `
-                    <img src="${product.image}" alt="${product.name}" style="cursor:pointer;" data-id="${product.id}">
-                    <h3>${product.name}</h3>
-                    <p>₹${product.price}</p>
-                `;
-                div.querySelector('img').onclick = function() {
-                    window.location.href = `product-details.html?id=${product.id}`;
-                };
-                grid.appendChild(div);
-            });
-        }
-
-        // Initial render
-        renderProducts();
-
-        // Show/hide loading animation helpers
-        function showLoading() {
-            document.getElementById('loading-overlay').style.display = 'flex';
-        }
-        function hideLoading() {
-            document.getElementById('loading-overlay').style.display = 'none';
-        }
-        // Fix: Only hide loading after DOM and all scripts are ready
-        window.addEventListener('DOMContentLoaded', function() {
-            hideLoading();
-        });
-        // Remove or comment out this line to avoid hiding loading too early:
-        // window.addEventListener('load', function() { hideLoading(); });
-
-        window.addEventListener('beforeunload', function() {
-            showLoading();
-        });
-        // Wrap a function with loading animation
-        function withLoading(fn) {
-            return function(...args) {
-                showLoading();
-                let result;
-                try {
-                    result = fn.apply(this, args);
-                    if (result && typeof result.then === 'function') {
-                        result.finally(hideLoading);
-                    } else {
-                        hideLoading();
-                    }
-                } catch (e) {
-                    hideLoading();
-                    throw e;
+                const res = await fetch('http://localhost:3000/products');
+                let products = await res.json();
+                const grid = document.getElementById('product-grid');
+                grid.innerHTML = '';
+                const filtered = products.filter(product =>
+                    !filter ||
+                    product.name.toLowerCase().includes(filter) ||
+                    (product.desc && product.desc.toLowerCase().includes(filter))
+                );
+                if (filtered.length === 0) {
+                    grid.innerHTML = '<div style="text-align:center; color:#888; font-size:1.2em; padding:32px 0;">No results found.</div>';
+                    return;
                 }
-                return result;
-            };
+                filtered.forEach(product => {
+                    const div = document.createElement('div');
+                    div.className = 'product-card';
+                    div.innerHTML = `
+                        <img src="${product.image}" alt="${product.name}" style="cursor:pointer;" data-id="${product._id}">
+                        <h3>${product.name}</h3>
+                        <p>₹${product.price}</p>
+                    `;
+                    div.querySelector('img').onclick = function() {
+                        window.location.href = `product-details.html?id=${product._id}`;
+                    };
+                    grid.appendChild(div);
+                });
+            } catch (e) {
+                document.getElementById('product-grid').innerHTML = '<div style="text-align:center; color:#888; font-size:1.2em; padding:32px 0;">Failed to load products from database.</div>';
+            }
         }
-
-        // --- Apply loading to main functions ---
-
-        // Render products
-        renderProducts = withLoading(renderProducts);
-
+        // Initial render
+        fetchAndRenderProducts();
         // Search form
-        document.getElementById('search-form').onsubmit = withLoading(function(e) {
+        document.getElementById('search-form').onsubmit = function(e) {
             e.preventDefault();
             const filter = document.getElementById('search-input').value.trim().toLowerCase();
-            renderProducts(filter);
-        });
+            fetchAndRenderProducts(filter);
+        };
 
         // Cart icon click
         document.getElementById('cartIcon').onclick = withLoading(function(e) {

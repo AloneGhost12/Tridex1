@@ -80,80 +80,77 @@
             const params = new URLSearchParams(window.location.search);
             return params.get('id');
         }
-        function renderProductDetails() {
-            const id = getProductId();
-            let products = [];
-            try {
-                products = JSON.parse(localStorage.getItem('products')) || [];
-            } catch (e) {
-                products = [];
-            }
-            const product = products.find(p => p.id === id);
+        // Fetch product details from backend
+        async function renderProductDetails() {
+            const id = new URLSearchParams(window.location.search).get('id');
             const container = document.getElementById('product-details');
-            if (!product) {
-                container.innerHTML = '<p style="color:red;">Product not found.</p><button class="back-btn" onclick="window.history.back()">Back</button>';
-                return;
-            }
-            container.innerHTML = `
-                <img src="${product.image}" alt="${product.name}">
-                <h2>${product.name}</h2>
-                <p><strong>Description:</strong> ${product.desc}</p>
-                <p><strong>Price:</strong> ₹${product.price}</p>
-                <div style="margin:18px 0;">
-                    <button id="add-to-cart-btn" style="padding:8px 18px; background:#28a745; color:#fff; border:none; border-radius:5px; font-size:1rem; cursor:pointer; margin-right:10px;">Add to Cart</button>
-                    <button id="add-to-wishlist-btn" style="padding:8px 18px; background:#ffc107; color:#333; border:none; border-radius:5px; font-size:1rem; cursor:pointer; margin-right:10px;">Add to Wishlist</button>
-                    <button id="buy-now-btn" style="padding:8px 18px; background:#007bff; color:#fff; border:none; border-radius:5px; font-size:1rem; cursor:pointer;">Buy Now</button>
-                </div>
-                <button class="back-btn" onclick="window.history.back()">Back</button>
-                <div id="product-action-msg" style="margin-top:12px; color:green; font-weight:500;"></div>
-            `;
-            renderSimilarProducts(product, products);
-
-            // Add to Cart
-            document.getElementById('add-to-cart-btn').onclick = function() {
-                let cart = [];
-                try { cart = JSON.parse(localStorage.getItem('cart')) || []; } catch (e) { cart = []; }
-                if (!cart.find(p => p.id === product.id)) {
-                    cart.push(product);
-                    localStorage.setItem('cart', JSON.stringify(cart));
-                    showActionMsg('Added to cart!');
-                } else {
-                    showActionMsg('Already in cart!');
+            try {
+                const res = await fetch('http://localhost:3000/products');
+                const products = await res.json();
+                const product = products.find(p => p._id === id);
+                if (!product) {
+                    container.innerHTML = '<p style="color:red;">Product not found.</p><button class="back-btn" onclick="window.history.back()">Back</button>';
+                    return;
                 }
-            };
-            // Add to Wishlist
-            document.getElementById('add-to-wishlist-btn').onclick = function() {
-                let wishlist = [];
-                try { wishlist = JSON.parse(localStorage.getItem('wishlist')) || []; } catch (e) { wishlist = []; }
-                if (!wishlist.find(p => p.id === product.id)) {
-                    wishlist.push(product);
-                    localStorage.setItem('wishlist', JSON.stringify(wishlist));
-                    showActionMsg('Added to wishlist!');
-                } else {
-                    showActionMsg('Already in wishlist!');
+                container.innerHTML = `
+                    <img src="${product.image}" alt="${product.name}">
+                    <h2>${product.name}</h2>
+                    <p><strong>Description:</strong> ${product.desc}</p>
+                    <p><strong>Price:</strong> ₹${product.price}</p>
+                    <div style="margin:18px 0;">
+                        <button id="add-to-cart-btn" style="padding:8px 18px; background:#28a745; color:#fff; border:none; border-radius:5px; font-size:1rem; cursor:pointer; margin-right:10px;">Add to Cart</button>
+                        <button id="add-to-wishlist-btn" style="padding:8px 18px; background:#ffc107; color:#333; border:none; border-radius:5px; font-size:1rem; cursor:pointer; margin-right:10px;">Add to Wishlist</button>
+                        <button id="buy-now-btn" style="padding:8px 18px; background:#007bff; color:#fff; border:none; border-radius:5px; font-size:1rem; cursor:pointer;">Buy Now</button>
+                    </div>
+                    <button class="back-btn" onclick="window.history.back()">Back</button>
+                    <div id="product-action-msg" style="margin-top:12px; color:green; font-weight:500;"></div>
+                `;
+                renderSimilarProducts(product, products);
+                // Add to Cart
+                document.getElementById('add-to-cart-btn').onclick = function() {
+                    let cart = [];
+                    try { cart = JSON.parse(localStorage.getItem('cart')) || []; } catch (e) { cart = []; }
+                    if (!cart.find(p => p._id === product._id)) {
+                        cart.push(product);
+                        localStorage.setItem('cart', JSON.stringify(cart));
+                        showActionMsg('Added to cart!');
+                    } else {
+                        showActionMsg('Already in cart!');
+                    }
+                };
+                // Add to Wishlist
+                document.getElementById('add-to-wishlist-btn').onclick = function() {
+                    let wishlist = [];
+                    try { wishlist = JSON.parse(localStorage.getItem('wishlist')) || []; } catch (e) { wishlist = []; }
+                    if (!wishlist.find(p => p._id === product._id)) {
+                        wishlist.push(product);
+                        localStorage.setItem('wishlist', JSON.stringify(wishlist));
+                        showActionMsg('Added to wishlist!');
+                    } else {
+                        showActionMsg('Already in wishlist!');
+                    }
+                };
+                // Buy Now
+                document.getElementById('buy-now-btn').onclick = function() {
+                    showActionMsg('Proceeding to buy now... (implement payment flow here)');
+                };
+                function showActionMsg(msg) {
+                    const el = document.getElementById('product-action-msg');
+                    el.textContent = msg;
+                    setTimeout(() => { el.textContent = ''; }, 2000);
                 }
-            };
-            // Buy Now
-            document.getElementById('buy-now-btn').onclick = function() {
-                showActionMsg('Proceeding to buy now... (implement payment flow here)');
-            };
-
-            function showActionMsg(msg) {
-                const el = document.getElementById('product-action-msg');
-                el.textContent = msg;
-                setTimeout(() => { el.textContent = ''; }, 2000);
+            } catch (e) {
+                container.innerHTML = '<p style="color:red;">Failed to load product details.</p><button class="back-btn" onclick="window.history.back()">Back</button>';
             }
         }
-
+        // Fetch and render similar products from backend
         function renderSimilarProducts(currentProduct, products) {
-            // Find similar products by name or description (excluding current)
             const filter = currentProduct.name.toLowerCase();
             const similar = products.filter(p =>
-                p.id !== currentProduct.id &&
+                p._id !== currentProduct._id &&
                 (p.name.toLowerCase().includes(filter) ||
                  (p.desc && p.desc.toLowerCase().includes(filter)))
-            ).slice(0, 4); // Show up to 4
-
+            ).slice(0, 4);
             const container = document.getElementById('similar-products');
             if (similar.length === 0) {
                 container.innerHTML = '';
@@ -164,7 +161,7 @@
                 <div style="display:flex; flex-wrap:wrap; gap:18px; justify-content:center;">
                     ${similar.map(p => `
                         <div class="similar-product">
-                            <img src="${p.image}" alt="${p.name}" onclick="window.location.href='product-details.html?id=${p.id}'">
+                            <img src="${p.image}" alt="${p.name}" onclick="window.location.href='product-details.html?id=${p._id}'">
                             <div class="name">${p.name}</div>
                             <div class="price">₹${p.price}</div>
                         </div>
@@ -172,7 +169,7 @@
                 </div>
             `;
         }
-
+        // Initial render
         renderProductDetails();
     </script>
 </body>
