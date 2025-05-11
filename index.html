@@ -306,6 +306,14 @@ function withLoading(action) {
     };
 }
 
+// --- Loading overlay helpers ---
+function showLoading() {
+    document.getElementById('loading-overlay').style.display = 'flex';
+}
+function hideLoading() {
+    document.getElementById('loading-overlay').style.display = 'none';
+}
+
 // Ban check logic (must be first in script)
 const username = localStorage.getItem('username');
 const bannedUsers = JSON.parse(localStorage.getItem('bannedUsers') || '[]');
@@ -373,38 +381,53 @@ document.getElementById('popup-logout-yes').onclick = function() {
     window.location.href = 'login.html';
 };
 
-// Fetch products from backend and render
-        async function fetchAndRenderProducts(filter = "") {
+// Render products function with detailed error logging
+        function renderProducts(products) {
             try {
-                const res = await fetch(' https://tridex1.onrender.com');
-                let products = await res.json();
                 const grid = document.getElementById('product-grid');
                 grid.innerHTML = '';
+                if (!products || products.length === 0) {
+                    grid.innerHTML = '<div style="text-align:center; color:#888; font-size:1.2em; padding:32px 0;">No results found.</div>';
+                    return;
+                }
+                products.forEach(product => {
+                    try {
+                        const div = document.createElement('div');
+                        div.className = 'product-card';
+                        div.innerHTML = `
+                            <img src="${product.image || ''}" alt="${product.name}" style="cursor:pointer;" data-id="${product._id}">
+                            <h3>${product.name}</h3>
+                            <p>₹${product.price}</p>
+                        `;
+                        div.querySelector('img').onclick = function() {
+                            window.location.href = `product-details.html?id=${product._id}`;
+                        };
+                        grid.appendChild(div);
+                    } catch (err) {
+                        console.error('Error rendering product:', product, err);
+                    }
+                });
+            } catch (err) {
+                console.error('Error in renderProducts:', err);
+                document.getElementById('product-grid').innerHTML = '<div style="text-align:center; color:#888; font-size:1.2em; padding:32px 0;">Failed to render products.<br>' + err + '</div>';
+            }
+        }
+        async function fetchAndRenderProducts(filter = "") {
+            try {
+                const res = await fetch('http://localhost:3000/products');
+                let products = await res.json();
                 const filtered = products.filter(product =>
                     !filter ||
                     product.name.toLowerCase().includes(filter) ||
                     (product.desc && product.desc.toLowerCase().includes(filter))
                 );
-                if (filtered.length === 0) {
-                    grid.innerHTML = '<div style="text-align:center; color:#888; font-size:1.2em; padding:32px 0;">No results found.</div>';
-                    return;
-                }
-                filtered.forEach(product => {
-                    const div = document.createElement('div');
-                    div.className = 'product-card';
-                    div.innerHTML = `
-                        <img src="${product.image}" alt="${product.name}" style="cursor:pointer;" data-id="${product._id}">
-                        <h3>${product.name}</h3>
-                        <p>₹${product.price}</p>
-                    `;
-                    div.querySelector('img').onclick = function() {
-                        window.location.href = `product-details.html?id=${product._id}`;
-                    };
-                    grid.appendChild(div);
-                });
+                renderProducts(filtered);
             } catch (e) {
-                document.getElementById('product-grid').innerHTML = '<div style="text-align:center; color:#888; font-size:1.2em; padding:32px 0;">Failed to load products from database.</div>';
+                console.error('Product fetch error:', e);
+                document.getElementById('product-grid').innerHTML = '<div style="text-align:center; color:#888; font-size:1.2em; padding:32px 0;">Failed to load products from database.<br>' + e + '</div>';
             }
+            // --- Hide loading overlay after products are rendered ---
+            hideLoading();
         }
         // Initial render
         fetchAndRenderProducts();
