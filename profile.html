@@ -1,10 +1,11 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>Profile</title>
     <link rel="stylesheet" href="style.css">
     <style>
+        /* Profile Page CSS */
         body {
             font-family: Arial, sans-serif;
             background-color: #f4f4f9;
@@ -82,16 +83,15 @@
         <div id="profile-greeting"
             style="text-align:center; font-size:1.3rem; margin-bottom:18px; color:#fff; font-weight:600;
                    background: linear-gradient(90deg,#007bff 0,#00c6ff 100%);
-                   border-radius: 8px; padding: 18px 0; box-shadow: 0 2px 12px rgba(0,0,0,0.10);
-                   opacity:0; transform:translateY(-20px); transition:opacity 0.7s, transform 0.7s;">
+                   border-radius: 8px; padding: 18px 0; box-shadow: 0 2px 12px rgba(0,0,0,0.10); opacity:0;">
         </div>
         <div id="profile-info">
             <!-- Profile details will be rendered here -->
         </div>
         <div style="display:flex; gap:12px; margin-bottom:18px; justify-content:center;">
-            <button id="edit-profile-btn" style="padding:10px 24px; background:#28a745; color:#fff; border:none; border-radius:6px; font-size:1rem; cursor:pointer;">Edit Profile</button>
-            <button id="change-password-btn" style="padding:10px 24px; background:#ffc107; color:#333; border:none; border-radius:6px; font-size:1rem; cursor:pointer;">Change Password</button>
-            <button id="toggle-theme-btn" style="padding:10px 24px; background:#222; color:#fff; border:none; border-radius:6px; font-size:1rem; cursor:pointer;">Dark Mode</button>
+            <button id="edit-profile-btn" style="background:#28a745;">Edit Profile</button>
+            <button id="change-password-btn" style="background:#ffc107;">Change Password</button>
+            <button id="toggle-theme-btn" style="background:#222;">Dark Mode</button>
         </div>
         <form id="profile-form" style="display:none;">
             <label for="profile-name">Name</label>
@@ -111,43 +111,38 @@
             <input type="email" id="profile-email" name="email" required>
             <button type="submit">Save Changes</button>
         </form>
-        <form id="password-form" style="display:none; margin-top:16px;">
+        <form id="password-form" style="display:none;">
             <label for="profile-old-password">Old Password</label>
             <input type="password" id="profile-old-password" required>
             <label for="profile-new-password">New Password</label>
             <input type="password" id="profile-new-password" required>
             <button type="submit">Update Password</button>
         </form>
-        <button id="back-btn" style="margin-top:16px; background:#eee; color:#333;">Back</button>
-        <div id="profile-msg" style="color:green; margin-top:10px; display:none;">Profile updated!</div>
-        <div id="password-msg" style="color:green; margin-top:10px; display:none;">Password updated!</div>
-        <div id="password-error" style="color:red; margin-top:10px; display:none;">Old password incorrect!</div>
+        <button id="back-btn">Back</button>
+        <div id="profile-msg">Profile updated!</div>
+        <div id="password-msg">Password updated!</div>
+        <div id="password-error">Old password incorrect!</div>
     </div>
+
     <script>
-        // Redirect to login if not logged in
         if (!localStorage.getItem('isLoggedIn')) {
             window.location.href = 'login.html';
         }
 
-        // Get current user
         const currentUser = localStorage.getItem('currentUser');
         let users = JSON.parse(localStorage.getItem('users') || '[]');
         let user = users.find(u => u.username === currentUser);
 
-        // Greeting logic with animation
         if (user) {
             const greetings = ["Welcome", "Hi", "Hello", "Greetings", "Hey"];
             const greet = greetings[Math.floor(Math.random() * greetings.length)];
             const greetingDiv = document.getElementById('profile-greeting');
             greetingDiv.textContent = `${greet}, ${user.name || user.username}!`;
-            // Animate in
             setTimeout(() => {
                 greetingDiv.style.opacity = "1";
-                greetingDiv.style.transform = "translateY(0)";
             }, 100);
         }
 
-        // Fill form with user data
         if (user) {
             document.getElementById('profile-name').value = user.name || '';
             document.getElementById('profile-age').value = user.age || '';
@@ -156,7 +151,6 @@
             document.getElementById('profile-email').value = user.email || '';
         }
 
-        // Save profile changes
         document.getElementById('profile-form').onsubmit = function(e) {
             e.preventDefault();
             if (!user) return;
@@ -165,7 +159,6 @@
             user.gender = document.getElementById('profile-gender').value;
             const newUsername = document.getElementById('profile-username').value.trim();
             const newEmail = document.getElementById('profile-email').value.trim().toLowerCase();
-            // Prevent duplicate usernames or emails
             if (newUsername !== user.username && users.some(u => u.username === newUsername)) {
                 alert('Username already exists!');
                 return;
@@ -184,7 +177,6 @@
             }, 2000);
         };
 
-        // Show/hide forms on button click
         document.getElementById('edit-profile-btn').onclick = function() {
             document.getElementById('profile-form').style.display = 
                 document.getElementById('profile-form').style.display === 'none' ? 'block' : 'none';
@@ -196,7 +188,6 @@
             document.getElementById('profile-form').style.display = 'none';
         };
 
-        // Change password logic
         document.getElementById('password-form').onsubmit = function(e) {
             e.preventDefault();
             if (!user) return;
@@ -223,7 +214,6 @@
             window.location.href = 'index.html';
         };
 
-        // Dark/Light mode toggle for the entire website
         const themeBtn = document.getElementById('toggle-theme-btn');
         let darkMode = localStorage.getItem('siteDarkMode') === 'true';
         function applyTheme() {
@@ -235,7 +225,7 @@
                 themeBtn.textContent = 'Dark Mode';
             }
         }
-        // Add dark mode CSS if not present
+
         if (!document.getElementById('dark-mode-style')) {
             const style = document.createElement('style');
             style.id = 'dark-mode-style';
@@ -244,17 +234,11 @@
                     background: #181a1b !important;
                     color: #f1f1f1 !important;
                 }
-                body.dark-mode .profile-container,
-                body.dark-mode .login-container,
-                body.dark-mode .signup-container,
-                body.dark-mode header,
-                body.dark-mode .product-card {
+                body.dark-mode .profile-container {
                     background: #23272b !important;
                     color: #f1f1f1 !important;
                 }
-                body.dark-mode input,
-                body.dark-mode select,
-                body.dark-mode textarea {
+                body.dark-mode input {
                     background: #23272b !important;
                     color: #f1f1f1 !important;
                     border: 1px solid #444 !important;
@@ -262,16 +246,6 @@
                 body.dark-mode button {
                     background: #444 !important;
                     color: #fff !important;
-                }
-                body.dark-mode #toggle-theme-btn {
-                    background: #f1f1f1 !important;
-                    color: #222 !important;
-                }
-                body.dark-mode a {
-                    color: #90cdf4 !important;
-                }
-                body.dark-mode .product-card {
-                    box-shadow: 0 2px 12px rgba(0,0,0,0.18);
                 }
             `;
             document.head.appendChild(style);
@@ -283,9 +257,6 @@
             applyTheme();
         };
 
-        // On page load, apply theme if set
-        applyTheme();
-
         // Profile details rendering
         const profileInfo = document.getElementById('profile-info');
         let html = '';
@@ -294,9 +265,7 @@
             html += `<p><strong>Email:</strong> ${user.email || ''}</p>`;
             html += `<p><strong>Phone:</strong> ${user.phone || ''}</p>`;
             html += `<p><strong>Age:</strong> ${user.age || ''}</p>`;
-            // Add more fields as necessary
-        } else {
-            html = '<p>User not found.</p>';
+            html += `<p><strong>Gender:</strong> ${user.gender || ''}</p>`;
         }
         profileInfo.innerHTML = html;
     </script>
