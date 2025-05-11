@@ -431,6 +431,20 @@
             document.getElementById('admin-mail-modal').style.display = 'none';
         };
 
+        // --- Navigation between sections ---
+        document.getElementById('show-users-btn').onclick = function() {
+            document.getElementById('user-section').style.display = '';
+            document.getElementById('product-section').style.display = 'none';
+            document.getElementById('show-users-btn').classList.add('active');
+            document.getElementById('show-products-btn').classList.remove('active');
+        };
+        document.getElementById('show-products-btn').onclick = function() {
+            document.getElementById('user-section').style.display = 'none';
+            document.getElementById('product-section').style.display = '';
+            document.getElementById('show-products-btn').classList.add('active');
+            document.getElementById('show-users-btn').classList.remove('active');
+        };
+
         function showLoading() {
             document.getElementById('loading-overlay').style.display = 'flex';
         }
