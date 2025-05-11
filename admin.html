@@ -157,6 +157,10 @@
         if (!localStorage.getItem('token')) {
             window.location.href = 'login.html';
         }
+        // Enforce admin-only access
+        if (localStorage.getItem('isAdmin') !== 'true') {
+            window.location.href = 'index.html';
+        }
 
         let users = [];
         let products = [];

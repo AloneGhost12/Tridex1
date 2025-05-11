@@ -320,6 +320,9 @@ if (username && bannedUsers.includes(username)) {
     throw new Error('User is banned');
 }
 
+// Fix: define verifiedUsers as an empty array to prevent JS errors
+const verifiedUsers = [];
+
 // Show/hide buttons based on login status
 const isLoggedIn = localStorage.getItem('isLoggedIn');
 // Display username if available
