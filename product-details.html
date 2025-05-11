@@ -1,176 +1,62 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Product Details</title>
-    <link rel="stylesheet" href="style.css">
-    <style>
-        .product-details-container {
-            max-width: 500px;
-            margin: 40px auto;
-            background: #fff;
-            border-radius: 8px;
-            box-shadow: 0 2px 12px rgba(0,0,0,0.12);
-            padding: 32px 24px;
-            text-align: center;
+ async function renderProductDetails() {
+    const id = new URLSearchParams(window.location.search).get('id');
+    const container = document.getElementById('product-details');
+    try {
+        const res = await fetch('https://tridex1.onrender.com/products'); // Updated URL
+        const products = await res.json();
+        const product = products.find(p => p._id === id);
+        if (!product) {
+            container.innerHTML = '<p style="color:red;">Product not found.</p><button class="back-btn" onclick="window.history.back()">Back</button>';
+            return;
         }
-        .product-details-container img {
-            max-width: 100%;
-            max-height: 300px;
-            margin-bottom: 18px;
-        }
-        .product-details-container h2 {
-            margin-bottom: 12px;
-        }
-        .product-details-container p {
-            margin-bottom: 10px;
-        }
-        .back-btn {
-            margin-top: 18px;
-            padding: 8px 18px;
-            background: #007bff;
-            color: #fff;
-            border: none;
-            border-radius: 5px;
-            font-size: 1rem;
-            cursor: pointer;
-        }
-        #similar-products {
-            max-width: 700px;
-            margin: 40px auto 0 auto;
-        }
-        #similar-products h3 {
-            margin-bottom: 18px;
-            color: #007bff;
-        }
-        #similar-products .similar-product {
-            background: #fff;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-            padding: 16px;
-            width: 150px;
-            text-align: center;
-            display: inline-block;
-            margin: 0 10px 20px 0;
-        }
-        #similar-products .similar-product img {
-            max-width: 100px;
-            max-height: 100px;
-            cursor: pointer;
-        }
-        #similar-products .similar-product .name {
-            font-weight: 600;
-            margin: 10px 0 4px 0;
-        }
-        #similar-products .similar-product .price {
-            color: #007bff;
-        }
-    </style>
-</head>
-<body>
-    <div class="product-details-container" id="product-details">
-        <!-- Product details will be rendered here -->
-    </div>
-    <div id="similar-products" style="max-width:700px; margin:40px auto 0 auto;">
-        <!-- Similar products will be rendered here -->
-    </div>
-    <script>
-        // Get product id from URL
-        function getProductId() {
-            const params = new URLSearchParams(window.location.search);
-            return params.get('id');
-        }
-        // Fetch product details from backend
-        async function renderProductDetails() {
-            const id = new URLSearchParams(window.location.search).get('id');
-            const container = document.getElementById('product-details');
-            try {
-                const res = await fetch('http://localhost:3000/products');
-                const products = await res.json();
-                const product = products.find(p => p._id === id);
-                if (!product) {
-                    container.innerHTML = '<p style="color:red;">Product not found.</p><button class="back-btn" onclick="window.history.back()">Back</button>';
-                    return;
-                }
-                container.innerHTML = `
-                    <img src="${product.image}" alt="${product.name}">
-                    <h2>${product.name}</h2>
-                    <p><strong>Description:</strong> ${product.desc}</p>
-                    <p><strong>Price:</strong> ₹${product.price}</p>
-                    <div style="margin:18px 0;">
-                        <button id="add-to-cart-btn" style="padding:8px 18px; background:#28a745; color:#fff; border:none; border-radius:5px; font-size:1rem; cursor:pointer; margin-right:10px;">Add to Cart</button>
-                        <button id="add-to-wishlist-btn" style="padding:8px 18px; background:#ffc107; color:#333; border:none; border-radius:5px; font-size:1rem; cursor:pointer; margin-right:10px;">Add to Wishlist</button>
-                        <button id="buy-now-btn" style="padding:8px 18px; background:#007bff; color:#fff; border:none; border-radius:5px; font-size:1rem; cursor:pointer;">Buy Now</button>
-                    </div>
-                    <button class="back-btn" onclick="window.history.back()">Back</button>
-                    <div id="product-action-msg" style="margin-top:12px; color:green; font-weight:500;"></div>
-                `;
-                renderSimilarProducts(product, products);
-                // Add to Cart
-                document.getElementById('add-to-cart-btn').onclick = function() {
-                    let cart = [];
-                    try { cart = JSON.parse(localStorage.getItem('cart')) || []; } catch (e) { cart = []; }
-                    if (!cart.find(p => p._id === product._id)) {
-                        cart.push(product);
-                        localStorage.setItem('cart', JSON.stringify(cart));
-                        showActionMsg('Added to cart!');
-                    } else {
-                        showActionMsg('Already in cart!');
-                    }
-                };
-                // Add to Wishlist
-                document.getElementById('add-to-wishlist-btn').onclick = function() {
-                    let wishlist = [];
-                    try { wishlist = JSON.parse(localStorage.getItem('wishlist')) || []; } catch (e) { wishlist = []; }
-                    if (!wishlist.find(p => p._id === product._id)) {
-                        wishlist.push(product);
-                        localStorage.setItem('wishlist', JSON.stringify(wishlist));
-                        showActionMsg('Added to wishlist!');
-                    } else {
-                        showActionMsg('Already in wishlist!');
-                    }
-                };
-                // Buy Now
-                document.getElementById('buy-now-btn').onclick = function() {
-                    showActionMsg('Proceeding to buy now... (implement payment flow here)');
-                };
-                function showActionMsg(msg) {
-                    const el = document.getElementById('product-action-msg');
-                    el.textContent = msg;
-                    setTimeout(() => { el.textContent = ''; }, 2000);
-                }
-            } catch (e) {
-                container.innerHTML = '<p style="color:red;">Failed to load product details.</p><button class="back-btn" onclick="window.history.back()">Back</button>';
+        container.innerHTML = `
+            <img src="${product.image}" alt="${product.name}">
+            <h2>${product.name}</h2>
+            <p><strong>Description:</strong> ${product.desc}</p>
+            <p><strong>Price:</strong> ₹${product.price}</p>
+            <div style="margin:18px 0;">
+                <button id="add-to-cart-btn" style="padding:8px 18px; background:#28a745; color:#fff; border:none; border-radius:5px; font-size:1rem; cursor:pointer; margin-right:10px;">Add to Cart</button>
+                <button id="add-to-wishlist-btn" style="padding:8px 18px; background:#ffc107; color:#333; border:none; border-radius:5px; font-size:1rem; cursor:pointer; margin-right:10px;">Add to Wishlist</button>
+                <button id="buy-now-btn" style="padding:8px 18px; background:#007bff; color:#fff; border:none; border-radius:5px; font-size:1rem; cursor:pointer;">Buy Now</button>
+            </div>
+            <button class="back-btn" onclick="window.history.back()">Back</button>
+            <div id="product-action-msg" style="margin-top:12px; color:green; font-weight:500;"></div>
+        `;
+        renderSimilarProducts(product, products);
+        // Add to Cart
+        document.getElementById('add-to-cart-btn').onclick = function() {
+            let cart = [];
+            try { cart = JSON.parse(localStorage.getItem('cart')) || []; } catch (e) { cart = []; }
+            if (!cart.find(p => p._id === product._id)) {
+                cart.push(product);
+                localStorage.setItem('cart', JSON.stringify(cart));
+                showActionMsg('Added to cart!');
+            } else {
+                showActionMsg('Already in cart!');
             }
-        }
-        // Fetch and render similar products from backend
-        function renderSimilarProducts(currentProduct, products) {
-            const filter = currentProduct.name.toLowerCase();
-            const similar = products.filter(p =>
-                p._id !== currentProduct._id &&
-                (p.name.toLowerCase().includes(filter) ||
-                 (p.desc && p.desc.toLowerCase().includes(filter)))
-            ).slice(0, 4);
-            const container = document.getElementById('similar-products');
-            if (similar.length === 0) {
-                container.innerHTML = '';
-                return;
+        };
+        // Add to Wishlist
+        document.getElementById('add-to-wishlist-btn').onclick = function() {
+            let wishlist = [];
+            try { wishlist = JSON.parse(localStorage.getItem('wishlist')) || []; } catch (e) { wishlist = []; }
+            if (!wishlist.find(p => p._id === product._id)) {
+                wishlist.push(product);
+                localStorage.setItem('wishlist', JSON.stringify(wishlist));
+                showActionMsg('Added to wishlist!');
+            } else {
+                showActionMsg('Already in wishlist!');
             }
-            container.innerHTML = `
-                <h3>Similar Products</h3>
-                <div style="display:flex; flex-wrap:wrap; gap:18px; justify-content:center;">
-                    ${similar.map(p => `
-                        <div class="similar-product">
-                            <img src="${p.image}" alt="${p.name}" onclick="window.location.href='product-details.html?id=${p._id}'">
-                            <div class="name">${p.name}</div>
-                            <div class="price">₹${p.price}</div>
-                        </div>
-                    `).join('')}
-                </div>
-            `;
+        };
+        // Buy Now
+        document.getElementById('buy-now-btn').onclick = function() {
+            showActionMsg('Proceeding to buy now... (implement payment flow here)');
+        };
+        function showActionMsg(msg) {
+            const el = document.getElementById('product-action-msg');
+            el.textContent = msg;
+            setTimeout(() => { el.textContent = ''; }, 2000);
         }
-        // Initial render
-        renderProductDetails();
-    </script>
-</body>
-</html>
+    } catch (e) {
+        container.innerHTML = '<p style="color:red;">Failed to load product details.</p><button class="back-btn" onclick="window.history.back()">Back</button>';
+    }
+}

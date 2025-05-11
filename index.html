@@ -376,7 +376,7 @@ document.getElementById('popup-logout-yes').onclick = function() {
 // Fetch products from backend and render
         async function fetchAndRenderProducts(filter = "") {
             try {
-                const res = await fetch('http://localhost:3000/products');
+                const res = await fetch(' https://tridex1.onrender.com');
                 let products = await res.json();
                 const grid = document.getElementById('product-grid');
                 grid.innerHTML = '';
