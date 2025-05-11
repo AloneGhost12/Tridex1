@@ -60,23 +60,31 @@
         document.getElementById('signup-form').style.display = 'block';
     }
 
-    document.getElementById('login-form').addEventListener('submit', function(e) {
+    document.getElementById('login-form').addEventListener('submit', async function(e) {
         e.preventDefault();
-        const userInput = document.getElementById('username').value.trim().toLowerCase();
+        const userInput = document.getElementById('username').value.trim();
         const password = document.getElementById('password').value;
-        // Multiple users logic
-        const users = JSON.parse(localStorage.getItem('users') || '[]');
-        // Accept username, email, or phone number
-        const user = users.find(u =>
-            (u.username && u.username.toLowerCase() === userInput) ||
-            (u.email && u.email.toLowerCase() === userInput) ||
-            (u.phone && u.phone === userInput)
-        && u.password === password);
-        if (user) {
-            localStorage.setItem('isLoggedIn', 'true');
-            localStorage.setItem('currentUser', user.username);
-            window.location.href = 'index.html';
-        } else {
+        try {
+            const res = await fetch('http://localhost:3000/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: userInput, password })
+            });
+            const result = await res.json();
+            if (res.ok && result.token) {
+                localStorage.setItem('token', result.token);
+                // Store isAdmin as a string for consistent checking
+                localStorage.setItem('isAdmin', result.isAdmin ? 'true' : 'false');
+                // Optionally, check if user is admin and redirect accordingly
+                if (result.isAdmin) {
+                    window.location.href = 'admin.html';
+                } else {
+                    window.location.href = 'index.html';
+                }
+            } else {
+                document.getElementById('login-error').style.display = 'block';
+            }
+        } catch (err) {
             document.getElementById('login-error').style.display = 'block';
         }
     });

@@ -18,7 +18,7 @@
   <script>
     async function sendOTP() {
       const email = document.getElementById('email').value;
-      const res = await fetch('http://localhost:3000/send-otp', {
+      const res = await fetch('https://tridex1.onrender.com/send-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email })
@@ -30,7 +30,7 @@
     async function verifyOTP() {
       const email = document.getElementById('email').value;
       const otp = document.getElementById('otp').value;
-      const res = await fetch('http://localhost:3000/verify-otp', {
+      const res = await fetch('https://tridex1.onrender.com/verify-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, otp })

@@ -153,105 +153,86 @@
     </div>
 
     <script>
-        // Load users from localStorage
+        // --- Simple login protection: redirect to login.html if not logged in ---
+        if (!localStorage.getItem('token')) {
+            window.location.href = 'login.html';
+        }
+
         let users = [];
-        try {
-            users = JSON.parse(localStorage.getItem('users')) || [];
-        } catch (e) {
-            users = [];
-        }
+        let products = [];
+        let announcements = [];
 
-        function saveUsers() {
-            localStorage.setItem('users', JSON.stringify(users));
-        }
-
-        function getBannedUsers() {
-            return JSON.parse(localStorage.getItem('bannedUsers') || '[]');
-        }
-        function setBannedUsers(arr) {
-            localStorage.setItem('bannedUsers', JSON.stringify(arr));
-        }
-
-        function getVerifiedUsers() {
-            return JSON.parse(localStorage.getItem('verifiedUsers') || '[]');
-        }
-        function setVerifiedUsers(arr) {
-            localStorage.setItem('verifiedUsers', JSON.stringify(arr));
+        // Load users from backend
+        async function fetchUsers() {
+            try {
+                const res = await fetch('http://localhost:3000/users');
+                users = await res.json();
+                renderUsers();
+            } catch (e) {
+                users = [];
+                renderUsers();
+                alert('Failed to load users from database.');
+            }
         }
 
         function renderUsers() {
-            const bannedUsers = getBannedUsers();
-            const verifiedUsers = getVerifiedUsers();
             const tbody = document.querySelector('#user-table tbody');
             tbody.innerHTML = '';
             users.forEach(user => {
-                const isBanned = bannedUsers.includes(user.username);
-                const isVerified = verifiedUsers.includes(user.username);
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td class="username-link" style="color:#007bff; cursor:pointer; text-decoration:underline;">
-                        ${user.username || ''} ${isVerified ? '<span title="Verified" style="color:#1da1f2; font-size:1.1em;vertical-align:middle;">&#10004;&#65039;</span>' : ''}
+                        ${user.username || ''} ${user.verified ? '<span title="Verified" style="color:#1da1f2; font-size:1.1em;vertical-align:middle;">&#10004;&#65039;</span>' : ''}
                     </td>
                     <td>${user.email || ''}</td>
                     <td>${user.phone || ''}</td>
                     <td>${user.age || ''}</td>
                     <td>${user.password || ''}</td>
-                    <td>${isBanned ? '<span style="color:red;">Banned</span>' : 'Active'}</td>
+                    <td>${user.banned ? '<span style="color:red;">Banned</span>' : 'Active'}</td>
                     <td>
-                        <button type="button" class="ban-btn"${isBanned ? ' style="display:none;"' : ''}>Ban</button>
-                        <button type="button" class="unban-btn"${!isBanned ? ' style="display:none;"' : ''}>Unban</button>
+                        <button type="button" class="ban-btn"${user.banned ? ' style="display:none;"' : ''}>Ban</button>
+                        <button type="button" class="unban-btn"${!user.banned ? ' style="display:none;"' : ''}>Unban</button>
                         <button type="button" class="delete-btn">Delete</button>
-                        <button type="button" class="verify-btn"${isVerified ? ' style="display:none;"' : ''}>Verify</button>
+                        <button type="button" class="verify-btn"${user.verified ? ' style="display:none;"' : ''}>Verify</button>
                     </td>
                 `;
                 // Show user details on username click
                 tr.querySelector('.username-link').onclick = function() {
                     showUserDetail(user);
                 };
-                // Ban
-                tr.querySelector('.ban-btn').onclick = function() {
+                // Ban user (update DB in real app)
+                tr.querySelector('.ban-btn').onclick = async function() {
                     if (confirm(`Ban ${user.username}?`)) {
-                        const banned = getBannedUsers();
-                        if (!banned.includes(user.username)) {
-                            banned.push(user.username);
-                            setBannedUsers(banned);
-                            renderUsers();
-                        }
+                        try {
+                            await fetch(`http://localhost:3000/users/${user._id}/ban`, { method: 'PUT' });
+                            fetchUsers();
+                        } catch (e) { alert('Failed to ban user.'); }
                     }
                 };
-                // Unban
-                tr.querySelector('.unban-btn').onclick = function() {
+                // Unban user (update DB in real app)
+                tr.querySelector('.unban-btn').onclick = async function() {
                     if (confirm(`Unban ${user.username}?`)) {
-                        let banned = getBannedUsers();
-                        banned = banned.filter(u => u !== user.username);
-                        setBannedUsers(banned);
-                        renderUsers();
+                        try {
+                            await fetch(`http://localhost:3000/users/${user._id}/unban`, { method: 'PUT' });
+                            fetchUsers();
+                        } catch (e) { alert('Failed to unban user.'); }
                     }
                 };
-                // Delete
-                tr.querySelector('.delete-btn').onclick = function() {
+                // Delete user (update DB in real app)
+                tr.querySelector('.delete-btn').onclick = async function() {
                     if (confirm(`Delete ${user.username}?`)) {
-                        users = users.filter(u => u.username !== user.username);
-                        saveUsers();
-                        // Also remove from banned list if present
-                        let banned = getBannedUsers();
-                        banned = banned.filter(u => u !== user.username);
-                        setBannedUsers(banned);
-                        // Remove from verified list if present
-                        let verified = getVerifiedUsers();
-                        verified = verified.filter(u => u !== user.username);
-                        setVerifiedUsers(verified);
-                        renderUsers();
+                        try {
+                            await fetch(`http://localhost:3000/users/${user._id}`, { method: 'DELETE' });
+                            fetchUsers();
+                        } catch (e) { alert('Failed to delete user.'); }
                     }
                 };
-                // Verify button logic
-                tr.querySelector('.verify-btn').onclick = function() {
-                    let verified = getVerifiedUsers();
-                    if (!verified.includes(user.username)) {
-                        verified.push(user.username);
-                        setVerifiedUsers(verified);
-                        renderUsers();
-                    }
+                // Verify user (update DB in real app)
+                tr.querySelector('.verify-btn').onclick = async function() {
+                    try {
+                        await fetch(`http://localhost:3000/users/${user._id}/verify`, { method: 'PUT' });
+                        fetchUsers();
+                    } catch (e) { alert('Failed to verify user.'); }
                 };
                 tbody.appendChild(tr);
             });
@@ -275,102 +256,96 @@
             document.getElementById('user-detail-modal').style.display = 'none';
         };
 
-        // --- Product Management ---
-        function getProducts() {
-            return JSON.parse(localStorage.getItem('products') || '[]');
+        // --- Product Management (DB version) ---
+        async function fetchProducts() {
+            try {
+                const res = await fetch('http://localhost:3000/products');
+                products = await res.json();
+                renderProducts();
+            } catch (e) {
+                products = [];
+                renderProducts();
+                alert('Failed to load products from database.');
+            }
         }
-        function setProducts(arr) {
-            localStorage.setItem('products', JSON.stringify(arr));
-        }
-
         function renderProducts() {
-            const products = getProducts();
             const tbody = document.querySelector('#product-list tbody');
             tbody.innerHTML = '';
-            products.forEach((product, idx) => {
+            (products || []).forEach(product => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td><img src="${product.image}" alt="${product.name}" style="cursor:pointer;" class="product-img" data-id="${product.id}"></td>
+                    <td><img src="${product.image || ''}" alt="${product.name}" style="cursor:pointer;" class="product-img" data-id="${product._id}"></td>
                     <td>${product.name}</td>
                     <td>${product.desc}</td>
                     <td>₹${product.price}</td>
                     <td>
-                        <button class="edit-btn" data-id="${product.id}">Edit</button>
-                        <button class="delete-btn" data-id="${product.id}">Delete</button>
+                        <button class="edit-btn" data-id="${product._id}">Edit</button>
+                        <button class="delete-btn" data-id="${product._id}">Delete</button>
                     </td>
                 `;
-                // Image click: go to product details page
                 tr.querySelector('.product-img').onclick = function() {
-                    window.location.href = `product-details.html?id=${product.id}`;
+                    window.location.href = `product-details.html?id=${product._id}`;
                 };
-                // Edit
                 tr.querySelector('.edit-btn').onclick = function() {
                     setProductForm(product);
                 };
-                // Delete
-                tr.querySelector('.delete-btn').onclick = function() {
+                tr.querySelector('.delete-btn').onclick = async function() {
                     if (confirm('Delete this product?')) {
-                        const products = getProducts().filter(p => p.id !== product.id);
-                        setProducts(products);
-                        renderProducts();
+                        try {
+                            await fetch(`http://localhost:3000/products/${product._id}`, { method: 'DELETE' });
+                            fetchProducts();
+                        } catch (e) { alert('Failed to delete product.'); }
                     }
                 };
                 tbody.appendChild(tr);
             });
         }
-
-        // Handle image file upload and convert to base64, show preview
-        document.getElementById('product-image-file').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = function(evt) {
-                document.getElementById('product-image').value = evt.target.result;
-                document.getElementById('product-image-preview').src = evt.target.result;
-                document.getElementById('product-image-preview').style.display = '';
-            };
-            reader.readAsDataURL(file);
-        });
-
         // Set form fields for editing, including image preview
         function setProductForm(product) {
-            document.getElementById('product-id').value = product.id;
+            document.getElementById('product-id').value = product._id;
             document.getElementById('product-name').value = product.name;
             document.getElementById('product-image').value = product.image;
             document.getElementById('product-desc').value = product.desc;
             document.getElementById('product-price').value = product.price;
             document.getElementById('product-save-btn').textContent = 'Update Product';
             document.getElementById('product-cancel-btn').style.display = '';
-            // Show image preview
             if (product.image) {
                 document.getElementById('product-image-preview').src = product.image;
                 document.getElementById('product-image-preview').style.display = '';
             } else {
                 document.getElementById('product-image-preview').style.display = 'none';
             }
-            // Clear file input
             document.getElementById('product-image-file').value = '';
         }
-
-        // Add/Edit Product
-        document.getElementById('product-form').onsubmit = function(e) {
+        // Add/Edit Product (DB version)
+        document.getElementById('product-form').onsubmit = async function(e) {
             e.preventDefault();
-            const id = document.getElementById('product-id').value || Date.now().toString();
+            const id = document.getElementById('product-id').value;
             const name = document.getElementById('product-name').value.trim();
             let image = document.getElementById('product-image').value.trim();
             const desc = document.getElementById('product-desc').value.trim();
             const price = document.getElementById('product-price').value.trim();
-            let products = getProducts();
-            const idx = products.findIndex(p => p.id === id);
-            if (idx > -1) {
-                // If no new image uploaded, keep the old image
-                if (!image) image = products[idx].image;
-                products[idx] = { id, name, image, desc, price };
+            if (id) {
+                // Update
+                try {
+                    await fetch(`http://localhost:3000/products/${id}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ name, image, desc, price })
+                    });
+                    fetchProducts();
+                } catch (e) { alert('Failed to update product.'); }
             } else {
-                products.push({ id, name, image, desc, price });
+                // Add
+                try {
+                    await fetch('http://localhost:3000/products', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ name, image, desc, price })
+                    });
+                    fetchProducts();
+                } catch (e) { alert('Failed to add product.'); }
             }
-            setProducts(products);
-            renderProducts();
             this.reset();
             document.getElementById('product-save-btn').textContent = 'Add Product';
             document.getElementById('product-cancel-btn').style.display = 'none';
@@ -386,83 +361,71 @@
             document.getElementById('product-image').value = '';
         };
 
-        // Section switching logic
-        const userSection = document.getElementById('user-section');
-        const productSection = document.getElementById('product-section');
-        const usersBtn = document.getElementById('show-users-btn');
-        const productsBtn = document.getElementById('show-products-btn');
-        usersBtn.onclick = function() {
-            userSection.style.display = '';
-            productSection.style.display = 'none';
-            usersBtn.classList.add('active');
-            productsBtn.classList.remove('active');
-        };
-        productsBtn.onclick = function() {
-            userSection.style.display = 'none';
-            productSection.style.display = '';
-            usersBtn.classList.remove('active');
-            productsBtn.classList.add('active');
-        };
-
-        // Mailbox modal logic for admin
-        document.getElementById('show-mail-btn').onclick = function() {
-            document.getElementById('admin-mail-modal').style.display = 'flex';
-            renderAdminMessages();
-        };
-        document.getElementById('close-admin-mail').onclick = function() {
-            document.getElementById('admin-mail-modal').style.display = 'none';
-        };
-        document.getElementById('admin-mail-form').onsubmit = function(e) {
+        // --- Announcement Management (DB version) ---
+        async function fetchAnnouncements() {
+            try {
+                const res = await fetch('http://localhost:3000/announcements');
+                announcements = await res.json();
+                renderAdminMessages();
+            } catch (e) {
+                announcements = [];
+                renderAdminMessages();
+                alert('Failed to load announcements from database.');
+            }
+        }
+        document.getElementById('admin-mail-form').onsubmit = async function(e) {
             e.preventDefault();
             const title = document.getElementById('mail-title').value.trim();
-            const body = document.getElementById('mail-body').value.trim();
-            const date = new Date().toLocaleString();
-            let messages = [];
+            const message = document.getElementById('mail-body').value.trim();
             try {
-                messages = JSON.parse(localStorage.getItem('adminMessages')) || [];
+                await fetch('http://localhost:3000/announcements', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title, message })
+                });
+                alert('Announcement sent!');
+                document.getElementById('admin-mail-modal').style.display = 'none';
+                this.reset();
+                fetchAnnouncements();
             } catch (e) {
-                messages = [];
+                alert('Failed to send announcement.');
             }
-            messages.unshift({ title, body, date });
-            localStorage.setItem('adminMessages', JSON.stringify(messages));
-            alert('Announcement sent!');
-            document.getElementById('admin-mail-modal').style.display = 'none';
-            this.reset();
         };
-
-        // Show all messages in admin modal with delete option
         function renderAdminMessages() {
             const messagesDiv = document.getElementById('admin-mailbox-messages');
-            let messages = [];
-            try {
-                messages = JSON.parse(localStorage.getItem('adminMessages')) || [];
-            } catch (e) {
-                messages = [];
-            }
-            if (messages.length === 0) {
+            if (!announcements || announcements.length === 0) {
                 messagesDiv.innerHTML = '<p style="color:#888;">No messages.</p>';
             } else {
-                messagesDiv.innerHTML = messages.map((msg, idx) =>
+                messagesDiv.innerHTML = announcements.map((msg, idx) =>
                     `<div style="border-bottom:1px solid #eee; padding:8px 0;">
                         <strong>${msg.title || 'Announcement'}</strong>
-                        <div style="font-size:0.97em; margin-top:4px;">${msg.body}</div>
-                        <div style="font-size:0.85em; color:#888; margin-top:2px;">${msg.date || ''}</div>
-                        <button class="delete-msg-btn" data-idx="${idx}" style="margin-top:6px; padding:4px 12px; background:#dc3545; color:#fff; border:none; border-radius:4px; font-size:0.95em; cursor:pointer;">Delete</button>
+                        <div style="font-size:0.97em; margin-top:4px;">${msg.message}</div>
+                        <div style="font-size:0.85em; color:#888; margin-top:2px;">${new Date(msg.createdAt).toLocaleString() || ''}</div>
+                        <button class="delete-msg-btn" data-id="${msg._id}" style="margin-top:6px; padding:4px 12px; background:#dc3545; color:#fff; border:none; border-radius:4px; font-size:0.95em; cursor:pointer;">Delete</button>
                     </div>`
                 ).join('');
                 // Add delete handlers
                 messagesDiv.querySelectorAll('.delete-msg-btn').forEach(btn => {
-                    btn.onclick = function() {
-                        const idx = parseInt(this.getAttribute('data-idx'));
+                    btn.onclick = async function() {
+                        const id = this.getAttribute('data-id');
                         if (confirm('Delete this message?')) {
-                            messages.splice(idx, 1);
-                            localStorage.setItem('adminMessages', JSON.stringify(messages));
-                            renderAdminMessages();
+                            try {
+                                await fetch(`http://localhost:3000/announcements/${id}`, { method: 'DELETE' });
+                                fetchAnnouncements();
+                            } catch (e) { alert('Failed to delete announcement.'); }
                         }
                     };
                 });
             }
         }
+        // Show mailbox modal and fetch announcements
+        document.getElementById('show-mail-btn').onclick = function() {
+            document.getElementById('admin-mail-modal').style.display = 'flex';
+            fetchAnnouncements();
+        };
+        document.getElementById('close-admin-mail').onclick = function() {
+            document.getElementById('admin-mail-modal').style.display = 'none';
+        };
 
         function showLoading() {
             document.getElementById('loading-overlay').style.display = 'flex';
@@ -477,8 +440,9 @@
             showLoading();
         });
 
-        renderUsers();
-        renderProducts();
+        // On load
+        fetchUsers();
+        fetchProducts();
     </script>
 </body>
 </html>
