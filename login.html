@@ -211,7 +211,16 @@
                 // No token, user is not logged in
                 return;
             }
- 
+
+            // User is logged in, check if they're an admin
+            if (isAdmin === 'true') {
+                alert('You are logged in as an admin!');
+                // Optionally, show admin content here
+            } else {
+                alert('You are logged in as a user!');
+                // Optionally, show user content here
+            }
+        });
     </script>
 </body>
 </html>
