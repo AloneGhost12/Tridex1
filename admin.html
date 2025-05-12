@@ -64,6 +64,38 @@
     </style>
 </head>
 <body>
+    <h2>Add New Product</h2>
+<form id="add-product-form" enctype="multipart/form-data">
+  <input type="text" name="name" placeholder="Product Name" required />
+  <input type="number" name="price" placeholder="Price" required />
+  <input type="text" name="desc" placeholder="Description" required />
+  <input type="file" name="image" accept="image/*" required />
+  <button type="submit">Upload</button>
+</form>
+
+<script>
+  const backendURL = 'https://tridex1.onrender.com'; // Replace with localhost if testing locally
+
+  document.getElementById('add-product-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const form = e.target;
+    const formData = new FormData(form);
+
+    try {
+      const res = await fetch(`${backendURL}/products`, {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await res.json();
+      alert(data.message);
+      form.reset();
+    } catch (err) {
+      console.error(err);
+      alert('Upload failed');
+    }
+  });
+</script>
+
     <!-- Loading animation overlay -->
     <div id="loading-overlay" style="display:flex; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(255,255,255,0.7); z-index:99999; align-items:center; justify-content:center;">
         <div style="border:6px solid #f3f3f3; border-top:6px solid #007bff; border-radius:50%; width:48px; height:48px; animation:spin 1s linear infinite;"></div>
