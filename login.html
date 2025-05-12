@@ -1,152 +1,225 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login Page</title>
-    <link rel="stylesheet" href="auth.css">
+    <title>User Authentication</title>
+    <style>
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Loading Overlay */
+        #loading-overlay {
+            display: flex;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(255, 255, 255, 0.7);
+            z-index: 99999;
+            align-items: center;
+            justify-content: center;
+        }
+        #loading-overlay div {
+            border: 6px solid #f3f3f3;
+            border-top: 6px solid #007bff;
+            border-radius: 50%;
+            width: 48px;
+            height: 48px;
+            animation: spin 1s linear infinite;
+        }
+
+        /* Login Container */
+        .login-container {
+            max-width: 400px;
+            margin: 100px auto;
+            padding: 20px;
+            border-radius: 8px;
+            background-color: #fff;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .login-container h2 {
+            text-align: center;
+        }
+
+        .login-container label {
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .login-container input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        .login-container button {
+            width: 100%;
+            padding: 10px;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+        }
+
+        .login-container button:hover {
+            background-color: #0056b3;
+        }
+
+        .login-container .signup-btn {
+            width: 100%;
+            padding: 10px;
+            background-color: #28a745;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+        }
+
+        /* Error message */
+        #login-error {
+            color: red;
+            margin-top: 10px;
+            display: none;
+        }
+
+        /* Forgot Password link */
+        #forgot-password-link {
+            display: block;
+            margin-top: 10px;
+            text-align: right;
+            color: #007bff;
+            text-decoration: underline;
+            cursor: pointer;
+        }
+        
+        /* Password visibility icon */
+        #toggle-login-password {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            font-size: 1.1em;
+            color: #888;
+        }
+    </style>
 </head>
 <body>
     <!-- Loading animation overlay -->
-    <div id="loading-overlay" style="display:flex; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(255,255,255,0.7); z-index:99999; align-items:center; justify-content:center;">
-        <div style="border:6px solid #f3f3f3; border-top:6px solid #007bff; border-radius:50%; width:48px; height:48px; animation:spin 1s linear infinite;"></div>
+    <div id="loading-overlay" style="display:none;">
+        <div></div>
     </div>
-    <style>
-        @keyframes spin {
-            0% { transform: rotate(0deg);}
-            100% { transform: rotate(360deg);}
-        }
-    </style>
+
+    <!-- Main login form -->
     <div class="login-container">
         <h2>Login</h2>
-        <form id="login-form" action="index.html" method="get">
+        <form id="login-form" action="#">
             <label for="username">Username</label>
             <input type="text" id="username" name="username" required placeholder="Username / Email / Phone Number">
+            
             <label for="password">Password</label>
-            <div style="display:flex; align-items:center; position:relative;">
-                <input type="password" id="password" name="password" required style="padding-right:32px; flex:1;">
-                <span id="toggle-login-password"
-                    style="position:absolute; right:12px; top:50%; transform:translateY(-50%); cursor:pointer; user-select:none; font-size:1.1em; color:#888;">
-                    👁️
-                </span>
+            <div style="display: flex; align-items: center; position: relative;">
+                <input type="password" id="password" name="password" required style="padding-right: 32px; flex: 1;">
+                <span id="toggle-login-password" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 1.1em; color: #888;">👁️</span>
             </div>
+
             <button type="submit">Login</button>
         </form>
-        <div id="login-error" style="color:red; margin-top:10px; display:none;">
+        <div id="login-error" style="color: red; margin-top: 10px; display: none;">
             Incorrect username or password.
         </div>
-        <a href="#" id="forgot-password-link" style="display:block; margin-top:10px; text-align:right; color:#007bff; text-decoration:underline; cursor:pointer;">Forgot Password?</a>
+        <a href="#" id="forgot-password-link" style="display: block; margin-top: 10px; text-align: right; color: #007bff; text-decoration: underline; cursor: pointer;">Forgot Password?</a>
         <a href="signup.html"><button class="signup-btn" type="button">Sign Up</button></a>
-        <div id="signup-form" style="display:none; margin-top:20px;">
-            <h2>Sign Up</h2>
-            <form id="signup-inner-form" action="#" method="post">
-                <label for="new-username">Username</label>
-                <input type="text" id="new-username" name="new-username" required>
-                <label for="new-password">Password</label>
-                <div style="display:flex; align-items:center; position:relative;">
-                    <input type="password" id="new-password" required style="padding-right:32px; flex:1;">
-                    <span id="toggle-signup-password"
-                        style="position:absolute; right:12px; top:50%; transform:translateY(-50%); cursor:pointer; user-select:none; font-size:1.1em; color:#888;">
-                        👁️
-                    </span>
-                </div>
-                <button type="submit">Create Account</button>
-            </form>
-            <div id="signup-success" style="color:green; margin-top:10px; display:none;">Account created! Please login.</div>
-        </div>
     </div>
+
     <script>
-    function showSignup() {
-        document.getElementById('signup-form').style.display = 'block';
-    }
+        // Function to show/hide the loading overlay
+        function showLoading(isLoading) {
+            const overlay = document.getElementById('loading-overlay');
+            overlay.style.display = isLoading ? 'flex' : 'none';
+        }
 
-    document.getElementById('login-form').addEventListener('submit', async function(e) {
-        e.preventDefault();
-        const userInput = document.getElementById('username').value.trim();
-        const password = document.getElementById('password').value;
-        try {
-            const res = await fetch('https://tridex1.onrender.com/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username: userInput, password })
-            });
-            const result = await res.json();
-            if (res.ok && result.token) {
-                localStorage.setItem('token', result.token);
-                // Store isAdmin as a string for consistent checking
-                localStorage.setItem('isAdmin', result.isAdmin ? 'true' : 'false');
-                // Optionally, check if user is admin and redirect accordingly
-                if (result.isAdmin) {
-                    window.location.href = 'admin.html';
+        document.getElementById('login-form').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const userInput = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
+
+            showLoading(true); // Show loading overlay
+
+            try {
+                const res = await fetch('https://tridex1.onrender.com/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: userInput, password })
+                });
+
+                const result = await res.json();
+
+                if (res.ok && result.token) {
+                    // Store token and user role in localStorage
+                    localStorage.setItem('token', result.token);
+                    localStorage.setItem('isAdmin', result.isAdmin ? 'true' : 'false');
+                    
+                    // Redirect user based on role
+                    if (result.isAdmin) {
+                        window.location.href = '#admin'; // Admin page (this could be dynamically loaded content)
+                    } else {
+                        window.location.href = '#user'; // User page (this could be dynamically loaded content)
+                    }
                 } else {
-                    window.location.href = 'index.html';
+                    document.getElementById('login-error').style.display = 'block';
                 }
-            } else {
+            } catch (err) {
+                console.error('Error:', err); // Log any network or other errors
                 document.getElementById('login-error').style.display = 'block';
+            } finally {
+                showLoading(false); // Hide loading overlay
             }
-        } catch (err) {
-            document.getElementById('login-error').style.display = 'block';
-        }
-    });
+        });
 
-    // Toggle password visibility for login
-    document.getElementById('toggle-login-password').addEventListener('click', function() {
-        const pwd = document.getElementById('password');
-        if (pwd.type === 'password') {
-            pwd.type = 'text';
-            this.textContent = '🙈';
-        } else {
-            pwd.type = 'password';
-            this.textContent = '👁️';
-        }
-    });
+        // Toggle password visibility
+        document.getElementById('toggle-login-password').addEventListener('click', function () {
+            const pwd = document.getElementById('password');
+            if (pwd.type === 'password') {
+                pwd.type = 'text';
+                this.textContent = '🙈';
+            } else {
+                pwd.type = 'password';
+                this.textContent = '👁️';
+            }
+        });
 
-    // Toggle password visibility for signup
-    document.getElementById('toggle-signup-password').addEventListener('click', function() {
-        const pwd = document.getElementById('new-password');
-        if (pwd.type === 'password') {
-            pwd.type = 'text';
-            this.textContent = '🙈';
-        } else {
-            pwd.type = 'password';
-            this.textContent = '👁️';
-        }
-    });
+        // Forgot password link
+        document.getElementById('forgot-password-link').onclick = function (e) {
+            e.preventDefault();
+            window.location.href = '#forgot-password'; // Link to forgot password page
+        };
 
-    // Forgot password link
-    document.getElementById('forgot-password-link').onclick = function(e) {
-        e.preventDefault();
-        window.location.href = 'forgotpassword.html';
-    };
+        // Check if user is logged in when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            const token = localStorage.getItem('token');
+            const isAdmin = localStorage.getItem('isAdmin');
+            
+            if (!token) {
+                // No token, user is not logged in
+                return;
+            }
 
-    // Sign up logic for the embedded form
-    document.getElementById('signup-inner-form').onsubmit = function(e) {
-        e.preventDefault();
-        const username = document.getElementById('new-username').value.trim();
-        const password = document.getElementById('new-password').value;
-        if (username && password) {
-            localStorage.setItem('profileUsername', username);
-            localStorage.setItem('profilePassword', password);
-            document.getElementById('signup-success').style.display = 'block';
-            setTimeout(() => {
-                document.getElementById('signup-form').style.display = 'none';
-                document.getElementById('signup-success').style.display = 'none';
-            }, 1500);
-        }
-    };
-
-    function showLoading() {
-        document.getElementById('loading-overlay').style.display = 'flex';
-    }
-    function hideLoading() {
-        document.getElementById('loading-overlay').style.display = 'none';
-    }
-    window.addEventListener('load', function() {
-        hideLoading();
-    });
-    window.addEventListener('beforeunload', function() {
-        showLoading();
-    });
+            // User is logged in, check if they're an admin
+            if (isAdmin === 'true') {
+                alert('You are logged in as an admin!');
+                // Optionally, show admin content here
+            } else {
+                alert('You are logged in as a user!');
+                // Optionally, show user content here
+            }
+        });
     </script>
 </body>
 </html>
