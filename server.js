@@ -1,17 +1,17 @@
- const express = require('express');
+const express = require('express');
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
 const cors = require('cors');
-const jwt = require('jsonwebtoken');
-const User = require('./models/User'); // Ensure the path is correct
+const User = require('./models/User'); // Make sure the path is correct
 const Product = require('./models/Product');
 const Announcement = require('./models/Announcement');
-require('dotenv').config(); // To use environment variables
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Middleware
+ const cors = require('cors');
+
 app.use(cors({
   origin: ['https://aloneghost12.github.io'], // Allow only your frontend domain
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -20,9 +20,8 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true })); // For parsing application/x-www-form-urlencoded
-
 // MongoDB Connection
-mongoose.connect(process.env.MONGODB_URI, {
+mongoose.connect('mongodb+srv://admin:admin123@cluster0.g3sy76o.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0', {
     useNewUrlParser: true,
     useUnifiedTopology: true,
 })
@@ -33,6 +32,7 @@ mongoose.connect(process.env.MONGODB_URI, {
 app.get('/', (req, res) => {
     res.send('Welcome to Tridex API!');
 });
+
 
 // ========== AUTH ROUTES ==========
 
@@ -91,15 +91,12 @@ app.post('/login', async (req, res) => {
             return res.status(401).json({ message: 'Invalid username or password' });
         }
 
-        // Generate JWT token
-        const token = jwt.sign({ id: user._id, username: user.username }, process.env.JWT_SECRET, { expiresIn: '1h' });
-
         // Respond with token and user info
         res.status(200).json({
             message: 'Login successful!',
             isAdmin: user.isAdmin || false,
             username: user.username,
-            token: token // Send the actual JWT
+            token: 'fake-jwt-token'
         });
 
     } catch (err) {
@@ -108,33 +105,20 @@ app.post('/login', async (req, res) => {
     }
 });
 
+
 // ========== USER MANAGEMENT ==========
 
-// Middleware to verify JWT and set user in request
-const authenticateJWT = (req, res, next) => {
-    const token = req.headers['authorization'] && req.headers['authorization'].split(' ')[1];
-    if (!token) return res.status(401).json({ message: 'Token required' });
-
-    jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
-        if (err) return res.status(403).json({ message: 'Invalid token' });
-        req.user = user;
-        next();
-    });
-};
-
-app.get('/users', authenticateJWT, async (req, res) => {
+app.get('/users', async (req, res) => {
     try {
         const users = await User.find({}, '-password');
         res.json(users);
     } catch (err) {
         console.error('Error fetching users:', err);
-        res.status(500).json({ message: 'Server error', error: err.message });
+        res.status(500).json({ message: 'Server error' });
     }
 });
 
-app.put('/users/:id/ban', authenticateJWT, async (req, res) => {
-    if (!req.user.isAdmin) return res.status(403).json({ message: 'Permission denied' });
-
+app.put('/users/:id/ban', async (req, res) => {
     try {
         await User.findByIdAndUpdate(req.params.id, { banned: true });
         res.json({ message: 'User banned' });
@@ -143,9 +127,7 @@ app.put('/users/:id/ban', authenticateJWT, async (req, res) => {
     }
 });
 
-app.put('/users/:id/unban', authenticateJWT, async (req, res) => {
-    if (!req.user.isAdmin) return res.status(403).json({ message: 'Permission denied' });
-
+app.put('/users/:id/unban', async (req, res) => {
     try {
         await User.findByIdAndUpdate(req.params.id, { banned: false });
         res.json({ message: 'User unbanned' });
@@ -154,9 +136,7 @@ app.put('/users/:id/unban', authenticateJWT, async (req, res) => {
     }
 });
 
-app.put('/users/:id/verify', authenticateJWT, async (req, res) => {
-    if (!req.user.isAdmin) return res.status(403).json({ message: 'Permission denied' });
-
+app.put('/users/:id/verify', async (req, res) => {
     try {
         await User.findByIdAndUpdate(req.params.id, { verified: true });
         res.json({ message: 'User verified' });
@@ -165,9 +145,7 @@ app.put('/users/:id/verify', authenticateJWT, async (req, res) => {
     }
 });
 
-app.delete('/users/:id', authenticateJWT, async (req, res) => {
-    if (!req.user.isAdmin) return res.status(403).json({ message: 'Permission denied' });
-
+app.delete('/users/:id', async (req, res) => {
     try {
         await User.findByIdAndDelete(req.params.id);
         res.json({ message: 'User deleted' });
@@ -176,24 +154,19 @@ app.delete('/users/:id', authenticateJWT, async (req, res) => {
     }
 });
 
+
 // ========== PRODUCT ROUTES ==========
 
 app.get('/products', async (req, res) => {
     try {
-        const page = parseInt(req.query.page) || 1;
-        const limit = parseInt(req.query.limit) || 10;
-        const skip = (page - 1) * limit;
-
-        const products = await Product.find().skip(skip).limit(limit);
+        const products = await Product.find();
         res.json(products);
     } catch (err) {
-        res.status(500).json({ message: 'Error fetching products', error: err.message });
+        res.status(500).json({ message: 'Error fetching products' });
     }
 });
 
-app.post('/products', authenticateJWT, async (req, res) => {
-    if (!req.user.isAdmin) return res.status(403).json({ message: 'Permission denied' });
-
+app.post('/products', async (req, res) => {
     try {
         const { name, image, desc, price } = req.body;
         const product = new Product({ name, image, desc, price });
@@ -204,9 +177,7 @@ app.post('/products', authenticateJWT, async (req, res) => {
     }
 });
 
-app.put('/products/:id', authenticateJWT, async (req, res) => {
-    if (!req.user.isAdmin) return res.status(403).json({ message: 'Permission denied' });
-
+app.put('/products/:id', async (req, res) => {
     try {
         const { name, image, desc, price } = req.body;
         await Product.findByIdAndUpdate(req.params.id, { name, image, desc, price });
@@ -216,9 +187,7 @@ app.put('/products/:id', authenticateJWT, async (req, res) => {
     }
 });
 
-app.delete('/products/:id', authenticateJWT, async (req, res) => {
-    if (!req.user.isAdmin) return res.status(403).json({ message: 'Permission denied' });
-
+app.delete('/products/:id', async (req, res) => {
     try {
         await Product.findByIdAndDelete(req.params.id);
         res.json({ message: 'Product deleted' });
@@ -226,6 +195,7 @@ app.delete('/products/:id', authenticateJWT, async (req, res) => {
         res.status(500).json({ message: 'Error deleting product' });
     }
 });
+
 
 // ========== ANNOUNCEMENT ROUTES ==========
 
@@ -238,9 +208,7 @@ app.get('/announcements', async (req, res) => {
     }
 });
 
-app.post('/announcements', authenticateJWT, async (req, res) => {
-    if (!req.user.isAdmin) return res.status(403).json({ message: 'Permission denied' });
-
+app.post('/announcements', async (req, res) => {
     try {
         const { title, message } = req.body;
         const announcement = new Announcement({ title, message });
@@ -251,9 +219,7 @@ app.post('/announcements', authenticateJWT, async (req, res) => {
     }
 });
 
-app.delete('/announcements/:id', authenticateJWT, async (req, res) => {
-    if (!req.user.isAdmin) return res.status(403).json({ message: 'Permission denied' });
-
+app.delete('/announcements/:id', async (req, res) => {
     try {
         await Announcement.findByIdAndDelete(req.params.id);
         res.json({ message: 'Announcement deleted' });
