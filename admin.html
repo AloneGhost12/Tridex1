@@ -1,5 +1,4 @@
- 
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -77,6 +76,29 @@
     button[type="submit"] {
       background-color: #28a745;
     }
+
+    .user-details {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .user-details div {
+      margin-bottom: 0.5rem;
+    }
+
+    .user-table td, .user-table th {
+      padding: 10px;
+    }
+
+    .user-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .user-table th {
+      background-color: #f1f1f1;
+      text-align: left;
+    }
   </style>
 </head>
 <body>
@@ -93,8 +115,21 @@
     <section id="users" class="section active">
       <div class="card">
         <h2>User Management</h2>
-        <p>List and manage users here.</p>
-        <div id="user-list"></div>
+        <table class="user-table">
+          <thead>
+            <tr>
+              <th>Username</th>
+              <th>Email</th>
+              <th>Phone</th>
+              <th>Age</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="user-list">
+            <!-- User details will be rendered here -->
+          </tbody>
+        </table>
       </div>
     </section>
 
@@ -102,8 +137,8 @@
       <div class="card">
         <h2>Send Message</h2>
         <form id="message-form">
-          <input type="email" id="user-email" placeholder="User Email" required><br>
-          <textarea id="message" placeholder="Your message here..." rows="5" required></textarea><br>
+          <input type="email" placeholder="User Email" required><br>
+          <textarea placeholder="Your message here..." rows="5" required></textarea><br>
           <button type="submit">Send</button>
         </form>
       </div>
@@ -113,11 +148,11 @@
       <div class="card">
         <h2>Add New Product</h2>
         <form id="product-form">
-          <input type="text" id="product-name" placeholder="Product Name" required><br>
-          <input type="number" id="price" placeholder="Price" required><br>
-          <textarea id="description" placeholder="Description" rows="4"></textarea><br>
-          <input type="file" id="image" accept="image/*" required><br>
-          <input type="url" id="product-link" placeholder="Product Link (Optional)" /><br>
+          <input type="text" placeholder="Product Name" required><br>
+          <input type="number" placeholder="Price" required><br>
+          <textarea placeholder="Description" rows="4"></textarea><br>
+          <input type="file" accept="image/*" required><br>
+          <input type="url" placeholder="Product Link" required><br>
           <button type="submit">Add Product</button>
         </form>
       </div>
@@ -125,6 +160,77 @@
   </main>
 
   <script>
+    let users = [];
+
+    async function fetchUsers() {
+      try {
+        const res = await fetch('https://tridex1.onrender.com/users');
+        users = await res.json();
+        renderUsers();
+      } catch (e) {
+        alert('Failed to load users.');
+        users = [];
+        renderUsers();
+      }
+    }
+
+    function renderUsers() {
+      const tbody = document.getElementById('user-list');
+      tbody.innerHTML = '';
+      users.forEach(user => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${user.username}</td>
+          <td>${user.email}</td>
+          <td>${user.phone}</td>
+          <td>${user.age}</td>
+          <td>${user.banned ? 'Banned' : 'Active'}</td>
+          <td>
+            <button onclick="banUser('${user._id}')">${user.banned ? 'Unban' : 'Ban'}</button>
+            <button onclick="deleteUser('${user._id}')">Delete</button>
+            <button onclick="verifyUser('${user._id}')">${user.verified ? 'Unverify' : 'Verify'}</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    async function banUser(userId) {
+      try {
+        await fetch(`https://tridex1.onrender.com/users/${userId}/ban`, { method: 'PUT' });
+        fetchUsers();
+      } catch (e) {
+        alert('Failed to ban user.');
+      }
+    }
+
+    async function unbanUser(userId) {
+      try {
+        await fetch(`https://tridex1.onrender.com/users/${userId}/unban`, { method: 'PUT' });
+        fetchUsers();
+      } catch (e) {
+        alert('Failed to unban user.');
+      }
+    }
+
+    async function deleteUser(userId) {
+      try {
+        await fetch(`https://tridex1.onrender.com/users/${userId}`, { method: 'DELETE' });
+        fetchUsers();
+      } catch (e) {
+        alert('Failed to delete user.');
+      }
+    }
+
+    async function verifyUser(userId) {
+      try {
+        await fetch(`https://tridex1.onrender.com/users/${userId}/verify`, { method: 'PUT' });
+        fetchUsers();
+      } catch (e) {
+        alert('Failed to verify user.');
+      }
+    }
+
     function showSection(id) {
       document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
       document.getElementById(id).classList.add('active');
@@ -134,78 +240,9 @@
       document.body.classList.toggle('dark-mode');
     }
 
-    // Handle sending message
-    document.getElementById('message-form').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const email = document.getElementById('user-email').value;
-      const message = document.getElementById('message').value;
-      try {
-        await fetch('https://tridex1.onrender.com/messages', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ email, message })
-        });
-        alert('Message sent successfully!');
-      } catch (error) {
-        alert('Failed to send message. Please try again later.');
-      }
-    });
-
-    // Handle adding product
-    document.getElementById('product-form').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const name = document.getElementById('product-name').value;
-      const price = document.getElementById('price').value;
-      const description = document.getElementById('description').value;
-      const image = document.getElementById('image').files[0];
-      const productLink = document.getElementById('product-link').value;
-
-      if (!image) {
-        alert('Please upload an image for the product.');
-        return;
-      }
-
-      const formData = new FormData();
-      formData.append('name', name);
-      formData.append('price', price);
-      formData.append('description', description);
-      formData.append('image', image);
-      formData.append('productLink', productLink);
-
-      try {
-        await fetch('https://tridex1.onrender.com/products', {
-          method: 'POST',
-          body: formData
-        });
-        alert('Product added successfully!');
-      } catch (error) {
-        alert('Failed to add product. Please try again later.');
-      }
-    });
-
-    // Load users and display them
-    async function loadUsers() {
-      try {
-        const res = await fetch('https://tridex1.onrender.com/users');
-        const users = await res.json();
-        const userList = document.getElementById('user-list');
-        userList.innerHTML = '';
-        users.forEach(user => {
-          const userElement = document.createElement('div');
-          userElement.innerHTML = `<p>${user.username} (${user.email})</p>`;
-          userList.appendChild(userElement);
-        });
-      } catch (error) {
-        alert('Failed to load users.');
-      }
-    }
-
     window.onload = () => {
-      loadUsers();
+      fetchUsers();
     };
   </script>
 </body>
 </html>
-
