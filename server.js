@@ -1,3 +1,7 @@
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
+const dotenv = require('dotenv');
 const express = require('express');
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
@@ -18,6 +22,19 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true  // Enable if you plan to send cookies/auth headers
 }));
+app.use('/uploads', express.static('uploads'));
+const multer = require('multer');
+const path = require('path');
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, 'uploads/'),
+  filename: (req, file, cb) => cb(null, Date.now() + path.extname(file.originalname)),
+});
+
+const upload = multer({ storage });
+ // Expose the uploads folder
+app.use(express.json({ limit: '50mb' })); // For parsing application/json
+app.use(express.urlencoded({ limit: '50mb', extended: true })); // For parsing application/x-www-form-urlencoded
 app.use(express.json());
 app.use(express.urlencoded({ extended: true })); // For parsing application/x-www-form-urlencoded
 // MongoDB Connection
@@ -166,17 +183,47 @@ app.get('/products', async (req, res) => {
     }
 });
 
-app.post('/products', async (req, res) => {
+ app.post('/products', upload.single('image'), async (req, res) => {
+  try {
+    const { name, price, desc } = req.body;
+    const imageUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
+
+    const newProduct = new Product({
+      name,
+      price,
+      desc,
+      image: imageUrl
+    });
+
+    await newProduct.save();
+    res.status(201).json({ message: 'Product added', product: newProduct });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Error adding product' });
+  }
+});
+app.get('/products/:id', async (req, res) => {
     try {
-        const { name, image, desc, price } = req.body;
-        const product = new Product({ name, image, desc, price });
-        await product.save();
-        res.json({ message: 'Product added', product });
+        const product = await Product.findById(req.params.id);
+        if (!product) {
+            return res.status(404).json({ message: 'Product not found' });
+        }
+        res.json(product);
     } catch (err) {
-        res.status(500).json({ message: 'Error adding product' });
+        res.status(500).json({ message: 'Error fetching product' });
     }
 });
-
+app.get('/products/:id/image', async (req, res) => {
+    try {
+        const product = await Product.findById(req.params.id);
+        if (!product) {
+            return res.status(404).json({ message: 'Product not found' });
+        }
+        res.json({ image: product.image });
+    } catch (err) {
+        res.status(500).json({ message: 'Error fetching product image' });
+    }
+});
 app.put('/products/:id', async (req, res) => {
     try {
         const { name, image, desc, price } = req.body;
