@@ -4,362 +4,282 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Panel</title>
-    <script src="https://cdn.jsdelivr.net/npm/react-hot-toast@2.4.0/dist/index.min.js"></script>
     <style>
-        /* Basic reset and body styles */
         body {
             font-family: Arial, sans-serif;
-            background-color: #f4f7fa;
             margin: 0;
             padding: 0;
+            background-color: #f4f4f4;
+        }
+
+        header {
+            background-color: #333;
+            color: white;
+            text-align: center;
+            padding: 10px 0;
+        }
+
+        nav {
+            background-color: #222;
+            padding: 10px;
+            display: flex;
+            justify-content: center;
+        }
+
+        nav a {
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            margin: 0 10px;
+        }
+
+        nav a:hover {
+            background-color: #444;
         }
 
         .container {
-            max-width: 1200px;
-            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
             padding: 20px;
         }
 
-        h2 {
-            font-size: 2rem;
-            color: #333;
+        .section {
+            width: 48%;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
 
-        /* Action Buttons */
-        .action-container {
-            display: flex;
-            gap: 20px;
+        .section h2 {
             margin-bottom: 20px;
         }
 
-        .action-container button {
-            background-color: #4CAF50;
-            color: white;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-        }
-
-        .action-container button:hover {
-            background-color: #45a049;
-        }
-
-        /* Table Styles */
         table {
             width: 100%;
-            border-collapse: collapse;
             margin-bottom: 20px;
+            border-collapse: collapse;
+        }
+
+        table, th, td {
+            border: 1px solid #ddd;
+            text-align: left;
         }
 
         th, td {
-            padding: 12px;
-            text-align: left;
-            border-bottom: 1px solid #ddd;
+            padding: 10px;
         }
 
-        th {
-            background-color: #f2f2f2;
-        }
-
-        /* Action buttons within table */
-        .action-buttons button {
-            background-color: #2196F3;
-            color: white;
-            padding: 6px 12px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            margin-right: 8px;
-            transition: background-color 0.3s ease;
-        }
-
-        .action-buttons button:hover {
-            background-color: #0b7dda;
-        }
-
-        .ban-btn {
-            background-color: #f44336;
-        }
-
-        .ban-btn:hover {
-            background-color: #d32f2f;
-        }
-
-        /* Modal Styles */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
-            justify-content: center;
-            align-items: center;
-        }
-
-        .modal-content {
-            background-color: #fff;
-            padding: 20px;
-            border-radius: 8px;
-            width: 400px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-        }
-
-        .modal-content h3 {
-            margin-bottom: 10px;
-            font-size: 1.5rem;
-        }
-
-        .modal-content button {
+        button {
             background-color: #4CAF50;
             color: white;
-            padding: 10px;
             border: none;
-            border-radius: 5px;
+            padding: 10px 20px;
             cursor: pointer;
-            width: 100%;
-            margin-bottom: 10px;
-            transition: background-color 0.3s ease;
+            border-radius: 4px;
         }
 
-        .modal-content button:hover {
+        button:hover {
             background-color: #45a049;
         }
 
-        .close-btn {
-            background-color: #f44336;
-            width: 100%;
+        .message-box {
+            display: flex;
+            flex-direction: column;
+            margin-top: 20px;
         }
 
-        .close-btn:hover {
-            background-color: #d32f2f;
-        }
-
-        .hidden {
-            display: none;
-        }
-
-        textarea {
-            width: 100%;
+        .message-box input, .message-box textarea {
             padding: 10px;
             margin-bottom: 10px;
-            border-radius: 5px;
-            border: 1px solid #ccc;
-            resize: vertical;
+            border: 1px solid #ddd;
+            border-radius: 4px;
         }
 
-        select {
-            width: 100%;
-            padding: 10px;
-            margin-bottom: 10px;
-            border-radius: 5px;
-            border: 1px solid #ccc;
-        }
-
-        .modal-button {
-            background-color: #4CAF50;
-            color: white;
-            padding: 10px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            margin-top: 10px;
-            transition: background-color 0.3s ease;
-        }
-
-        .modal-button:hover {
-            background-color: #45a049;
-        }
-
-        /* Responsive design */
-        @media (max-width: 768px) {
-            .container {
-                padding: 10px;
-            }
-
-            table, th, td {
-                font-size: 0.9rem;
-            }
-
-            .action-container {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-
-            .action-container button {
-                width: 100%;
-                margin-bottom: 10px;
-            }
-
-            .modal-content {
-                width: 90%;
-            }
+        .message-box button {
+            align-self: flex-start;
+            background-color: #007BFF;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h2>Admin Panel</h2>
 
-        <!-- Action Buttons -->
-        <div class="action-container">
-            <button class="product-btn" onclick="openProductModal()">Product Options</button>
-            <button class="message-btn" onclick="openMessageModal()">Send Message</button>
-        </div>
+<header>
+    <h1>Admin Panel</h1>
+</header>
 
-        <div class="p-4">
-            <h2 class="text-2xl font-bold mb-4">User List</h2>
-            <table class="min-w-full border border-gray-200">
-                <thead>
-                    <tr class="bg-gray-100">
-                        <th class="border px-4 py-2">Username</th>
-                        <th class="border px-4 py-2">Email</th>
-                        <th class="border px-4 py-2">Phone</th>
-                        <th class="border px-4 py-2">Age</th>
-                        <th class="border px-4 py-2">Status</th>
-                        <th class="border px-4 py-2">Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="userList">
-                    <!-- Dynamic rows will be added here -->
-                </tbody>
-            </table>
-        </div>
+<nav>
+    <a href="#products-section">Products</a>
+    <a href="#users-section">Users</a>
+    <a href="#message-section">Send Message</a>
+</nav>
 
-        <!-- Modal for Product Options -->
-        <div id="productModal" class="modal hidden">
-            <div class="modal-content">
-                <h3 class="text-xl font-semibold mb-2">Product Options</h3>
-                <button class="modal-button" onclick="addProduct()">Add Product</button>
-                <button class="modal-button" onclick="editProduct()">Edit Product</button>
-                <button class="close-btn" onclick="closeModal('productModal')">Close</button>
-            </div>
-        </div>
-
-        <!-- Modal for Sending Messages -->
-        <div id="messageModal" class="modal hidden">
-            <div class="modal-content">
-                <h3 class="text-xl font-semibold mb-2">Send Message</h3>
-                <textarea id="messageText" rows="4" class="w-full p-2 mb-2 border border-gray-300 rounded-md"></textarea>
-                <select id="userSelect" class="w-full p-2 mb-2 border border-gray-300 rounded-md">
-                    <!-- Options will be dynamically populated -->
-                </select>
-                <button class="modal-button" onclick="sendMessage()">Send</button>
-                <button class="close-btn" onclick="closeModal('messageModal')">Close</button>
-            </div>
-        </div>
+<div class="container">
+    <!-- Product Management Section -->
+    <div class="section" id="products-section">
+        <h2>Product Management</h2>
+        <button onclick="openProductModal()">Add Product</button>
+        <table id="products-table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Description</th>
+                    <th>Price</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Dynamic Product Data will be injected here -->
+            </tbody>
+        </table>
     </div>
 
-    <script>
-        document.addEventListener("DOMContentLoaded", () => {
-            const userList = document.getElementById("userList");
+    <!-- User Management Section -->
+    <div class="section" id="users-section">
+        <h2>User Management</h2>
+        <table id="users-table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Dynamic User Data will be injected here -->
+            </tbody>
+        </table>
+    </div>
 
-            // Fetch users from the backend
-            const fetchUsers = async () => {
-                try {
-                    const res = await fetch('https://tridex1.onrender.com/users');
-                    const data = await res.json();
-                    displayUsers(data);
-                } catch (error) {
-                    toast.error("Failed to fetch users.");
-                }
-            };
+    <!-- Message Sending Section -->
+    <div class="section" id="message-section">
+        <h2>Send Message to Users</h2>
+        <div class="message-box">
+            <input type="email" id="message-email" placeholder="User's Email">
+            <textarea id="message-content" rows="5" placeholder="Enter your message..."></textarea>
+            <button onclick="sendMessage()">Send Message</button>
+        </div>
+    </div>
+</div>
 
-            const displayUsers = (users) => {
-                userList.innerHTML = "";
-                users.forEach(user => {
-                    const row = document.createElement("tr");
+<script>
+// Admin Panel JavaScript Functionality
+const apiUrl = 'https://tridex1.onrender.com';
 
-                    row.innerHTML = `
-                        <td class="border px-4 py-2">${user.username}</td>
-                        <td class="border px-4 py-2">${user.email}</td>
-                        <td class="border px-4 py-2">${user.phone}</td>
-                        <td class="border px-4 py-2">${user.age}</td>
-                        <td class="border px-4 py-2">${user.banned ? 'Banned' : 'Active'}</td>
-                        <td class="border px-4 py-2 space-y-1 action-buttons">
-                            <button class="ban-btn" onclick="banUser('${user._id}', ${user.banned})">
-                                ${user.banned ? 'Unban' : 'Ban'}
-                            </button>
-                            <button class="delete-btn" onclick="deleteUser('${user._id}')">Delete</button>
-                            <button class="verify-btn" onclick="toggleVerifyUser('${user._id}', ${user.verified})">
-                                ${user.verified ? 'Unverify' : 'Verify'}
-                            </button>
-                        </td>
-                    `;
-                    userList.appendChild(row);
-                });
-            };
+async function fetchProducts() {
+    const response = await fetch(`${apiUrl}/products`);
+    const products = await response.json();
+    const productsTableBody = document.getElementById('products-table').getElementsByTagName('tbody')[0];
+    productsTableBody.innerHTML = '';
+    products.forEach(product => {
+        const row = productsTableBody.insertRow();
+        row.innerHTML = `
+            <td>${product.name}</td>
+            <td>${product.desc}</td>
+            <td>${product.price}</td>
+            <td>
+                <button onclick="deleteProduct('${product._id}')">Delete</button>
+            </td>
+        `;
+    });
+}
 
-            const openMessageModal = () => {
-                document.getElementById('messageModal').classList.remove('hidden');
-            };
+async function fetchUsers() {
+    const response = await fetch(`${apiUrl}/users`);
+    const users = await response.json();
+    const usersTableBody = document.getElementById('users-table').getElementsByTagName('tbody')[0];
+    usersTableBody.innerHTML = '';
+    users.forEach(user => {
+        const row = usersTableBody.insertRow();
+        row.innerHTML = `
+            <td>${user.name}</td>
+            <td>${user.email}</td>
+            <td>
+                <button onclick="banUser('${user._id}')">Ban</button>
+                <button onclick="unbanUser('${user._id}')">Unban</button>
+                <button onclick="verifyUser('${user._id}')">Verify</button>
+                <button onclick="unverifyUser('${user._id}')">Unverify</button>
+                <button onclick="deleteUser('${user._id}')">Delete</button>
+            </td>
+        `;
+    });
+}
 
-            const sendMessage = async () => {
-                const message = document.getElementById('messageText').value;
-                const userId = document.getElementById('userSelect').value;
+async function sendMessage() {
+    const email = document.getElementById('message-email').value;
+    const content = document.getElementById('message-content').value;
 
-                if (!message || !userId) {
-                    alert("Please enter a message and select a user.");
-                    return;
-                }
+    if (!email || !content) {
+        alert('Please provide an email and a message!');
+        return;
+    }
 
-                try {
-                    const res = await fetch('https://tridex1.onrender.com/messages', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ userId, message })
-                    });
+    const response = await fetch(`${apiUrl}/send-message`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, content })
+    });
 
-                    if (res.ok) {
-                        toast.success("Message sent successfully");
-                        closeModal('messageModal');
-                    } else {
-                        toast.error("Failed to send message.");
-                    }
-                } catch (error) {
-                    toast.error("Failed to send message.");
-                }
-            };
+    if (response.ok) {
+        alert('Message sent!');
+        document.getElementById('message-email').value = '';
+        document.getElementById('message-content').value = '';
+    } else {
+        alert('Failed to send message!');
+    }
+}
 
-            const openProductModal = () => {
-                document.getElementById('productModal').classList.remove('hidden');
-            };
+async function banUser(userId) {
+    const response = await fetch(`${apiUrl}/users/${userId}/ban`, { method: 'PUT' });
+    if (response.ok) {
+        alert('User banned');
+        fetchUsers();
+    }
+}
 
-            const addProduct = () => {
-                alert("Product Added!");
-            };
+async function unbanUser(userId) {
+    const response = await fetch(`${apiUrl}/users/${userId}/unban`, { method: 'PUT' });
+    if (response.ok) {
+        alert('User unbanned');
+        fetchUsers();
+    }
+}
 
-            const editProduct = () => {
-                alert("Product Edited!");
-            };
+async function verifyUser(userId) {
+    const response = await fetch(`${apiUrl}/users/${userId}/verify`, { method: 'PUT' });
+    if (response.ok) {
+        alert('User verified');
+        fetchUsers();
+    }
+}
 
-            const closeModal = (modalId) => {
-                document.getElementById(modalId).classList.add('hidden');
-            };
+async function unverifyUser(userId) {
+    const response = await fetch(`${apiUrl}/users/${userId}/unverify`, { method: 'PUT' });
+    if (response.ok) {
+        alert('User unverified');
+        fetchUsers();
+    }
+}
 
-            // Define user management functions
-            const banUser = (userId, isBanned) => {
-                // Add backend API logic to ban/unban user
-                alert(isBanned ? "User unbanned" : "User banned");
-            };
+async function deleteUser(userId) {
+    const response = await fetch(`${apiUrl}/users/${userId}`, { method: 'DELETE' });
+    if (response.ok) {
+        alert('User deleted');
+        fetchUsers();
+    }
+}
 
-            const toggleVerifyUser = (userId, isVerified) => {
-                // Add backend API logic to verify/unverify user
-                alert(isVerified ? "User unverified" : "User verified");
-            };
+async function deleteProduct(productId) {
+    const response = await fetch(`${apiUrl}/products/${productId}`, { method: 'DELETE' });
+    if (response.ok) {
+        alert('Product deleted');
+        fetchProducts();
+    }
+}
 
-            const deleteUser = (userId) => {
-                // Add backend API logic to delete user
-                alert("User deleted");
-            };
+fetchProducts();
+fetchUsers();
+</script>
 
-            fetchUsers(); // Initial fetch on page load
-        });
-    </script>
 </body>
 </html>
