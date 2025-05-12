@@ -1,360 +1,234 @@
- <!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Admin Panel</title>
-  <style>
-    /* existing styles... */
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 0;
-      background-color: #f4f4f4;
+const express = require('express');
+const mongoose = require('mongoose');
+const bcrypt = require('bcrypt');
+const cors = require('cors');
+const User = require('./models/User'); // Make sure the path is correct
+const Product = require('./models/Product');
+const Announcement = require('./models/Announcement');
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+// Middleware
+ const cors = require('cors');
+
+app.use(cors({
+  origin: ['https://aloneghost12.github.io'], // Allow only your frontend domain
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true  // Enable if you plan to send cookies/auth headers
+}));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true })); // For parsing application/x-www-form-urlencoded
+// MongoDB Connection
+mongoose.connect('mongodb+srv://admin:admin123@cluster0.g3sy76o.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0', {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+})
+.then(() => console.log('Connected to MongoDB Atlas'))
+.catch((err) => console.error('MongoDB connection error:', err));
+
+// Root Route
+app.get('/', (req, res) => {
+    res.send('Welcome to Tridex API!');
+});
+
+
+// ========== AUTH ROUTES ==========
+
+// SIGNUP
+app.post('/signup', async (req, res) => {
+    try {
+        const { name, age, gender, username, email, phone, password } = req.body;
+
+        // Check if user already exists
+        const existingUser = await User.findOne({ $or: [{ email }, { username }] });
+        if (existingUser) {
+            return res.status(400).json({ message: 'User already exists' });
+        }
+
+        // Hash password
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        const newUser = new User({
+            name,
+            age,
+            gender,
+            username,
+            email,
+            phone,
+            password: hashedPassword
+        });
+
+        await newUser.save();
+        res.status(201).json({ message: 'Signup successful!' });
+
+    } catch (err) {
+        console.error('Signup error:', err);
+        res.status(500).json({ message: 'Server error' });
     }
+});
 
-    header {
-      background-color: #333;
-      color: white;
-      text-align: center;
-      padding: 15px 0;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+// LOGIN
+app.post('/login', async (req, res) => {
+    try {
+        const { username, password } = req.body;
+
+        // Find user by username, email, or phone
+        const user = await User.findOne({
+            $or: [
+                { username: username },
+                { email: username },
+                { phone: username }
+            ]
+        });
+        if (!user) {
+            return res.status(401).json({ message: 'Invalid username or password' });
+        }
+
+        const isMatch = await bcrypt.compare(password, user.password);
+        if (!isMatch) {
+            return res.status(401).json({ message: 'Invalid username or password' });
+        }
+
+        // Respond with token and user info
+        res.status(200).json({
+            message: 'Login successful!',
+            isAdmin: user.isAdmin || false,
+            username: user.username,
+            token: 'fake-jwt-token'
+        });
+
+    } catch (err) {
+        console.error('Login error:', err);
+        res.status(500).json({ message: 'Server error' });
     }
+});
 
-    nav {
-      background-color: #222;
-      padding: 12px;
-      display: flex;
-      justify-content: center;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+
+// ========== USER MANAGEMENT ==========
+
+app.get('/users', async (req, res) => {
+    try {
+        const users = await User.find({}, '-password');
+        res.json(users);
+    } catch (err) {
+        console.error('Error fetching users:', err);
+        res.status(500).json({ message: 'Server error' });
     }
+});
 
-    nav a {
-      color: white;
-      text-decoration: none;
-      padding: 12px 20px;
-      margin: 0 15px;
-      border-radius: 4px;
+app.put('/users/:id/ban', async (req, res) => {
+    try {
+        await User.findByIdAndUpdate(req.params.id, { banned: true });
+        res.json({ message: 'User banned' });
+    } catch (err) {
+        res.status(500).json({ message: 'Error banning user' });
     }
+});
 
-    nav a:hover {
-      background-color: #444;
+app.put('/users/:id/unban', async (req, res) => {
+    try {
+        await User.findByIdAndUpdate(req.params.id, { banned: false });
+        res.json({ message: 'User unbanned' });
+    } catch (err) {
+        res.status(500).json({ message: 'Error unbanning user' });
     }
+});
 
-    .container {
-      display: flex;
-      justify-content: space-between;
-      padding: 30px;
-      gap: 20px;
+app.put('/users/:id/verify', async (req, res) => {
+    try {
+        await User.findByIdAndUpdate(req.params.id, { verified: true });
+        res.json({ message: 'User verified' });
+    } catch (err) {
+        res.status(500).json({ message: 'Error verifying user' });
     }
+});
 
-    .section {
-      width: 48%;
-      background-color: white;
-      padding: 30px;
-      border-radius: 8px;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-      display: none;
+app.delete('/users/:id', async (req, res) => {
+    try {
+        await User.findByIdAndDelete(req.params.id);
+        res.json({ message: 'User deleted' });
+    } catch (err) {
+        res.status(500).json({ message: 'Error deleting user' });
     }
+});
 
-    .section h2 {
-      margin-bottom: 20px;
+
+// ========== PRODUCT ROUTES ==========
+
+app.get('/products', async (req, res) => {
+    try {
+        const products = await Product.find();
+        res.json(products);
+    } catch (err) {
+        res.status(500).json({ message: 'Error fetching products' });
     }
+});
 
-    table {
-      width: 100%;
-      margin-bottom: 20px;
-      border-collapse: collapse;
+app.post('/products', async (req, res) => {
+    try {
+        const { name, image, desc, price } = req.body;
+        const product = new Product({ name, image, desc, price });
+        await product.save();
+        res.json({ message: 'Product added', product });
+    } catch (err) {
+        res.status(500).json({ message: 'Error adding product' });
     }
+});
 
-    table, th, td {
-      border: 1px solid #ddd;
-      text-align: left;
+app.put('/products/:id', async (req, res) => {
+    try {
+        const { name, image, desc, price } = req.body;
+        await Product.findByIdAndUpdate(req.params.id, { name, image, desc, price });
+        res.json({ message: 'Product updated' });
+    } catch (err) {
+        res.status(500).json({ message: 'Error updating product' });
     }
+});
 
-    th, td {
-      padding: 12px;
-      text-align: center;
+app.delete('/products/:id', async (req, res) => {
+    try {
+        await Product.findByIdAndDelete(req.params.id);
+        res.json({ message: 'Product deleted' });
+    } catch (err) {
+        res.status(500).json({ message: 'Error deleting product' });
     }
+});
 
-    button {
-      background-color: #4CAF50;
-      color: white;
-      border: none;
-      padding: 10px 20px;
-      cursor: pointer;
-      border-radius: 4px;
+
+// ========== ANNOUNCEMENT ROUTES ==========
+
+app.get('/announcements', async (req, res) => {
+    try {
+        const announcements = await Announcement.find().sort({ createdAt: -1 });
+        res.json(announcements);
+    } catch (err) {
+        res.status(500).json({ message: 'Error fetching announcements' });
     }
+});
 
-    button:hover {
-      background-color: #45a049;
+app.post('/announcements', async (req, res) => {
+    try {
+        const { title, message } = req.body;
+        const announcement = new Announcement({ title, message });
+        await announcement.save();
+        res.json({ message: 'Announcement sent', announcement });
+    } catch (err) {
+        res.status(500).json({ message: 'Error sending announcement' });
     }
+});
 
-    .message-box {
-      display: flex;
-      flex-direction: column;
-      margin-top: 20px;
+app.delete('/announcements/:id', async (req, res) => {
+    try {
+        await Announcement.findByIdAndDelete(req.params.id);
+        res.json({ message: 'Announcement deleted' });
+    } catch (err) {
+        res.status(500).json({ message: 'Error deleting announcement' });
     }
+});
 
-    .message-box input, .message-box textarea {
-      padding: 12px;
-      margin-bottom: 15px;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-    }
-
-    .message-box button {
-      align-self: flex-start;
-      background-color: #007BFF;
-    }
-
-    .product-form {
-      margin-top: 20px;
-      display: none;
-      flex-direction: column;
-    }
-
-    .product-form input {
-      padding: 12px;
-      margin-bottom: 15px;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-    }
-
-    #toast {
-      position: fixed;
-      bottom: 30px;
-      left: 50%;
-      transform: translateX(-50%);
-      background-color: #333;
-      color: #fff;
-      padding: 12px 20px;
-      border-radius: 6px;
-      display: none;
-      z-index: 9999;
-    }
-  </style>
-</head>
-<body>
-
-<header>
-  <h1>Admin Panel</h1>
-</header>
-
-<nav>
-  <a href="javascript:void(0);" onclick="showSection('products-section')">Products</a>
-  <a href="javascript:void(0);" onclick="showSection('users-section')">Users</a>
-  <a href="javascript:void(0);" onclick="showSection('message-section')">Send Message</a>
-</nav>
-
-<div class="container">
-  <!-- Product Management Section -->
-  <div class="section" id="products-section">
-    <h2>Product Management</h2>
-    <button onclick="toggleProductForm()">Add Product</button>
-
-    <div class="product-form" id="product-form">
-      <input type="text" id="product-name" placeholder="Product Name" />
-      <input type="text" id="product-desc" placeholder="Description" />
-      <input type="number" id="product-price" placeholder="Price" />
-      <input type="text" id="product-image" placeholder="Image URL (optional)" />
-      <button onclick="submitProduct()">Submit Product</button>
-    </div>
-
-    <table id="products-table">
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Description</th>
-          <th>Price</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </div>
-
-  <!-- User Management Section -->
-  <div class="section" id="users-section">
-    <h2>User Management</h2>
-    <table id="users-table">
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Email</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </div>
-
-  <!-- Message Sending Section -->
-  <div class="section" id="message-section">
-    <h2>Send Message to Users</h2>
-    <div class="message-box">
-      <input type="email" id="message-email" placeholder="User's Email">
-      <textarea id="message-content" rows="5" placeholder="Enter your message..."></textarea>
-      <button onclick="sendMessage()">Send Message</button>
-    </div>
-  </div>
-</div>
-
-<div id="toast"></div>
-
-<script>
-const apiUrl = 'https://tridex1.onrender.com';
-
-function showSection(sectionId) {
-  document.querySelectorAll('.section').forEach(sec => sec.style.display = 'none');
-  const sec = document.getElementById(sectionId);
-  if (sec) sec.style.display = 'block';
-}
-
-function showToast(msg) {
-  const toast = document.getElementById('toast');
-  toast.innerText = msg;
-  toast.style.display = 'block';
-  setTimeout(() => toast.style.display = 'none', 3000);
-}
-
-function toggleProductForm() {
-  const form = document.getElementById('product-form');
-  form.style.display = form.style.display === 'none' || form.style.display === '' ? 'flex' : 'none';
-}
-
-async function submitProduct() {
-  const name = document.getElementById('product-name').value.trim();
-  const desc = document.getElementById('product-desc').value.trim();
-  const price = document.getElementById('product-price').value.trim();
-  const image = document.getElementById('product-image').value.trim();
-
-  if (!name || !desc || !price) {
-    showToast('Please fill all required fields!');
-    return;
-  }
-
-  try {
-    const res = await fetch(`${apiUrl}/products`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, desc, price, image })
-    });
-
-    if (res.ok) {
-      showToast('Product added successfully!');
-      document.getElementById('product-form').reset();
-      document.getElementById('product-form').style.display = 'none';
-      fetchProducts();
-    } else {
-      showToast('Failed to add product!');
-    }
-  } catch (err) {
-    console.error(err);
-    showToast('Error occurred!');
-  }
-}
-
-async function fetchProducts() {
-  const response = await fetch(`${apiUrl}/products`);
-  const products = await response.json();
-  const tbody = document.getElementById('products-table').getElementsByTagName('tbody')[0];
-  tbody.innerHTML = '';
-  products.forEach(p => {
-    const row = tbody.insertRow();
-    row.innerHTML = `
-      <td>${p.name}</td>
-      <td>${p.desc}</td>
-      <td>${p.price}</td>
-      <td><button onclick="deleteProduct('${p._id}')">Delete</button></td>
-    `;
-  });
-}
-
-async function deleteProduct(productId) {
-  if (confirm('Are you sure you want to delete this product?')) {
-    const res = await fetch(`${apiUrl}/products/${productId}`, { method: 'DELETE' });
-    if (res.ok) {
-      showToast('Product deleted');
-      fetchProducts();
-    }
-  }
-}
-
-async function fetchUsers() {
-  const response = await fetch(`${apiUrl}/users`);
-  const users = await response.json();
-  const tbody = document.getElementById('users-table').getElementsByTagName('tbody')[0];
-  tbody.innerHTML = '';
-  users.forEach(user => {
-    const row = tbody.insertRow();
-    row.innerHTML = `
-      <td>${user.name}</td>
-      <td>${user.email}</td>
-      <td>
-        <button onclick="banUser('${user._id}')">Ban</button>
-        <button onclick="unbanUser('${user._id}')">Unban</button>
-        <button onclick="verifyUser('${user._id}')">Verify</button>
-        <button onclick="unverifyUser('${user._id}')">Unverify</button>
-        <button onclick="deleteUser('${user._id}')">Delete</button>
-      </td>
-    `;
-  });
-}
-
-async function sendMessage() {
-  const email = document.getElementById('message-email').value;
-  const content = document.getElementById('message-content').value;
-  if (!email || !content) {
-    showToast('Please provide email and message.');
-    return;
-  }
-
-  const response = await fetch(`${apiUrl}/send-message`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, content })
-  });
-
-  if (response.ok) {
-    showToast('Message sent!');
-    document.getElementById('message-email').value = '';
-    document.getElementById('message-content').value = '';
-  } else {
-    showToast('Failed to send message!');
-  }
-}
-
-async function banUser(userId) {
-  const res = await fetch(`${apiUrl}/users/${userId}/ban`, { method: 'PUT' });
-  if (res.ok) { showToast('User banned'); fetchUsers(); }
-}
-
-async function unbanUser(userId) {
-  const res = await fetch(`${apiUrl}/users/${userId}/unban`, { method: 'PUT' });
-  if (res.ok) { showToast('User unbanned'); fetchUsers(); }
-}
-
-async function verifyUser(userId) {
-  const res = await fetch(`${apiUrl}/users/${userId}/verify`, { method: 'PUT' });
-  if (res.ok) { showToast('User verified'); fetchUsers(); }
-}
-
-async function unverifyUser(userId) {
-  const res = await fetch(`${apiUrl}/users/${userId}/unverify`, { method: 'PUT' });
-  if (res.ok) { showToast('User unverified'); fetchUsers(); }
-}
-
-async function deleteUser(userId) {
-  if (confirm('Are you sure you want to delete this user?')) {
-    const res = await fetch(`${apiUrl}/users/${userId}`, { method: 'DELETE' });
-    if (res.ok) { showToast('User deleted'); fetchUsers(); }
-  }
-}
-
-fetchProducts();
-fetchUsers();
-</script>
-
-</body>
-</html>
+// Start server
+app.listen(PORT, () => {
+    console.log(`Server running on http://localhost:${PORT}`);
+});
