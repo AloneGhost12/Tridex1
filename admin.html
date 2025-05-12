@@ -1,203 +1,211 @@
- <!DOCTYPE html>
+ 
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Admin Panel</title>
-  <link rel="stylesheet" href="style.css">
+  <title>Admin Dashboard</title>
   <style>
-    /* Modal Styles */
-    .modal {
-      display: none;
-      position: fixed;
-      z-index: 1;
-      left: 0;
-      top: 0;
-      width: 100%;
-      height: 100%;
-      overflow: auto;
-      background-color: rgba(0, 0, 0, 0.4);
+    :root {
+      --bg-color: #ffffff;
+      --text-color: #000000;
+      --card-color: #f1f1f1;
     }
 
-    .modal-content {
-      background-color: #fefefe;
-      margin: 15% auto;
-      padding: 20px;
-      border: 1px solid #888;
-      width: 80%;
+    body.dark-mode {
+      --bg-color: #121212;
+      --text-color: #ffffff;
+      --card-color: #1e1e1e;
     }
 
-    .close {
-      color: #aaa;
-      float: right;
-      font-size: 28px;
-      font-weight: bold;
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
     }
 
-    .close:hover,
-    .close:focus {
-      color: black;
-      text-decoration: none;
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem;
+      background-color: var(--card-color);
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    .nav-buttons button, .mode-toggle {
+      margin: 0 0.5rem;
+      padding: 0.5rem 1rem;
+      border: none;
+      background-color: #007bff;
+      color: white;
+      border-radius: 5px;
       cursor: pointer;
     }
 
-    /* Loading Overlay */
-    #loading-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
+    .mode-toggle {
+      background-color: #555;
+    }
+
+    main {
+      padding: 2rem;
+    }
+
+    .section {
+      display: none;
+    }
+
+    .section.active {
+      display: block;
+    }
+
+    .card {
+      background-color: var(--card-color);
+      padding: 1rem;
+      border-radius: 10px;
+      margin-bottom: 1rem;
+    }
+
+    input, textarea {
       width: 100%;
-      height: 100%;
-      background-color: rgba(255, 255, 255, 0.8);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      z-index: 1000;
-      font-size: 24px;
+      padding: 0.5rem;
+      margin-bottom: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+
+    button[type="submit"] {
+      background-color: #28a745;
     }
   </style>
 </head>
 <body>
-
-  <!-- Loading Overlay -->
-  <div id="loading-overlay">Loading...</div>
-
-  <!-- User Detail Modal -->
-  <div id="user-detail-modal" class="modal">
-    <div class="modal-content">
-      <span id="close-user-detail" class="close">&times;</span>
-      <div id="user-detail-content"></div>
+  <header>
+    <div class="nav-buttons">
+      <button onclick="showSection('users')">Users</button>
+      <button onclick="showSection('messages')">Messages</button>
+      <button onclick="showSection('products')">Add Product</button>
     </div>
-  </div>
+    <button class="mode-toggle" onclick="toggleMode()">🌗 Mode</button>
+  </header>
 
-  <!-- User Table -->
-  <table id="user-table" border="1" style="width:100%; border-collapse:collapse;">
-    <thead>
-      <tr>
-        <th>Username</th>
-        <th>Email</th>
-        <th>Phone</th>
-        <th>Age</th>
-        <!-- Password removed for security -->
-        <th>Status</th>
-        <th>Actions</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
+  <main>
+    <section id="users" class="section active">
+      <div class="card">
+        <h2>User Management</h2>
+        <p>List and manage users here.</p>
+        <div id="user-list"></div>
+      </div>
+    </section>
+
+    <section id="messages" class="section">
+      <div class="card">
+        <h2>Send Message</h2>
+        <form id="message-form">
+          <input type="email" id="user-email" placeholder="User Email" required><br>
+          <textarea id="message" placeholder="Your message here..." rows="5" required></textarea><br>
+          <button type="submit">Send</button>
+        </form>
+      </div>
+    </section>
+
+    <section id="products" class="section">
+      <div class="card">
+        <h2>Add New Product</h2>
+        <form id="product-form">
+          <input type="text" id="product-name" placeholder="Product Name" required><br>
+          <input type="number" id="price" placeholder="Price" required><br>
+          <textarea id="description" placeholder="Description" rows="4"></textarea><br>
+          <input type="file" id="image" accept="image/*" required><br>
+          <input type="url" id="product-link" placeholder="Product Link (Optional)" /><br>
+          <button type="submit">Add Product</button>
+        </form>
+      </div>
+    </section>
+  </main>
 
   <script>
-    // Redirect if not logged in or not admin
-    if (!localStorage.getItem('token')) {
-      window.location.href = 'login.html';
-    }
-    if (localStorage.getItem('isAdmin') !== 'true') {
-      window.location.href = 'index.html';
+    function showSection(id) {
+      document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
     }
 
-    let users = [];
+    function toggleMode() {
+      document.body.classList.toggle('dark-mode');
+    }
 
-    async function fetchUsers() {
+    // Handle sending message
+    document.getElementById('message-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('user-email').value;
+      const message = document.getElementById('message').value;
+      try {
+        await fetch('https://tridex1.onrender.com/messages', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ email, message })
+        });
+        alert('Message sent successfully!');
+      } catch (error) {
+        alert('Failed to send message. Please try again later.');
+      }
+    });
+
+    // Handle adding product
+    document.getElementById('product-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const name = document.getElementById('product-name').value;
+      const price = document.getElementById('price').value;
+      const description = document.getElementById('description').value;
+      const image = document.getElementById('image').files[0];
+      const productLink = document.getElementById('product-link').value;
+
+      if (!image) {
+        alert('Please upload an image for the product.');
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('name', name);
+      formData.append('price', price);
+      formData.append('description', description);
+      formData.append('image', image);
+      formData.append('productLink', productLink);
+
+      try {
+        await fetch('https://tridex1.onrender.com/products', {
+          method: 'POST',
+          body: formData
+        });
+        alert('Product added successfully!');
+      } catch (error) {
+        alert('Failed to add product. Please try again later.');
+      }
+    });
+
+    // Load users and display them
+    async function loadUsers() {
       try {
         const res = await fetch('https://tridex1.onrender.com/users');
-        users = await res.json();
-        renderUsers();
-      } catch (e) {
-        alert('Failed to load users from database.');
-        users = [];
-        renderUsers();
+        const users = await res.json();
+        const userList = document.getElementById('user-list');
+        userList.innerHTML = '';
+        users.forEach(user => {
+          const userElement = document.createElement('div');
+          userElement.innerHTML = `<p>${user.username} (${user.email})</p>`;
+          userList.appendChild(userElement);
+        });
+      } catch (error) {
+        alert('Failed to load users.');
       }
     }
 
-    function showUserDetail(user) {
-      const modal = document.getElementById('user-detail-modal');
-      const content = document.getElementById('user-detail-content');
-      content.innerHTML = `
-        <p><strong>Username:</strong> ${user.username}</p>
-        <p><strong>Email:</strong> ${user.email}</p>
-        <p><strong>Phone:</strong> ${user.phone}</p>
-        <p><strong>Age:</strong> ${user.age}</p>
-        <p><strong>Status:</strong> ${user.banned ? 'Banned' : 'Active'}</p>
-        <p><strong>Verified:</strong> ${user.verified ? 'Yes' : 'No'}</p>
-      `;
-      modal.style.display = 'flex';
-    }
-
-    function renderUsers() {
-      const tbody = document.querySelector('#user-table tbody');
-      tbody.innerHTML = '';
-      users.forEach(user => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td class="username-link" style="color:#007bff; cursor:pointer; text-decoration:underline;">
-            ${user.username || ''} ${user.verified ? '<span title="Verified" style="color:#1da1f2;">&#10004;&#65039;</span>' : ''}
-          </td>
-          <td>${user.email || ''}</td>
-          <td>${user.phone || ''}</td>
-          <td>${user.age || ''}</td>
-          <td>${user.banned ? '<span style="color:red;">Banned</span>' : 'Active'}</td>
-          <td>
-            <button class="ban-btn"${user.banned ? ' style="display:none;"' : ''}>Ban</button>
-            <button class="unban-btn"${!user.banned ? ' style="display:none;"' : ''}>Unban</button>
-            <button class="delete-btn">Delete</button>
-            <button class="verify-btn"${user.verified ? ' style="display:none;"' : ''}>Verify</button>
-          </td>
-        `;
-        tr.querySelector('.username-link').onclick = () => showUserDetail(user);
-        tr.querySelector('.ban-btn').onclick = async () => {
-          if (confirm(`Ban ${user.username}?`)) {
-            try {
-              await fetch(`https://tridex1.onrender.com/users/${user._id}/ban`, { method: 'PUT' });
-              fetchUsers();
-            } catch (e) {
-              alert('Failed to ban user.');
-            }
-          }
-        };
-        tr.querySelector('.unban-btn').onclick = async () => {
-          if (confirm(`Unban ${user.username}?`)) {
-            try {
-              await fetch(`https://tridex1.onrender.com/users/${user._id}/unban`, { method: 'PUT' });
-              fetchUsers();
-            } catch (e) {
-              alert('Failed to unban user.');
-            }
-          }
-        };
-        tr.querySelector('.delete-btn').onclick = async () => {
-          if (confirm(`Delete ${user.username}?`)) {
-            try {
-              await fetch(`https://tridex1.onrender.com/users/${user._id}`, { method: 'DELETE' });
-              fetchUsers();
-            } catch (e) {
-              alert('Failed to delete user.');
-            }
-          }
-        };
-        tr.querySelector('.verify-btn').onclick = async () => {
-          if (confirm(`Verify ${user.username}?`)) {
-            try {
-              await fetch(`https://tridex1.onrender.com/users/${user._id}/verify`, { method: 'PUT' });
-              fetchUsers();
-            } catch (e) {
-              alert('Failed to verify user.');
-            }
-          }
-        };
-        tbody.appendChild(tr);
-      });
-    }
-
-    document.getElementById('close-user-detail').onclick = () => {
-      document.getElementById('user-detail-modal').style.display = 'none';
-    };
-
     window.onload = () => {
-      fetchUsers();
-      setTimeout(() => {
-        const overlay = document.getElementById('loading-overlay');
-        if (overlay) overlay.style.display = 'none';
-      }, 1000);
+      loadUsers();
     };
   </script>
 </body>
 </html>
+
