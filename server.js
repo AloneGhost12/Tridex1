@@ -1,3 +1,7 @@
+ // server.js
+
+require('dotenv').config();
+
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
@@ -10,12 +14,36 @@ const User = require('./models/User'); // Make sure the path is correct
 const Product = require('./models/Product');
 const Announcement = require('./models/Announcement');
 
+// Cloudinary and Multer Storage for Cloudinary
+const cloudinary = require('cloudinary').v2;
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
+
+// Configure Cloudinary
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
+// Setup Multer Storage for Cloudinary
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: 'TridexUploads', // You can name this folder anything
+    allowed_formats: ['jpg', 'jpeg', 'png'],
+  },
+});
+
+const upload = multer({ storage });
+
+dotenv.config({ path: './demo.env' });
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(cors({
-  origin: ['https://aloneghost12.github.io'], // Allow only your frontend domain
+  origin: ['http://127.0.0.1:5500', 'https://aloneghost12.github.io'], // Allow only your frontend domain
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true  // Enable if you plan to send cookies/auth headers
@@ -23,14 +51,6 @@ app.use(cors({
 
 app.use('/uploads', express.static('uploads'));
 
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, 'uploads/'),
-  filename: (req, file, cb) => cb(null, Date.now() + path.extname(file.originalname)),
-});
-
-const upload = multer({ storage });
-
-// Expose the uploads folder
 app.use(express.json({ limit: '50mb' })); // For parsing application/json
 app.use(express.urlencoded({ limit: '50mb', extended: true })); // For parsing application/x-www-form-urlencoded
 app.use(express.json());
@@ -50,6 +70,7 @@ app.get('/', (req, res) => {
 });
 
 // Your other routes...
+
 // Middleware to handle CORS preflight requests
 app.options('*', cors());
 
@@ -124,7 +145,6 @@ app.post('/login', async (req, res) => {
     }
 });
 
-
 // ========== USER MANAGEMENT ==========
 
 app.get('/users', async (req, res) => {
@@ -173,7 +193,6 @@ app.delete('/users/:id', async (req, res) => {
     }
 });
 
-
 // ========== PRODUCT ROUTES ==========
 
 app.get('/products', async (req, res) => {
@@ -185,47 +204,38 @@ app.get('/products', async (req, res) => {
     }
 });
 
- app.post('/products', upload.single('image'), async (req, res) => {
-  try {
-    const { name, price, desc } = req.body;
-    const imageUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
+app.post('/products', upload.single('image'), async (req, res) => {
+    try {
+        const { name, price, desc } = req.body;
+        const imageUrl = req.file.path;  // This is the Cloudinary URL
 
-    const newProduct = new Product({
-      name,
-      price,
-      desc,
-      image: imageUrl
-    });
+        const newProduct = new Product({
+            name,
+            price,
+            desc,
+            image: imageUrl // Store Cloudinary URL in the database
+        });
 
-    await newProduct.save();
-    res.status(201).json({ message: 'Product added', product: newProduct });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Error adding product' });
-  }
+        await newProduct.save();
+        res.status(201).json({ message: 'Product added', product: newProduct });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Error adding product' });
+    }
 });
+
 app.get('/products/:id', async (req, res) => {
     try {
         const product = await Product.findById(req.params.id);
         if (!product) {
             return res.status(404).json({ message: 'Product not found' });
         }
-        res.json(product);
+        res.json(product); // The product contains the Cloudinary image URL
     } catch (err) {
         res.status(500).json({ message: 'Error fetching product' });
     }
 });
-app.get('/products/:id/image', async (req, res) => {
-    try {
-        const product = await Product.findById(req.params.id);
-        if (!product) {
-            return res.status(404).json({ message: 'Product not found' });
-        }
-        res.json({ image: product.image });
-    } catch (err) {
-        res.status(500).json({ message: 'Error fetching product image' });
-    }
-});
+
 app.put('/products/:id', async (req, res) => {
     try {
         const { name, image, desc, price } = req.body;
@@ -244,7 +254,6 @@ app.delete('/products/:id', async (req, res) => {
         res.status(500).json({ message: 'Error deleting product' });
     }
 });
-
 
 // ========== ANNOUNCEMENT ROUTES ==========
 
@@ -279,5 +288,5 @@ app.delete('/announcements/:id', async (req, res) => {
 
 // Start server
 app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+    console.log(`Server is running on port ${PORT}`);
 });
