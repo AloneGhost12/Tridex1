@@ -1,299 +1,346 @@
  <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Panel</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #f4f4f4;
-        }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin Panel</title>
+  <style>
+    /* existing styles... */
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f4f4f4;
+    }
 
-        header {
-            background-color: #333;
-            color: white;
-            text-align: center;
-            padding: 10px 0;
-        }
+    header {
+      background-color: #333;
+      color: white;
+      text-align: center;
+      padding: 10px 0;
+    }
 
-        nav {
-            background-color: #222;
-            padding: 10px;
-            display: flex;
-            justify-content: center;
-        }
+    nav {
+      background-color: #222;
+      padding: 10px;
+      display: flex;
+      justify-content: center;
+    }
 
-        nav a {
-            color: white;
-            text-decoration: none;
-            padding: 10px 20px;
-            margin: 0 10px;
-        }
+    nav a {
+      color: white;
+      text-decoration: none;
+      padding: 10px 20px;
+      margin: 0 10px;
+    }
 
-        nav a:hover {
-            background-color: #444;
-        }
+    nav a:hover {
+      background-color: #444;
+    }
 
-        .container {
-            display: flex;
-            justify-content: space-between;
-            padding: 20px;
-        }
+    .container {
+      display: flex;
+      justify-content: space-between;
+      padding: 20px;
+    }
 
-        .section {
-            width: 48%;
-            background-color: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            display: none; /* Initially hidden */
-        }
+    .section {
+      width: 48%;
+      background-color: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      display: none;
+    }
 
-        .section h2 {
-            margin-bottom: 20px;
-        }
+    .section h2 {
+      margin-bottom: 20px;
+    }
 
-        table {
-            width: 100%;
-            margin-bottom: 20px;
-            border-collapse: collapse;
-        }
+    table {
+      width: 100%;
+      margin-bottom: 20px;
+      border-collapse: collapse;
+    }
 
-        table, th, td {
-            border: 1px solid #ddd;
-            text-align: left;
-        }
+    table, th, td {
+      border: 1px solid #ddd;
+      text-align: left;
+    }
 
-        th, td {
-            padding: 10px;
-        }
+    th, td {
+      padding: 10px;
+    }
 
-        button {
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            cursor: pointer;
-            border-radius: 4px;
-        }
+    button {
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      cursor: pointer;
+      border-radius: 4px;
+    }
 
-        button:hover {
-            background-color: #45a049;
-        }
+    button:hover {
+      background-color: #45a049;
+    }
 
-        .message-box {
-            display: flex;
-            flex-direction: column;
-            margin-top: 20px;
-        }
+    .message-box {
+      display: flex;
+      flex-direction: column;
+      margin-top: 20px;
+    }
 
-        .message-box input, .message-box textarea {
-            padding: 10px;
-            margin-bottom: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-        }
+    .message-box input, .message-box textarea {
+      padding: 10px;
+      margin-bottom: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
 
-        .message-box button {
-            align-self: flex-start;
-            background-color: #007BFF;
-        }
-    </style>
+    .message-box button {
+      align-self: flex-start;
+      background-color: #007BFF;
+    }
+
+    .product-form {
+      margin-top: 20px;
+      display: none;
+      flex-direction: column;
+    }
+
+    .product-form input {
+      padding: 10px;
+      margin-bottom: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+
+    #toast {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      background-color: #333;
+      color: #fff;
+      padding: 12px 20px;
+      border-radius: 6px;
+      display: none;
+      z-index: 9999;
+    }
+  </style>
 </head>
 <body>
 
 <header>
-    <h1>Admin Panel</h1>
+  <h1>Admin Panel</h1>
 </header>
 
 <nav>
-    <a href="javascript:void(0);" onclick="showSection('products-section')">Products</a>
-    <a href="javascript:void(0);" onclick="showSection('users-section')">Users</a>
-    <a href="javascript:void(0);" onclick="showSection('message-section')">Send Message</a>
+  <a href="javascript:void(0);" onclick="showSection('products-section')">Products</a>
+  <a href="javascript:void(0);" onclick="showSection('users-section')">Users</a>
+  <a href="javascript:void(0);" onclick="showSection('message-section')">Send Message</a>
 </nav>
 
 <div class="container">
-    <!-- Product Management Section -->
-    <div class="section" id="products-section">
-        <h2>Product Management</h2>
-        <button onclick="addProduct()">Add Product</button>
-        <table id="products-table">
-            <thead>
-                <tr>
-                    <th>Name</th>
-                    <th>Description</th>
-                    <th>Price</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                <!-- Dynamic Product Data will be injected here -->
-            </tbody>
-        </table>
+  <!-- Product Management Section -->
+  <div class="section" id="products-section">
+    <h2>Product Management</h2>
+    <button onclick="toggleProductForm()">Add Product</button>
+
+    <div class="product-form" id="product-form">
+      <input type="text" id="product-name" placeholder="Product Name" />
+      <input type="text" id="product-desc" placeholder="Description" />
+      <input type="number" id="product-price" placeholder="Price" />
+      <input type="text" id="product-image" placeholder="Image URL (optional)" />
+      <button onclick="submitProduct()">Submit Product</button>
     </div>
 
-    <!-- User Management Section -->
-    <div class="section" id="users-section">
-        <h2>User Management</h2>
-        <table id="users-table">
-            <thead>
-                <tr>
-                    <th>Name</th>
-                    <th>Email</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                <!-- Dynamic User Data will be injected here -->
-            </tbody>
-        </table>
-    </div>
+    <table id="products-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Description</th>
+          <th>Price</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
 
-    <!-- Message Sending Section -->
-    <div class="section" id="message-section">
-        <h2>Send Message to Users</h2>
-        <div class="message-box">
-            <input type="email" id="message-email" placeholder="User's Email">
-            <textarea id="message-content" rows="5" placeholder="Enter your message..."></textarea>
-            <button onclick="sendMessage()">Send Message</button>
-        </div>
+  <!-- User Management Section -->
+  <div class="section" id="users-section">
+    <h2>User Management</h2>
+    <table id="users-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <!-- Message Sending Section -->
+  <div class="section" id="message-section">
+    <h2>Send Message to Users</h2>
+    <div class="message-box">
+      <input type="email" id="message-email" placeholder="User's Email">
+      <textarea id="message-content" rows="5" placeholder="Enter your message..."></textarea>
+      <button onclick="sendMessage()">Send Message</button>
     </div>
+  </div>
 </div>
 
+<div id="toast"></div>
+
 <script>
-// Admin Panel JavaScript Functionality
 const apiUrl = 'https://tridex1.onrender.com';
 
 function showSection(sectionId) {
-    // Hide all sections
-    const sections = document.querySelectorAll('.section');
-    sections.forEach(section => {
-        section.style.display = 'none';
+  document.querySelectorAll('.section').forEach(sec => sec.style.display = 'none');
+  const sec = document.getElementById(sectionId);
+  if (sec) sec.style.display = 'block';
+}
+
+function showToast(msg) {
+  const toast = document.getElementById('toast');
+  toast.innerText = msg;
+  toast.style.display = 'block';
+  setTimeout(() => toast.style.display = 'none', 3000);
+}
+
+function toggleProductForm() {
+  const form = document.getElementById('product-form');
+  form.style.display = form.style.display === 'none' || form.style.display === '' ? 'flex' : 'none';
+}
+
+async function submitProduct() {
+  const name = document.getElementById('product-name').value.trim();
+  const desc = document.getElementById('product-desc').value.trim();
+  const price = document.getElementById('product-price').value.trim();
+  const image = document.getElementById('product-image').value.trim();
+
+  if (!name || !desc || !price) {
+    showToast('Please fill all required fields!');
+    return;
+  }
+
+  try {
+    const res = await fetch(`${apiUrl}/products`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, desc, price, image })
     });
 
-    // Show the selected section
-    const selectedSection = document.getElementById(sectionId);
-    if (selectedSection) {
-        selectedSection.style.display = 'block';
+    if (res.ok) {
+      showToast('Product added successfully!');
+      document.getElementById('product-form').reset();
+      document.getElementById('product-form').style.display = 'none';
+      fetchProducts();
+    } else {
+      showToast('Failed to add product!');
     }
+  } catch (err) {
+    console.error(err);
+    showToast('Error occurred!');
+  }
 }
 
 async function fetchProducts() {
-    const response = await fetch(`${apiUrl}/products`);
-    const products = await response.json();
-    const productsTableBody = document.getElementById('products-table').getElementsByTagName('tbody')[0];
-    productsTableBody.innerHTML = '';
-    products.forEach(product => {
-        const row = productsTableBody.insertRow();
-        row.innerHTML = `
-            <td>${product.name}</td>
-            <td>${product.desc}</td>
-            <td>${product.price}</td>
-            <td>
-                <button onclick="deleteProduct('${product._id}')">Delete</button>
-            </td>
-        `;
-    });
-}
-
-async function fetchUsers() {
-    const response = await fetch(`${apiUrl}/users`);
-    const users = await response.json();
-    const usersTableBody = document.getElementById('users-table').getElementsByTagName('tbody')[0];
-    usersTableBody.innerHTML = '';
-    users.forEach(user => {
-        const row = usersTableBody.insertRow();
-        row.innerHTML = `
-            <td>${user.name}</td>
-            <td>${user.email}</td>
-            <td>
-                <button onclick="banUser('${user._id}')">Ban</button>
-                <button onclick="unbanUser('${user._id}')">Unban</button>
-                <button onclick="verifyUser('${user._id}')">Verify</button>
-                <button onclick="unverifyUser('${user._id}')">Unverify</button>
-                <button onclick="deleteUser('${user._id}')">Delete</button>
-            </td>
-        `;
-    });
-}
-
-async function sendMessage() {
-    const email = document.getElementById('message-email').value;
-    const content = document.getElementById('message-content').value;
-
-    if (!email || !content) {
-        alert('Please provide an email and a message!');
-        return;
-    }
-
-    const response = await fetch(`${apiUrl}/send-message`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, content })
-    });
-
-    if (response.ok) {
-        alert('Message sent!');
-        document.getElementById('message-email').value = '';
-        document.getElementById('message-content').value = '';
-    } else {
-        alert('Failed to send message!');
-    }
-}
-
-async function banUser(userId) {
-    const response = await fetch(`${apiUrl}/users/${userId}/ban`, { method: 'PUT' });
-    if (response.ok) {
-        alert('User banned');
-        fetchUsers();
-    }
-}
-
-async function unbanUser(userId) {
-    const response = await fetch(`${apiUrl}/users/${userId}/unban`, { method: 'PUT' });
-    if (response.ok) {
-        alert('User unbanned');
-        fetchUsers();
-    }
-}
-
-async function verifyUser(userId) {
-    const response = await fetch(`${apiUrl}/users/${userId}/verify`, { method: 'PUT' });
-    if (response.ok) {
-        alert('User verified');
-        fetchUsers();
-    }
-}
-
-async function unverifyUser(userId) {
-    const response = await fetch(`${apiUrl}/users/${userId}/unverify`, { method: 'PUT' });
-    if (response.ok) {
-        alert('User unverified');
-        fetchUsers();
-    }
-}
-
-async function deleteUser(userId) {
-    const response = await fetch(`${apiUrl}/users/${userId}`, { method: 'DELETE' });
-    if (response.ok) {
-        alert('User deleted');
-        fetchUsers();
-    }
+  const response = await fetch(`${apiUrl}/products`);
+  const products = await response.json();
+  const tbody = document.getElementById('products-table').getElementsByTagName('tbody')[0];
+  tbody.innerHTML = '';
+  products.forEach(p => {
+    const row = tbody.insertRow();
+    row.innerHTML = `
+      <td>${p.name}</td>
+      <td>${p.desc}</td>
+      <td>${p.price}</td>
+      <td><button onclick="deleteProduct('${p._id}')">Delete</button></td>
+    `;
+  });
 }
 
 async function deleteProduct(productId) {
-    const response = await fetch(`${apiUrl}/products/${productId}`, { method: 'DELETE' });
-    if (response.ok) {
-        alert('Product deleted');
-        fetchProducts();
-    }
+  const res = await fetch(`${apiUrl}/products/${productId}`, { method: 'DELETE' });
+  if (res.ok) {
+    showToast('Product deleted');
+    fetchProducts();
+  }
 }
 
-async function addProduct() {
-    alert("Product addition feature coming soon!");
+async function fetchUsers() {
+  const response = await fetch(`${apiUrl}/users`);
+  const users = await response.json();
+  const tbody = document.getElementById('users-table').getElementsByTagName('tbody')[0];
+  tbody.innerHTML = '';
+  users.forEach(user => {
+    const row = tbody.insertRow();
+    row.innerHTML = `
+      <td>${user.name}</td>
+      <td>${user.email}</td>
+      <td>
+        <button onclick="banUser('${user._id}')">Ban</button>
+        <button onclick="unbanUser('${user._id}')">Unban</button>
+        <button onclick="verifyUser('${user._id}')">Verify</button>
+        <button onclick="unverifyUser('${user._id}')">Unverify</button>
+        <button onclick="deleteUser('${user._id}')">Delete</button>
+      </td>
+    `;
+  });
+}
+
+async function sendMessage() {
+  const email = document.getElementById('message-email').value;
+  const content = document.getElementById('message-content').value;
+  if (!email || !content) {
+    showToast('Please provide email and message.');
+    return;
+  }
+
+  const response = await fetch(`${apiUrl}/send-message`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, content })
+  });
+
+  if (response.ok) {
+    showToast('Message sent!');
+    document.getElementById('message-email').value = '';
+    document.getElementById('message-content').value = '';
+  } else {
+    showToast('Failed to send message!');
+  }
+}
+
+async function banUser(userId) {
+  const res = await fetch(`${apiUrl}/users/${userId}/ban`, { method: 'PUT' });
+  if (res.ok) { showToast('User banned'); fetchUsers(); }
+}
+
+async function unbanUser(userId) {
+  const res = await fetch(`${apiUrl}/users/${userId}/unban`, { method: 'PUT' });
+  if (res.ok) { showToast('User unbanned'); fetchUsers(); }
+}
+
+async function verifyUser(userId) {
+  const res = await fetch(`${apiUrl}/users/${userId}/verify`, { method: 'PUT' });
+  if (res.ok) { showToast('User verified'); fetchUsers(); }
+}
+
+async function unverifyUser(userId) {
+  const res = await fetch(`${apiUrl}/users/${userId}/unverify`, { method: 'PUT' });
+  if (res.ok) { showToast('User unverified'); fetchUsers(); }
+}
+
+async function deleteUser(userId) {
+  const res = await fetch(`${apiUrl}/users/${userId}`, { method: 'DELETE' });
+  if (res.ok) { showToast('User deleted'); fetchUsers(); }
 }
 
 fetchProducts();
