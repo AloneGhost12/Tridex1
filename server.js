@@ -1,4 +1,4 @@
-const express = require('express');
+ const express = require('express');
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
 const cors = require('cors');
@@ -118,8 +118,8 @@ app.get('/users', async (req, res) => {
 
 app.put('/users/:id/ban', async (req, res) => {
     try {
-        await User.findByIdAndUpdate(req.params.id, { banned: true });
-        res.json({ message: 'User banned' });
+        const updatedUser = await User.findByIdAndUpdate(req.params.id, { banned: true }, { new: true });
+        res.json({ message: 'User banned', user: updatedUser });
     } catch (err) {
         res.status(500).json({ message: 'Error banning user' });
     }
@@ -127,19 +127,30 @@ app.put('/users/:id/ban', async (req, res) => {
 
 app.put('/users/:id/unban', async (req, res) => {
     try {
-        await User.findByIdAndUpdate(req.params.id, { banned: false });
-        res.json({ message: 'User unbanned' });
+        const updatedUser = await User.findByIdAndUpdate(req.params.id, { banned: false }, { new: true });
+        res.json({ message: 'User unbanned', user: updatedUser });
     } catch (err) {
         res.status(500).json({ message: 'Error unbanning user' });
     }
 });
 
+// Verify User
 app.put('/users/:id/verify', async (req, res) => {
     try {
-        await User.findByIdAndUpdate(req.params.id, { verified: true });
-        res.json({ message: 'User verified' });
+        const updatedUser = await User.findByIdAndUpdate(req.params.id, { verified: true }, { new: true });
+        res.json({ message: 'User verified', user: updatedUser });
     } catch (err) {
         res.status(500).json({ message: 'Error verifying user' });
+    }
+});
+
+// Unverify User
+app.put('/users/:id/unverify', async (req, res) => {
+    try {
+        const updatedUser = await User.findByIdAndUpdate(req.params.id, { verified: false }, { new: true });
+        res.json({ message: 'User unverified', user: updatedUser });
+    } catch (err) {
+        res.status(500).json({ message: 'Error un-verifying user' });
     }
 });
 
