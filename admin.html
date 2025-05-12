@@ -165,9 +165,11 @@
     async function fetchUsers() {
       try {
         const res = await fetch('https://tridex1.onrender.com/users');
+        if (!res.ok) throw new Error('Failed to fetch users.');
         users = await res.json();
         renderUsers();
       } catch (e) {
+        console.error(e);
         alert('Failed to load users.');
         users = [];
         renderUsers();
@@ -186,48 +188,36 @@
           <td>${user.age}</td>
           <td>${user.banned ? 'Banned' : 'Active'}</td>
           <td>
-            <button onclick="banUser('${user._id}')">${user.banned ? 'Unban' : 'Ban'}</button>
+            <button onclick="toggleUserStatus('${user._id}', 'ban')">${user.banned ? 'Unban' : 'Ban'}</button>
             <button onclick="deleteUser('${user._id}')">Delete</button>
-            <button onclick="verifyUser('${user._id}')">${user.verified ? 'Unverify' : 'Verify'}</button>
+            <button onclick="toggleUserStatus('${user._id}', 'verify')">${user.verified ? 'Unverify' : 'Verify'}</button>
           </td>
         `;
         tbody.appendChild(tr);
       });
     }
 
-    async function banUser(userId) {
+    async function toggleUserStatus(userId, action) {
       try {
-        await fetch(`https://tridex1.onrender.com/users/${userId}/ban`, { method: 'PUT' });
+        const method = action === 'ban' ? 'PUT' : 'PUT';
+        const url = `https://tridex1.onrender.com/users/${userId}/${action}`;
+        const res = await fetch(url, { method });
+        if (!res.ok) throw new Error(`Failed to ${action} user.`);
         fetchUsers();
       } catch (e) {
-        alert('Failed to ban user.');
-      }
-    }
-
-    async function unbanUser(userId) {
-      try {
-        await fetch(`https://tridex1.onrender.com/users/${userId}/unban`, { method: 'PUT' });
-        fetchUsers();
-      } catch (e) {
-        alert('Failed to unban user.');
+        console.error(e);
+        alert(`Failed to ${action} user.`);
       }
     }
 
     async function deleteUser(userId) {
       try {
-        await fetch(`https://tridex1.onrender.com/users/${userId}`, { method: 'DELETE' });
+        const res = await fetch(`https://tridex1.onrender.com/users/${userId}`, { method: 'DELETE' });
+        if (!res.ok) throw new Error('Failed to delete user.');
         fetchUsers();
       } catch (e) {
+        console.error(e);
         alert('Failed to delete user.');
-      }
-    }
-
-    async function verifyUser(userId) {
-      try {
-        await fetch(`https://tridex1.onrender.com/users/${userId}/verify`, { method: 'PUT' });
-        fetchUsers();
-      } catch (e) {
-        alert('Failed to verify user.');
       }
     }
 
