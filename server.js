@@ -14,17 +14,14 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Middleware
- const cors = require('cors');
-
 app.use(cors({
   origin: ['https://aloneghost12.github.io'], // Allow only your frontend domain
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true  // Enable if you plan to send cookies/auth headers
 }));
+
 app.use('/uploads', express.static('uploads'));
-const multer = require('multer');
-const path = require('path');
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, 'uploads/'),
@@ -32,11 +29,13 @@ const storage = multer.diskStorage({
 });
 
 const upload = multer({ storage });
- // Expose the uploads folder
+
+// Expose the uploads folder
 app.use(express.json({ limit: '50mb' })); // For parsing application/json
 app.use(express.urlencoded({ limit: '50mb', extended: true })); // For parsing application/x-www-form-urlencoded
 app.use(express.json());
 app.use(express.urlencoded({ extended: true })); // For parsing application/x-www-form-urlencoded
+
 // MongoDB Connection
 mongoose.connect('mongodb+srv://admin:admin123@cluster0.g3sy76o.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0', {
     useNewUrlParser: true,
@@ -50,6 +49,9 @@ app.get('/', (req, res) => {
     res.send('Welcome to Tridex API!');
 });
 
+// Your other routes...
+// Middleware to handle CORS preflight requests
+app.options('*', cors());
 
 // ========== AUTH ROUTES ==========
 
