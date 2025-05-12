@@ -414,7 +414,10 @@ document.getElementById('popup-logout-yes').onclick = function() {
         }
         async function fetchAndRenderProducts(filter = "") {
             try {
-                const res = await fetch('http://localhost:3000/products');
+                const res = await fetch('https://tridex1.onrender.com/products');
+                if (!res.ok) {
+                    throw new Error('Network response was not ok');
+                }
                 let products = await res.json();
                 const filtered = products.filter(product =>
                     !filter ||
