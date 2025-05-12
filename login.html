@@ -160,6 +160,7 @@
                 });
 
                 const result = await res.json();
+                console.log(result);  // Check if the result is correct
 
                 if (res.ok && result.token) {
                     // Store token and user role in localStorage
@@ -168,9 +169,9 @@
                     
                     // Redirect user based on role
                     if (result.isAdmin) {
-                        window.location.href = '#admin'; // Admin page (this could be dynamically loaded content)
+                        window.location.href = 'admin.html'; // Admin page (you can change this to your desired path)
                     } else {
-                        window.location.href = '#user'; // User page (this could be dynamically loaded content)
+                        window.location.href = 'index.html'; // User page (you can change this to your desired path)
                     }
                 } else {
                     document.getElementById('login-error').style.display = 'block';
