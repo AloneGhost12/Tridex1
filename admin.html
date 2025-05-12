@@ -49,6 +49,7 @@
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            display: none; /* Initially hidden */
         }
 
         .section h2 {
@@ -109,16 +110,16 @@
 </header>
 
 <nav>
-    <a href="#products-section">Products</a>
-    <a href="#users-section">Users</a>
-    <a href="#message-section">Send Message</a>
+    <a href="javascript:void(0);" onclick="showSection('products-section')">Products</a>
+    <a href="javascript:void(0);" onclick="showSection('users-section')">Users</a>
+    <a href="javascript:void(0);" onclick="showSection('message-section')">Send Message</a>
 </nav>
 
 <div class="container">
     <!-- Product Management Section -->
     <div class="section" id="products-section">
         <h2>Product Management</h2>
-        <button onclick="openProductModal()">Add Product</button>
+        <button onclick="addProduct()">Add Product</button>
         <table id="products-table">
             <thead>
                 <tr>
@@ -165,6 +166,20 @@
 <script>
 // Admin Panel JavaScript Functionality
 const apiUrl = 'https://tridex1.onrender.com';
+
+function showSection(sectionId) {
+    // Hide all sections
+    const sections = document.querySelectorAll('.section');
+    sections.forEach(section => {
+        section.style.display = 'none';
+    });
+
+    // Show the selected section
+    const selectedSection = document.getElementById(sectionId);
+    if (selectedSection) {
+        selectedSection.style.display = 'block';
+    }
+}
 
 async function fetchProducts() {
     const response = await fetch(`${apiUrl}/products`);
@@ -275,6 +290,10 @@ async function deleteProduct(productId) {
         alert('Product deleted');
         fetchProducts();
     }
+}
+
+async function addProduct() {
+    alert("Product addition feature coming soon!");
 }
 
 fetchProducts();
