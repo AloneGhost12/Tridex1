@@ -70,7 +70,7 @@
 
     async function fetchUsers() {
       try {
-        const res = await fetch('https://tridex1.onrender.com/user');
+        const res = await fetch('https://tridex1.onrender.com/users');
         users = await res.json();
         renderUsers();
       } catch (e) {
