@@ -1,224 +1,248 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>User Authentication</title>
-    <style>
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        /* Loading Overlay */
-        #loading-overlay {
-            display: flex;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            background: rgba(255, 255, 255, 0.7);
-            z-index: 99999;
-            align-items: center;
-            justify-content: center;
-        }
-        #loading-overlay div {
-            border: 6px solid #f3f3f3;
-            border-top: 6px solid #007bff;
-            border-radius: 50%;
-            width: 48px;
-            height: 48px;
-            animation: spin 1s linear infinite;
-        }
-
-        /* Login Container */
-        .login-container {
-            max-width: 400px;
-            margin: 100px auto;
-            padding: 20px;
-            border-radius: 8px;
-            background-color: #fff;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        }
-
-        .login-container h2 {
-            text-align: center;
-        }
-
-        .login-container label {
-            display: block;
-            margin-bottom: 8px;
-        }
-
-        .login-container input {
-            width: 100%;
-            padding: 10px;
-            margin-bottom: 10px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-        }
-
-        .login-container button {
-            width: 100%;
-            padding: 10px;
-            background-color: #007bff;
-            color: #fff;
-            border: none;
-            border-radius: 4px;
-        }
-
-        .login-container button:hover {
-            background-color: #0056b3;
-        }
-
-        .login-container .signup-btn {
-            width: 100%;
-            padding: 10px;
-            background-color: #28a745;
-            color: #fff;
-            border: none;
-            border-radius: 4px;
-        }
-
-        /* Error message */
-        #login-error {
-            color: red;
-            margin-top: 10px;
-            display: none;
-        }
-
-        /* Forgot Password link */
-        #forgot-password-link {
-            display: block;
-            margin-top: 10px;
-            text-align: right;
-            color: #007bff;
-            text-decoration: underline;
-            cursor: pointer;
-        }
-        
-        /* Password visibility icon */
-        #toggle-login-password {
-            position: absolute;
-            right: 12px;
-            top: 50%;
-            transform: translateY(-50%);
-            cursor: pointer;
-            font-size: 1.1em;
-            color: #888;
-        }
-    </style>
+    <title>Login Page</title>
+    <link rel="stylesheet" href="auth.css">
 </head>
 <body>
     <!-- Loading animation overlay -->
-    <div id="loading-overlay" style="display:none;">
-        <div></div>
+    <div id="loading-overlay" style="display:flex; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(255,255,255,0.7); z-index:99999; align-items:center; justify-content:center;">
+        <div style="border:6px solid #f3f3f3; border-top:6px solid #007bff; border-radius:50%; width:48px; height:48px; animation:spin 1s linear infinite;"></div>
     </div>
-
-    <!-- Main login form -->
+    <style>
+        @keyframes spin {
+            0% { transform: rotate(0deg);}
+            100% { transform: rotate(360deg);}
+        }
+    </style>
     <div class="login-container">
         <h2>Login</h2>
-        <form id="login-form" action="#">
+        <form id="login-form" action="index.html" method="get">
             <label for="username">Username</label>
             <input type="text" id="username" name="username" required placeholder="Username / Email / Phone Number">
-            
             <label for="password">Password</label>
-            <div style="display: flex; align-items: center; position: relative;">
-                <input type="password" id="password" name="password" required style="padding-right: 32px; flex: 1;">
-                <span id="toggle-login-password" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 1.1em; color: #888;">👁️</span>
+            <div style="display:flex; align-items:center; position:relative;">
+                <input type="password" id="password" name="password" required style="padding-right:32px; flex:1;">
+                <span id="toggle-login-password"
+                    style="position:absolute; right:12px; top:50%; transform:translateY(-50%); cursor:pointer; user-select:none; font-size:1.1em; color:#888;">
+                    👁️
+                </span>
             </div>
-
             <button type="submit">Login</button>
         </form>
-        <div id="login-error" style="color: red; margin-top: 10px; display: none;">
+        <div id="login-error" style="color:red; margin-top:10px; display:none;">
             Incorrect username or password.
         </div>
-        <a href="#" id="forgot-password-link" style="display: block; margin-top: 10px; text-align: right; color: #007bff; text-decoration: underline; cursor: pointer;">Forgot Password?</a>
+        <a href="#" id="forgot-password-link" style="display:block; margin-top:10px; text-align:right; color:#007bff; text-decoration:underline; cursor:pointer;">Forgot Password?</a>
         <a href="signup.html"><button class="signup-btn" type="button">Sign Up</button></a>
-    </div>
+        <div id="signup-form" style="display:none; margin-top:20px;">
+            <h2>Sign Up</h2>
+            <form id="signup-inner-form" action="#" method="post">
+                <label for="new-name">Full Name</label>
+                <input type="text" id="new-name" name="new-name" required placeholder="Your full name">
 
+                <label for="new-age">Age</label>
+                <input type="number" id="new-age" name="new-age" required min="13" max="120" placeholder="Your age">
+
+                <label for="new-gender">Gender</label>
+                <select id="new-gender" name="new-gender" required style="padding:10px 14px; margin-bottom:12px; border:1.5px solid #bdbdbd; border-radius:8px; font-size:1rem; background:#f9f9f9;">
+                    <option value="">Select gender</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Other">Other</option>
+                    <option value="Prefer not to say">Prefer not to say</option>
+                </select>
+
+                <label for="new-username">Username</label>
+                <input type="text" id="new-username" name="new-username" required placeholder="Choose a username">
+
+                <label for="new-email">Email</label>
+                <input type="email" id="new-email" name="new-email" required placeholder="Your email address">
+
+                <label for="new-phone">Phone</label>
+                <input type="tel" id="new-phone" name="new-phone" required placeholder="Your phone number">
+
+                <label for="new-password">Password</label>
+                <div style="display:flex; align-items:center; position:relative;">
+                    <input type="password" id="new-password" required style="padding-right:32px; flex:1;" placeholder="Choose a password">
+                    <span id="toggle-signup-password"
+                        style="position:absolute; right:12px; top:50%; transform:translateY(-50%); cursor:pointer; user-select:none; font-size:1.1em; color:#888;">
+                        👁️
+                    </span>
+                </div>
+                <button type="submit">Create Account</button>
+            </form>
+            <div id="signup-success" style="color:green; margin-top:10px; display:none;">Account created! Please login.</div>
+        </div>
+    </div>
     <script>
-        // Function to show/hide the loading overlay
-        function showLoading(isLoading) {
-            const overlay = document.getElementById('loading-overlay');
-            overlay.style.display = isLoading ? 'flex' : 'none';
+    // Show signup form when signup button is clicked
+    document.querySelector('.signup-btn').addEventListener('click', function(e) {
+        e.preventDefault();
+        document.getElementById('signup-form').style.display = 'block';
+        // Scroll to the signup form
+        document.getElementById('signup-form').scrollIntoView({ behavior: 'smooth' });
+    });
+
+    document.getElementById('login-form').addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        // Hide any previous error messages
+        document.getElementById('login-error').style.display = 'none';
+
+        // Show loading indicator
+        showLoading();
+
+        const userInput = document.getElementById('username').value.trim();
+        const password = document.getElementById('password').value;
+
+        // Basic validation
+        if (!userInput || !password) {
+            document.getElementById('login-error').textContent = 'Please enter both username and password.';
+            document.getElementById('login-error').style.display = 'block';
+            hideLoading();
+            return;
         }
 
-        document.getElementById('login-form').addEventListener('submit', async function (e) {
-            e.preventDefault();
-            const userInput = document.getElementById('username').value.trim();
-            const password = document.getElementById('password').value;
-
-            showLoading(true); // Show loading overlay
-
-            try {
-              
-const res = await fetch('https://tridex1.onrender.com/login', {
-
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username: userInput, password })
-                });
-
-                const result = await res.json();
-                console.log(result);  // Check if the result is correct
-
-                if (res.ok && result.token) {
-                    // Store token and user role in localStorage
-                    localStorage.setItem('token', result.token);
-                    localStorage.setItem('isAdmin', result.isAdmin ? 'true' : 'false');
-                    
-                    // Redirect user based on role
-                    if (result.isAdmin) {
-                        window.location.href = 'admin.html'; // Admin page
-                    } else {
-                        window.location.href = 'index.html'; // User page
-                    }
-                } else {
-                    document.getElementById('login-error').textContent = result.message || 'Incorrect username or password.';
-                    document.getElementById('login-error').style.display = 'block';
-                }
-            } catch (err) {
-                console.error('Error:', err); // Log any network or other errors
-                document.getElementById('login-error').style.display = 'block';
-            } finally {
-                showLoading(false); // Hide loading overlay
-            }
-        });
-
-        // Toggle password visibility
-        document.getElementById('toggle-login-password').addEventListener('click', function () {
-            const pwd = document.getElementById('password');
-            if (pwd.type === 'password') {
-                pwd.type = 'text';
-                this.textContent = '🙈';
-            } else {
-                pwd.type = 'password';
-                this.textContent = '👁️';
-            }
-        });
-
-        // Forgot password link
-        document.getElementById('forgot-password-link').onclick = function (e) {
-            e.preventDefault();
-            window.location.href = '#forgot-password'; // Link to forgot password page
-        };
-
-        // Check if user is logged in when page loads
-        document.addEventListener('DOMContentLoaded', () => {
-            const token = localStorage.getItem('token');
-            const isAdmin = localStorage.getItem('isAdmin');
-            
-            if (token) {
-                // Redirect based on role if the user is already logged in
-                if (isAdmin === 'true') {
+        try {
+            const res = await fetch('https://tridex1.onrender.com/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: userInput, password })
+            });
+            const result = await res.json();
+            if (res.ok && result.token) {
+                localStorage.setItem('token', result.token);
+                // Store isAdmin as a string for consistent checking
+                localStorage.setItem('isAdmin', result.isAdmin ? 'true' : 'false');
+                // Optionally, check if user is admin and redirect accordingly
+                if (result.isAdmin) {
                     window.location.href = 'admin.html';
                 } else {
                     window.location.href = 'index.html';
                 }
+            } else {
+                document.getElementById('login-error').textContent = result.message || 'Incorrect username or password.';
+                document.getElementById('login-error').style.display = 'block';
             }
-        });
+        } catch (err) {
+            console.error('Login error:', err);
+            document.getElementById('login-error').textContent = 'Connection error. Please try again later.';
+            document.getElementById('login-error').style.display = 'block';
+        } finally {
+            // Hide loading indicator
+            hideLoading();
+        }
+    });
+
+    // Toggle password visibility for login
+    document.getElementById('toggle-login-password').addEventListener('click', function() {
+        const pwd = document.getElementById('password');
+        if (pwd.type === 'password') {
+            pwd.type = 'text';
+            this.textContent = '🙈';
+        } else {
+            pwd.type = 'password';
+            this.textContent = '👁️';
+        }
+    });
+
+    // Toggle password visibility for signup
+    document.getElementById('toggle-signup-password').addEventListener('click', function() {
+        const pwd = document.getElementById('new-password');
+        if (pwd.type === 'password') {
+            pwd.type = 'text';
+            this.textContent = '🙈';
+        } else {
+            pwd.type = 'password';
+            this.textContent = '👁️';
+        }
+    });
+
+    // Forgot password link
+    document.getElementById('forgot-password-link').onclick = function(e) {
+        e.preventDefault();
+        window.location.href = 'forgotpassword.html';
+    };
+
+    // Sign up logic for the embedded form
+    document.getElementById('signup-inner-form').onsubmit = async function(e) {
+        e.preventDefault();
+
+        // Show loading indicator
+        showLoading();
+
+        const name = document.getElementById('new-name').value.trim();
+        const age = document.getElementById('new-age').value.trim();
+        const gender = document.getElementById('new-gender').value;
+        const username = document.getElementById('new-username').value.trim();
+        const email = document.getElementById('new-email').value.trim();
+        const phone = document.getElementById('new-phone').value.trim();
+        const password = document.getElementById('new-password').value;
+
+        // Basic validation
+        if (!name || !age || !gender || !username || !email || !phone || !password) {
+            alert('Please fill in all required fields');
+            hideLoading();
+            return;
+        }
+
+        // Email validation
+        if (!email.includes('@') || !email.includes('.')) {
+            alert('Please enter a valid email address');
+            hideLoading();
+            return;
+        }
+
+        try {
+            const response = await fetch('https://tridex1.onrender.com/signup', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name,
+                    age: parseInt(age),
+                    gender,
+                    username,
+                    email,
+                    phone,
+                    password
+                })
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                document.getElementById('signup-success').textContent = 'Account created! Please login.';
+                document.getElementById('signup-success').style.display = 'block';
+                setTimeout(() => {
+                    document.getElementById('signup-form').style.display = 'none';
+                    document.getElementById('signup-success').style.display = 'none';
+                }, 2000);
+            } else {
+                alert(result.message || 'Signup failed. Please try again.');
+            }
+        } catch (err) {
+            console.error('Signup error:', err);
+            alert('Connection error. Please try again later.');
+        } finally {
+            hideLoading();
+        }
+    };
+
+    function showLoading() {
+        document.getElementById('loading-overlay').style.display = 'flex';
+    }
+    function hideLoading() {
+        document.getElementById('loading-overlay').style.display = 'none';
+    }
+    window.addEventListener('load', function() {
+        hideLoading();
+    });
+    window.addEventListener('beforeunload', function() {
+        showLoading();
+    });
     </script>
 </body>
 </html>
