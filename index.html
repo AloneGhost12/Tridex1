@@ -264,7 +264,7 @@
         </div>
     </div>
     <!-- Ban popup for banned users -->
-    <div id="ban-message" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.8); z-index:2000; align-items:center; justify-content:center;">
+    <div id="ban-message" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.8); z-index:999999; align-items:center; justify-content:center;">
         <div style="background:#fff; padding:32px 24px; border-radius:8px; box-shadow:0 2px 12px rgba(0,0,0,0.15); min-width:320px; max-width:90%; text-align:center;">
             <div style="margin-bottom:10px; font-size:3em; color:#d32f2f;">⚠️</div>
             <h2 style="margin-bottom:10px; color:#d32f2f; font-size:1.5em;">Account Banned</h2>
@@ -273,6 +273,20 @@
             <button id="ban-ok-btn" style="padding:10px 24px; background:#dc3545; color:#fff; border:none; border-radius:5px; font-size:1rem; cursor:pointer; font-weight:bold; transition:all 0.2s ease;">OK</button>
         </div>
     </div>
+
+    <script>
+        // Add click handler for the ban message OK button
+        document.getElementById('ban-ok-btn').addEventListener('click', function() {
+            // Clear all login data
+            localStorage.removeItem('token');
+            localStorage.removeItem('isLoggedIn');
+            localStorage.removeItem('username');
+            localStorage.removeItem('currentUser');
+
+            // Redirect to login page with banned parameter
+            window.location.href = 'login.html?banned=true';
+        });
+    </script>
     <!-- Mailbox Modal -->
     <div id="mailbox-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.3); z-index:3000; align-items:center; justify-content:center;">
         <div style="background:#fff; padding:32px 24px; border-radius:8px; box-shadow:0 2px 12px rgba(0,0,0,0.15); min-width:320px; max-width:90vw;">
