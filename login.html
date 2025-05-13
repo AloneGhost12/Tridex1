@@ -89,7 +89,18 @@
     // Check if the server is running
     async function checkServerStatus() {
         try {
-            const response = await fetch('https://tridex1.onrender.com/', { method: 'GET' });
+            // Add timeout to prevent hanging requests
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+
+            const response = await fetch('https://tridex1.onrender.com/', {
+                method: 'GET',
+                signal: controller.signal
+            });
+
+            // Clear the timeout if the request completes
+            clearTimeout(timeoutId);
+
             console.log('Server status check:', response.status);
             if (response.ok) {
                 console.log('Server is running');
@@ -108,16 +119,8 @@
     checkServerStatus().then(isRunning => {
         if (!isRunning) {
             document.getElementById('login-error').textContent =
-                'Server appears to be offline. Try using admin/admin123 or user/user123 for testing.';
+                'Server appears to be offline. Please try again later or contact support.';
             document.getElementById('login-error').style.display = 'block';
-        } else {
-            // Add a note about test accounts
-            const noteElement = document.createElement('div');
-            noteElement.style.marginTop = '10px';
-            noteElement.style.color = '#2ecc40';
-            noteElement.style.fontSize = '0.9em';
-            noteElement.textContent = 'Tip: You can use admin/admin123 or user/user123 for testing.';
-            document.querySelector('.login-container').appendChild(noteElement);
         }
     });
 
@@ -142,88 +145,95 @@
         }
 
         try {
-            // First, try the hardcoded credentials for development/testing
-            // This is a temporary solution until the server is fixed
-            if ((userInput === 'admin' && password === 'admin123') ||
-                (userInput === 'user' && password === 'user123')) {
+            // We'll focus on connecting to the remote server
+            // No local fallbacks since we're using a remote server
 
-                console.log('Using development login credentials');
-                const isAdmin = userInput === 'admin';
-
-                localStorage.setItem('token', 'dev-token-' + Date.now());
-                localStorage.setItem('isAdmin', isAdmin ? 'true' : 'false');
-                localStorage.setItem('username', userInput);
-
-                // Redirect based on user type
-                if (isAdmin) {
-                    window.location.href = 'admin.html';
-                } else {
-                    window.location.href = 'index.html';
-                }
-                return;
-            }
-
-            // If not using hardcoded credentials, try the server
             console.log('Attempting to login with:', { username: userInput });
 
-            // Try the server login
-            let apiUrl = 'https://tridex1.onrender.com/login';
-            console.log('Trying API URL:', apiUrl);
+            // Use the correct server URL
+            const apiUrl = 'https://tridex1.onrender.com/login';
+            console.log('Connecting to server:', apiUrl);
 
-            const res = await fetch(apiUrl, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                },
-                body: JSON.stringify({ username: userInput, password })
-            });
+            // Add timeout to prevent hanging requests
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
 
-            console.log('Login response status:', res.status);
-
-            // If server returns 500, show a specific message
-            if (res.status === 500) {
-                throw new Error('The server is experiencing issues. Please try the test accounts: admin/admin123 or user/user123');
-            }
-
-            // For debugging - log the raw response text
-            const responseText = await res.text();
-            console.log('Raw response:', responseText);
-
-            // Try to parse the JSON response
-            let result;
             try {
-                result = JSON.parse(responseText);
-                console.log('Parsed response:', result);
-            } catch (parseError) {
-                console.error('Error parsing response:', parseError);
-                throw new Error('Invalid response from server');
-            }
+                const res = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ username: userInput, password }),
+                    signal: controller.signal
+                });
 
-            if (res.ok && result.token) {
-                localStorage.setItem('token', result.token);
-                // Store isAdmin as a string for consistent checking
-                localStorage.setItem('isAdmin', result.isAdmin ? 'true' : 'false');
-                localStorage.setItem('username', result.username || userInput);
-                console.log('Login successful, redirecting...');
+                // Clear the timeout if the request completes
+                clearTimeout(timeoutId);
 
-                // Redirect based on user type
-                if (result.isAdmin) {
-                    window.location.href = 'admin.html';
-                } else {
-                    window.location.href = 'index.html';
+                console.log('Login response status:', res.status);
+
+                // If server returns 500, show a specific message
+                if (res.status === 500) {
+                    throw new Error('The server is experiencing issues. Please try again later or contact support.');
                 }
-            } else {
-                console.error('Login failed:', result);
-                document.getElementById('login-error').textContent = result.message || 'Incorrect username or password.';
-                document.getElementById('login-error').style.display = 'block';
+
+                // For debugging - log the raw response text
+                const responseText = await res.text();
+                console.log('Raw response:', responseText);
+
+                // Try to parse the JSON response
+                let result;
+                try {
+                    result = JSON.parse(responseText);
+                    console.log('Parsed response:', result);
+                } catch (parseError) {
+                    console.error('Error parsing response:', parseError);
+                    throw new Error('Invalid response from server');
+                }
+
+                if (res.ok && result.token) {
+                    localStorage.setItem('token', result.token);
+                    // Store isAdmin as a string for consistent checking
+                    localStorage.setItem('isAdmin', result.isAdmin ? 'true' : 'false');
+                    localStorage.setItem('username', result.username || userInput);
+                    console.log('Login successful, redirecting...');
+
+                    // Redirect based on user type
+                    if (result.isAdmin) {
+                        window.location.href = 'admin.html';
+                    } else {
+                        window.location.href = 'index.html';
+                    }
+                } else {
+                    console.error('Login failed:', result);
+                    document.getElementById('login-error').textContent = result.message || 'Incorrect username or password.';
+                    document.getElementById('login-error').style.display = 'block';
+                }
+            } catch (fetchError) {
+                // Handle fetch errors (network issues, timeouts, etc.)
+                console.error('Fetch error:', fetchError);
+                if (fetchError.name === 'AbortError') {
+                    throw new Error('Login request timed out. Please check your internet connection and try again.');
+                }
+                throw fetchError;
             }
         } catch (err) {
             console.error('Login error:', err);
 
-            // Display a user-friendly error message
-            document.getElementById('login-error').textContent = err.message ||
-                'Connection error. Try using admin/admin123 or user/user123 for testing.';
+            // Display a user-friendly error message based on the error type
+            let errorMessage = 'An unexpected error occurred. Please try again later.';
+
+            if (err.name === 'TypeError' && err.message.includes('Failed to fetch')) {
+                errorMessage = 'Unable to connect to the server. Please check your internet connection and try again.';
+            } else if (err.name === 'AbortError') {
+                errorMessage = 'The request timed out. Please try again later.';
+            } else if (err.message) {
+                errorMessage = err.message;
+            }
+
+            document.getElementById('login-error').textContent = errorMessage;
             document.getElementById('login-error').style.display = 'block';
         } finally {
             // Hide loading indicator
@@ -291,35 +301,83 @@
         }
 
         try {
-            const response = await fetch('https://tridex1.onrender.com/signup', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    name,
-                    age: parseInt(age),
-                    gender,
-                    username,
-                    email,
-                    phone,
-                    password
-                })
-            });
+            // Add timeout to prevent hanging requests
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
 
-            const result = await response.json();
+            try {
+                const response = await fetch('https://tridex1.onrender.com/signup', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        name,
+                        age: parseInt(age),
+                        gender,
+                        username,
+                        email,
+                        phone,
+                        password
+                    }),
+                    signal: controller.signal
+                });
 
-            if (response.ok) {
-                document.getElementById('signup-success').textContent = 'Account created! Please login.';
-                document.getElementById('signup-success').style.display = 'block';
-                setTimeout(() => {
-                    document.getElementById('signup-form').style.display = 'none';
-                    document.getElementById('signup-success').style.display = 'none';
-                }, 2000);
-            } else {
-                alert(result.message || 'Signup failed. Please try again.');
+                // Clear the timeout if the request completes
+                clearTimeout(timeoutId);
+
+                console.log('Signup response status:', response.status);
+
+                // For debugging - log the raw response text
+                const responseText = await response.text();
+                console.log('Raw signup response:', responseText);
+
+                // Try to parse the JSON response
+                let result;
+                try {
+                    result = JSON.parse(responseText);
+                    console.log('Parsed signup response:', result);
+                } catch (parseError) {
+                    console.error('Error parsing signup response:', parseError);
+                    throw new Error('Invalid response from server');
+                }
+
+                if (response.ok) {
+                    document.getElementById('signup-success').textContent = 'Account created! Please login.';
+                    document.getElementById('signup-success').style.display = 'block';
+                    setTimeout(() => {
+                        document.getElementById('signup-form').style.display = 'none';
+                        document.getElementById('signup-success').style.display = 'none';
+                    }, 2000);
+                } else {
+                    document.getElementById('login-error').textContent = result.message || 'Signup failed. Please try again.';
+                    document.getElementById('login-error').style.display = 'block';
+                }
+            } catch (fetchError) {
+                // Handle fetch errors (network issues, timeouts, etc.)
+                console.error('Fetch error during signup:', fetchError);
+                if (fetchError.name === 'AbortError') {
+                    throw new Error('Signup request timed out. Please check your internet connection and try again.');
+                }
+                throw fetchError;
             }
         } catch (err) {
             console.error('Signup error:', err);
-            alert('Connection error. Please try again later.');
+
+            // Display a user-friendly error message based on the error type
+            let errorMessage = 'An unexpected error occurred during signup. Please try again later.';
+
+            if (err.name === 'TypeError' && err.message.includes('Failed to fetch')) {
+                errorMessage = 'Unable to connect to the server. Please check your internet connection and try again.';
+            } else if (err.name === 'AbortError') {
+                errorMessage = 'The request timed out. Please try again later.';
+            } else if (err.message) {
+                errorMessage = err.message;
+            }
+
+            document.getElementById('login-error').textContent = errorMessage;
+            document.getElementById('login-error').style.display = 'block';
         } finally {
             hideLoading();
         }
