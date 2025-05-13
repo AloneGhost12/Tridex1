@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Profile</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile - Tridex</title>
     <link rel="stylesheet" href="style.css">
     <style>
         /* Profile Page CSS */
@@ -80,10 +81,112 @@
             margin: 8px 0;
             color: #555;
         }
+
+        /* Responsive styles for profile page */
+        @media (max-width: 768px) {
+            .profile-container {
+                max-width: 90%;
+                margin: 20px auto;
+                padding: 20px 15px;
+            }
+
+            h1 {
+                margin-top: 20px;
+                font-size: 1.5rem;
+            }
+
+            #profile-greeting {
+                font-size: 1.1rem !important;
+                padding: 15px 0 !important;
+            }
+
+            .profile-container button {
+                padding: 8px;
+                font-size: 0.9rem;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .profile-container {
+                max-width: 95%;
+                margin: 15px auto;
+                padding: 15px 10px;
+            }
+
+            h1 {
+                margin-top: 15px;
+                font-size: 1.3rem;
+            }
+
+            #profile-greeting {
+                font-size: 1rem !important;
+                padding: 12px 0 !important;
+            }
+
+            .profile-container div[style*="display:flex"] {
+                flex-direction: column;
+                gap: 8px !important;
+            }
+
+            .profile-container button {
+                width: 100%;
+                margin: 5px 0;
+            }
+
+            #profile-info h2 {
+                font-size: 1.3rem;
+            }
+
+            #profile-info p {
+                font-size: 0.9rem;
+            }
+        }
     </style>
 </head>
 <body>
-    <h1>Profile</h1>
+    <!-- Loading animation overlay -->
+    <div id="loading-overlay" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(255,255,255,0.7); z-index:99999; align-items:center; justify-content:center;">
+        <div style="border:6px solid #f3f3f3; border-top:6px solid #007bff; border-radius:50%; width:48px; height:48px; animation:spin 1s linear infinite;"></div>
+    </div>
+
+    <!-- Header with navigation -->
+    <header style="background-color: #333; color: white; padding: 15px 0; position:relative;">
+        <div style="display:flex; align-items:center; justify-content:space-between; padding:0 15px;">
+            <div style="display:flex; align-items:center;">
+                <h1>Tridex</h1>
+                <span id="username-display"></span>
+            </div>
+
+            <!-- Hamburger icon for mobile -->
+            <button id="hamburger-menu" style="background:none; border:none; cursor:pointer; display:none; padding:10px; z-index:1000;">
+                <div style="width:30px; height:3px; background-color:white; margin:6px 0; transition:0.4s;"></div>
+                <div style="width:30px; height:3px; background-color:white; margin:6px 0; transition:0.4s;"></div>
+                <div style="width:30px; height:3px; background-color:white; margin:6px 0; transition:0.4s;"></div>
+            </button>
+
+            <nav id="main-nav" style="display:flex;">
+                <ul id="nav" style="display:flex; list-style:none; margin:0; padding:0; align-items:center;">
+                    <li class="nav"><a href="index.html">Home</a></li>
+                    <li class="nav"><a href="about.html">About</a></li>
+                    <li class="nav"><a href="#">More</a></li>
+                    <li><a href="#" class="nav-icon" id="userIcon">👤</a></li>
+                    <li>
+                        <a href="#" class="nav-icon" id="mailIcon" title="Mailbox">
+                            &#9993;
+                            <span id="mail-count">0</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="cart.html" class="nav-icon" id="cartIcon" title="Cart">
+                            🛒<span id="cart-count">0</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <h1 style="margin-top: 30px;">Profile</h1>
     <div class="profile-container">
         <div id="profile-greeting"
             style="text-align:center; font-size:1.3rem; margin-bottom:18px; color:#fff; font-weight:600;
@@ -126,9 +229,9 @@
             <button type="submit">Update Password</button>
         </form>
         <button id="back-btn">Back</button>
-        <div id="profile-msg" style="display:none; color:white; background-color:#28a745; margin-top:15px; text-align:center; padding:10px; border-radius:5px; font-weight:500; box-shadow:0 2px 5px rgba(0,0,0,0.1);">Profile updated!</div>
-        <div id="password-msg" style="display:none; color:white; background-color:#28a745; margin-top:15px; text-align:center; padding:10px; border-radius:5px; font-weight:500; box-shadow:0 2px 5px rgba(0,0,0,0.1);">Password updated!</div>
-        <div id="password-error" style="display:none; color:white; background-color:#dc3545; margin-top:15px; text-align:center; padding:10px; border-radius:5px; font-weight:500; box-shadow:0 2px 5px rgba(0,0,0,0.1);">Old password incorrect!</div>
+        <div id="profile-msg" style="display:none; color:white; background-color:#28a745; margin-top:15px; text-align:center; padding:10px; border-radius:5px; font-weight:bold; box-shadow:0 3px 8px rgba(0,0,0,0.2); font-size:16px;">Profile updated!</div>
+        <div id="password-msg" style="display:none; color:white; background-color:#28a745; margin-top:15px; text-align:center; padding:10px; border-radius:5px; font-weight:bold; box-shadow:0 3px 8px rgba(0,0,0,0.2); font-size:16px;">Password updated!</div>
+        <div id="password-error" style="display:none; color:white; background-color:#dc3545; margin-top:15px; text-align:center; padding:10px; border-radius:5px; font-weight:bold; box-shadow:0 3px 8px rgba(0,0,0,0.2); font-size:16px;">Old password incorrect!</div>
     </div>
 
     <script>
@@ -139,6 +242,69 @@
         if (!isLoggedIn && !token) {
             window.location.href = 'login.html';
         }
+
+        // Simple hamburger menu implementation
+        const hamburger = document.getElementById('hamburger-menu');
+        const nav = document.getElementById('main-nav');
+
+        // Function to check window size and adjust menu visibility
+        function checkWindowSize() {
+            if (window.innerWidth <= 768) {
+                // Mobile view
+                hamburger.style.display = 'block';
+                nav.style.display = 'none';
+            } else {
+                // Desktop view
+                hamburger.style.display = 'none';
+                nav.style.display = 'flex';
+            }
+        }
+
+        // Initial check
+        checkWindowSize();
+
+        // Check on window resize
+        window.addEventListener('resize', checkWindowSize);
+
+        // Toggle menu when hamburger is clicked
+        hamburger.addEventListener('click', function() {
+            if (nav.style.display === 'none' || nav.style.display === '') {
+                nav.style.display = 'flex';
+                nav.style.position = 'absolute';
+                nav.style.top = '60px';
+                nav.style.left = '0';
+                nav.style.width = '100%';
+                nav.style.backgroundColor = '#333';
+                nav.style.flexDirection = 'column';
+                nav.style.zIndex = '1000';
+
+                // Make the nav items stack vertically
+                document.getElementById('nav').style.flexDirection = 'column';
+                document.getElementById('nav').style.width = '100%';
+
+                // Add some styling to nav items
+                const navItems = document.querySelectorAll('#nav li');
+                navItems.forEach(item => {
+                    item.style.width = '100%';
+                    item.style.textAlign = 'center';
+                    item.style.padding = '10px 0';
+                    item.style.borderBottom = '1px solid #444';
+                });
+            } else {
+                nav.style.display = 'none';
+            }
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function(event) {
+            if (window.innerWidth <= 768 &&
+                nav.style.display === 'flex' &&
+                !nav.contains(event.target) &&
+                event.target !== hamburger &&
+                !hamburger.contains(event.target)) {
+                nav.style.display = 'none';
+            }
+        });
 
         // Get username from either source
         const username = localStorage.getItem('username') || localStorage.getItem('currentUser');
@@ -304,9 +470,11 @@
                     // Show success message
                     document.getElementById('profile-msg').textContent = 'Profile updated successfully!';
                     document.getElementById('profile-msg').style.display = 'block';
+                    // Scroll to message
+                    document.getElementById('profile-msg').scrollIntoView({ behavior: 'smooth', block: 'center' });
                     setTimeout(() => {
                         document.getElementById('profile-msg').style.display = 'none';
-                    }, 2000);
+                    }, 3000);
                 } else {
                     // Server returned an error
                     const errorData = await response.json();
@@ -400,19 +568,23 @@
                     // Password update was successful
                     document.getElementById('password-msg').textContent = 'Password updated successfully!';
                     document.getElementById('password-msg').style.display = 'block';
+                    // Scroll to message
+                    document.getElementById('password-msg').scrollIntoView({ behavior: 'smooth', block: 'center' });
                     setTimeout(() => {
                         document.getElementById('password-msg').style.display = 'none';
                         document.getElementById('password-form').reset();
                         document.getElementById('password-form').style.display = 'none';
-                    }, 2000);
+                    }, 3000);
                 } else {
                     // Server returned an error
                     const errorData = await response.json();
                     document.getElementById('password-error').textContent = errorData.message || 'Old password is incorrect';
                     document.getElementById('password-error').style.display = 'block';
+                    // Scroll to error message
+                    document.getElementById('password-error').scrollIntoView({ behavior: 'smooth', block: 'center' });
                     setTimeout(() => {
                         document.getElementById('password-error').style.display = 'none';
-                    }, 3000);
+                    }, 4000);
                 }
             } catch (error) {
                 console.error('Error updating password:', error);

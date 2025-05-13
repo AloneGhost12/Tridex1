@@ -203,47 +203,49 @@
             100% { transform: rotate(360deg);}
         }
     </style>
-   <header style="background-color: #333; color: white; padding: 20px 0; position:relative;">
-       <div style="display:flex; align-items:center; justify-content:space-between; max-width:1200px; margin:0 auto; position:relative;">
+   <header style="background-color: #333; color: white; padding: 15px 0; position:relative;">
+       <div style="display:flex; align-items:center; justify-content:space-between; padding:0 15px;">
            <div style="display:flex; align-items:center;">
-               <h1 style="margin:0 24px 0 0;">Tridex</h1>
-               <span id="username-display" style="margin-left:10px; font-weight:normal;"></span>
+               <h1>Tridex</h1>
+               <span id="username-display"></span>
            </div>
+
            <!-- Hamburger icon for mobile -->
-           <div class="hamburger" id="hamburger-menu" aria-label="Open navigation" tabindex="0">
-               <span></span>
-               <span></span>
-               <span></span>
-           </div>
-           <nav>
-               <ul id="nav" class="nav-collapsed" style="display:flex; align-items:center; gap:18px; list-style:none; margin:0; padding:0;">
-                   <li class="nav"><a href="#" style="color:white; text-decoration:none;">Home</a></li>
-                   <li class="nav"><a href="about.html" style="color:white; text-decoration:none;">About</a></li>
-                   <li class="nav"><a href="#" style="color:white; text-decoration:none;">More</a></li>
-                   <li><a href="#" class="nav nav-icon" id="userIcon" style="color:white; font-size:1.3em;">👤</a></li>
+           <button id="hamburger-menu" style="background:none; border:none; cursor:pointer; display:none; padding:10px; z-index:1000;">
+               <div style="width:30px; height:3px; background-color:white; margin:6px 0; transition:0.4s;"></div>
+               <div style="width:30px; height:3px; background-color:white; margin:6px 0; transition:0.4s;"></div>
+               <div style="width:30px; height:3px; background-color:white; margin:6px 0; transition:0.4s;"></div>
+           </button>
+
+           <nav id="main-nav" style="display:flex;">
+               <ul id="nav" style="display:flex; list-style:none; margin:0; padding:0; align-items:center;">
+                   <li class="nav"><a href="#">Home</a></li>
+                   <li class="nav"><a href="about.html">About</a></li>
+                   <li class="nav"><a href="#">More</a></li>
+                   <li><a href="#" class="nav-icon" id="userIcon">👤</a></li>
                    <li>
-                       <a href="#" class="nav nav-icon" id="mailIcon" title="Mailbox" style="color:white; font-size:1.3em; position:relative;">
+                       <a href="#" class="nav-icon" id="mailIcon" title="Mailbox">
                            &#9993;
-                           <span id="mail-count" style="position:absolute; top:-8px; right:-10px; background:#28a745; color:#fff; border-radius:50%; font-size:0.85em; padding:2px 7px; min-width:20px; text-align:center; display:none;">0</span>
+                           <span id="mail-count">0</span>
                        </a>
                    </li>
                    <li>
-                       <a href="cart.html" class="nav nav-icon" id="cartIcon" title="Cart" style="color:white; font-size:1.3em; position:relative;">
-                           🛒<span id="cart-count" style="position:absolute; top:-8px; right:-10px; background:#dc3545; color:#fff; border-radius:50%; font-size:0.85em; padding:2px 7px; min-width:20px; text-align:center; display:none;">0</span>
+                       <a href="cart.html" class="nav-icon" id="cartIcon" title="Cart">
+                           🛒<span id="cart-count">0</span>
                        </a>
                    </li>
                </ul>
            </nav>
        </div>
-       <form class="search-bar" id="search-form" style="max-width:600px; margin:18px auto 0 auto; display:flex; position:relative;">
-           <input type="text" id="search-input" placeholder="Search..." style="flex:1; padding:8px 38px 8px 12px; border-radius:5px; border:none;">
-           <button type="submit" style="position:absolute; right:4px; top:50%; transform:translateY(-50%); background:none; border:none; padding:0; cursor:pointer;">
-               <span class="search-icon" style="font-size:1.2em; color:#007bff;">🔍</span>
+       <form class="search-bar" id="search-form">
+           <input type="text" id="search-input" placeholder="Search...">
+           <button type="submit">
+               <span class="search-icon">🔍</span>
            </button>
        </form>
        <div class="dropdown-menu" id="userDropdown" style="display:none;">
-           <a href="login.html">Login</a>
-           <a href="signup.html">Sign Up</a>
+           <a href="login.html" class="dropdown-btn">Login</a>
+           <a href="signup.html" class="dropdown-btn">Sign Up</a>
        </div>
    </header>
    <section class="product-grid" id="product-grid">
@@ -313,6 +315,43 @@ function showLoading() {
 function hideLoading() {
     document.getElementById('loading-overlay').style.display = 'none';
 }
+
+// --- Hamburger menu functionality ---
+document.addEventListener('DOMContentLoaded', function() {
+    const hamburger = document.getElementById('hamburger-menu');
+    const nav = document.getElementById('nav');
+
+    // Toggle navigation when hamburger is clicked
+    hamburger.addEventListener('click', function() {
+        nav.classList.toggle('show');
+
+        // Animate hamburger icon
+        const spans = hamburger.querySelectorAll('span');
+        spans.forEach(span => span.classList.toggle('active'));
+    });
+
+    // Close navigation when clicking outside
+    document.addEventListener('click', function(event) {
+        if (!hamburger.contains(event.target) && !nav.contains(event.target) && nav.classList.contains('show')) {
+            nav.classList.remove('show');
+
+            // Reset hamburger icon
+            const spans = hamburger.querySelectorAll('span');
+            spans.forEach(span => span.classList.remove('active'));
+        }
+    });
+
+    // Close navigation when window is resized
+    window.addEventListener('resize', function() {
+        if (window.innerWidth > 992 && nav.classList.contains('show')) {
+            nav.classList.remove('show');
+
+            // Reset hamburger icon
+            const spans = hamburger.querySelectorAll('span');
+            spans.forEach(span => span.classList.remove('active'));
+        }
+    });
+});
 
 // Ban check logic (must be first in script)
 const username = localStorage.getItem('username');
@@ -739,38 +778,72 @@ document.getElementById('popup-logout-yes').onclick = function() {
     // If you want to update cart count after adding to cart from product-details.html,
     // you must call updateCartCount() after adding to cart, or reload the index page.
 
-    // Hamburger menu logic
-    const hamburger = document.getElementById('hamburger-menu');
-    const nav = document.getElementById('nav');
+    // Simple hamburger menu implementation
+    document.addEventListener('DOMContentLoaded', function() {
+        const hamburger = document.getElementById('hamburger-menu');
+        const nav = document.getElementById('main-nav');
 
-    function handleResize() {
-        if (window.innerWidth <= 900) {
-            nav.classList.remove('show');
-            nav.style.display = 'none';
-        } else {
-            nav.classList.remove('show');
-            nav.style.display = 'flex';
-        }
-    }
-    window.addEventListener('resize', handleResize);
-    handleResize();
-
-    hamburger.onclick = function(e) {
-        e.stopPropagation();
-        nav.classList.toggle('show');
-        // Remove direct style manipulation, let CSS handle display
-    };
-
-    document.addEventListener('click', function(e) {
-        if (window.innerWidth <= 900) {
-            if (!nav.contains(e.target) && !hamburger.contains(e.target)) {
-                nav.classList.remove('show');
-            }
-            if (e.target.tagName === 'A' && nav.contains(e.target)) {
-                nav.classList.remove('show');
+        // Function to check window size and adjust menu visibility
+        function checkWindowSize() {
+            if (window.innerWidth <= 768) {
+                // Mobile view
+                hamburger.style.display = 'block';
+                nav.style.display = 'none';
+            } else {
+                // Desktop view
+                hamburger.style.display = 'none';
+                nav.style.display = 'flex';
             }
         }
+
+        // Initial check
+        checkWindowSize();
+
+        // Check on window resize
+        window.addEventListener('resize', checkWindowSize);
+
+        // Toggle menu when hamburger is clicked
+        hamburger.addEventListener('click', function() {
+            if (nav.style.display === 'none' || nav.style.display === '') {
+                nav.style.display = 'flex';
+                nav.style.position = 'absolute';
+                nav.style.top = '60px';
+                nav.style.left = '0';
+                nav.style.width = '100%';
+                nav.style.backgroundColor = '#333';
+                nav.style.flexDirection = 'column';
+                nav.style.zIndex = '1000';
+
+                // Make the nav items stack vertically
+                document.getElementById('nav').style.flexDirection = 'column';
+                document.getElementById('nav').style.width = '100%';
+
+                // Add some styling to nav items
+                const navItems = document.querySelectorAll('#nav li');
+                navItems.forEach(item => {
+                    item.style.width = '100%';
+                    item.style.textAlign = 'center';
+                    item.style.padding = '10px 0';
+                    item.style.borderBottom = '1px solid #444';
+                });
+            } else {
+                nav.style.display = 'none';
+            }
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function(event) {
+            if (window.innerWidth <= 768 &&
+                nav.style.display === 'flex' &&
+                !nav.contains(event.target) &&
+                event.target !== hamburger &&
+                !hamburger.contains(event.target)) {
+                nav.style.display = 'none';
+            }
+        });
     });
+
+    // This event listener is now handled in the DOMContentLoaded block above
     </script>
 </body>
 </html>
