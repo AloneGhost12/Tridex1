@@ -414,20 +414,39 @@ document.getElementById('popup-logout-yes').onclick = function() {
         }
         async function fetchAndRenderProducts(filter = "") {
             try {
-                const res = await fetch('http://localhost:3000/products');
+                // Use the production server URL instead of localhost
+                const res = await fetch('https://tridex1.onrender.com/products');
+
+                // Log the response for debugging
+                console.log('Product fetch response status:', res.status);
+
                 let products = await res.json();
+                console.log('Products loaded:', products.length);
+
                 const filtered = products.filter(product =>
                     !filter ||
-                    product.name.toLowerCase().includes(filter) ||
-                    (product.desc && product.desc.toLowerCase().includes(filter))
+                    product.name.toLowerCase().includes(filter.toLowerCase()) ||
+                    (product.desc && product.desc.toLowerCase().includes(filter.toLowerCase()))
                 );
+
+                console.log('Filtered products:', filtered.length);
                 renderProducts(filtered);
             } catch (e) {
                 console.error('Product fetch error:', e);
-                document.getElementById('product-grid').innerHTML = '<div style="text-align:center; color:#888; font-size:1.2em; padding:32px 0;">Failed to load products from database.<br>' + e + '</div>';
+
+                // Show a more user-friendly error message
+                document.getElementById('product-grid').innerHTML = `
+                    <div style="text-align:center; color:#888; font-size:1.2em; padding:32px 0;">
+                        <p>Unable to load products at this time.</p>
+                        <p style="font-size:0.9em; margin-top:10px;">Please try again later or contact support.</p>
+                        <button onclick="fetchAndRenderProducts()" style="margin-top:15px; padding:8px 16px; background:#007bff; color:#fff; border:none; border-radius:5px; cursor:pointer;">
+                            Try Again
+                        </button>
+                    </div>`;
+            } finally {
+                // --- Hide loading overlay after products are rendered ---
+                hideLoading();
             }
-            // --- Hide loading overlay after products are rendered ---
-            hideLoading();
         }
         // Initial render
         fetchAndRenderProducts();
