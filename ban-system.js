@@ -5,53 +5,87 @@
 
 // Function to check if a user is banned
 function isUserBanned(username) {
-    if (!username) return false;
+    if (!username) {
+        console.log('isUserBanned: No username provided');
+        return false;
+    }
 
     // Get the list of banned users from localStorage
     const bannedUsers = JSON.parse(localStorage.getItem('bannedUsers') || '[]');
-    return bannedUsers.includes(username);
+    const isBanned = bannedUsers.includes(username);
+
+    console.log(`Checking if user ${username} is banned: ${isBanned}`);
+    console.log('Current banned users:', bannedUsers);
+
+    return isBanned;
 }
 
 // Function to ban a user
 function banUser(username) {
-    if (!username) return false;
+    if (!username) {
+        console.error('Cannot ban: No username provided');
+        return false;
+    }
+
+    console.log(`Attempting to ban user: ${username}`);
 
     // Get the current list of banned users
     const bannedUsers = JSON.parse(localStorage.getItem('bannedUsers') || '[]');
+    console.log('Current banned users before ban:', bannedUsers);
 
     // Check if the user is already banned
     if (bannedUsers.includes(username)) {
+        console.log(`User ${username} is already banned`);
         return true; // User is already banned
     }
 
     // Add the user to the banned list
     bannedUsers.push(username);
+    console.log('Updated banned users after ban:', bannedUsers);
 
     // Save the updated list
     localStorage.setItem('bannedUsers', JSON.stringify(bannedUsers));
 
-    return true;
+    // Verify the update was successful
+    const verifyList = JSON.parse(localStorage.getItem('bannedUsers') || '[]');
+    const success = verifyList.includes(username);
+    console.log(`Ban operation ${success ? 'successful' : 'failed'} for ${username}`);
+
+    return success;
 }
 
 // Function to unban a user
 function unbanUser(username) {
-    if (!username) return false;
+    if (!username) {
+        console.error('Cannot unban: No username provided');
+        return false;
+    }
+
+    console.log(`Attempting to unban user: ${username}`);
 
     // Get the current list of banned users
     const bannedUsers = JSON.parse(localStorage.getItem('bannedUsers') || '[]');
+    console.log('Current banned users before unban:', bannedUsers);
 
     // Check if the user is banned
     if (!bannedUsers.includes(username)) {
+        console.log(`User ${username} is not in the banned list`);
         return true; // User is not banned
     }
 
     // Remove the user from the banned list
     const updatedList = bannedUsers.filter(user => user !== username);
+    console.log('Updated banned users after unban:', updatedList);
 
     // Save the updated list
     localStorage.setItem('bannedUsers', JSON.stringify(updatedList));
 
-    return true;
+    // Verify the update was successful
+    const verifyList = JSON.parse(localStorage.getItem('bannedUsers') || '[]');
+    const success = !verifyList.includes(username);
+    console.log(`Unban operation ${success ? 'successful' : 'failed'} for ${username}`);
+
+    return success;
 }
 
 // Function to show the ban message
@@ -142,11 +176,25 @@ function checkCurrentUserBan() {
     return false; // User is not banned
 }
 
+// Function to get the list of banned users
+function getBannedUsers() {
+    return JSON.parse(localStorage.getItem('bannedUsers') || '[]');
+}
+
+// Function to debug the ban system
+function debugBanSystem() {
+    const bannedUsers = getBannedUsers();
+    console.log('Current banned users:', bannedUsers);
+    return bannedUsers;
+}
+
 // Export the functions
 window.banSystem = {
     isUserBanned,
     banUser,
     unbanUser,
     showBanMessage,
-    checkCurrentUserBan
+    checkCurrentUserBan,
+    getBannedUsers,
+    debugBanSystem
 };
