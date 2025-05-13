@@ -110,6 +110,14 @@
             document.getElementById('login-error').textContent =
                 'Server appears to be offline. Try using admin/admin123 or user/user123 for testing.';
             document.getElementById('login-error').style.display = 'block';
+        } else {
+            // Add a note about test accounts
+            const noteElement = document.createElement('div');
+            noteElement.style.marginTop = '10px';
+            noteElement.style.color = '#2ecc40';
+            noteElement.style.fontSize = '0.9em';
+            noteElement.textContent = 'Tip: You can use admin/admin123 or user/user123 for testing.';
+            document.querySelector('.login-container').appendChild(noteElement);
         }
     });
 
@@ -134,9 +142,31 @@
         }
 
         try {
+            // First, try the hardcoded credentials for development/testing
+            // This is a temporary solution until the server is fixed
+            if ((userInput === 'admin' && password === 'admin123') ||
+                (userInput === 'user' && password === 'user123')) {
+
+                console.log('Using development login credentials');
+                const isAdmin = userInput === 'admin';
+
+                localStorage.setItem('token', 'dev-token-' + Date.now());
+                localStorage.setItem('isAdmin', isAdmin ? 'true' : 'false');
+                localStorage.setItem('username', userInput);
+
+                // Redirect based on user type
+                if (isAdmin) {
+                    window.location.href = 'admin.html';
+                } else {
+                    window.location.href = 'index.html';
+                }
+                return;
+            }
+
+            // If not using hardcoded credentials, try the server
             console.log('Attempting to login with:', { username: userInput });
 
-            // Try multiple URLs in case one is not working
+            // Try the server login
             let apiUrl = 'https://tridex1.onrender.com/login';
             console.log('Trying API URL:', apiUrl);
 
@@ -150,6 +180,11 @@
             });
 
             console.log('Login response status:', res.status);
+
+            // If server returns 500, show a specific message
+            if (res.status === 500) {
+                throw new Error('The server is experiencing issues. Please try the test accounts: admin/admin123 or user/user123');
+            }
 
             // For debugging - log the raw response text
             const responseText = await res.text();
@@ -169,9 +204,10 @@
                 localStorage.setItem('token', result.token);
                 // Store isAdmin as a string for consistent checking
                 localStorage.setItem('isAdmin', result.isAdmin ? 'true' : 'false');
+                localStorage.setItem('username', result.username || userInput);
                 console.log('Login successful, redirecting...');
 
-                // Optionally, check if user is admin and redirect accordingly
+                // Redirect based on user type
                 if (result.isAdmin) {
                     window.location.href = 'admin.html';
                 } else {
@@ -185,24 +221,9 @@
         } catch (err) {
             console.error('Login error:', err);
 
-            // FALLBACK: If server is unavailable, try local login for testing
-            // This is a temporary solution for development/testing
-            if (userInput === 'admin' && password === 'admin123') {
-                console.log('Using fallback admin login');
-                localStorage.setItem('token', 'local-dev-token');
-                localStorage.setItem('isAdmin', 'true');
-                window.location.href = 'admin.html';
-                return;
-            } else if (userInput === 'user' && password === 'user123') {
-                console.log('Using fallback user login');
-                localStorage.setItem('token', 'local-dev-token');
-                localStorage.setItem('isAdmin', 'false');
-                window.location.href = 'index.html';
-                return;
-            }
-
-            document.getElementById('login-error').textContent = 'Connection error: ' + err.message +
-                '. Try using admin/admin123 or user/user123 for testing.';
+            // Display a user-friendly error message
+            document.getElementById('login-error').textContent = err.message ||
+                'Connection error. Try using admin/admin123 or user/user123 for testing.';
             document.getElementById('login-error').style.display = 'block';
         } finally {
             // Hide loading indicator
