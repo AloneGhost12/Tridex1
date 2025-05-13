@@ -5,6 +5,8 @@
    <meta name="viewport" content="width=device-width, initial-scale=1.0">
    <title>Tridex</title>
    <link rel="stylesheet" href="style.css">
+   <!-- Include the ban system script -->
+   <script src="ban-system.js"></script>
    <style>
        /* Responsive Navbar */
        @media (max-width: 900px) {
@@ -357,33 +359,11 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // Ban check logic (must be first in script)
-const username = localStorage.getItem('username');
-const bannedUsers = JSON.parse(localStorage.getItem('bannedUsers') || '[]');
-if (username && bannedUsers.includes(username)) {
-    // Clear all login data
-    localStorage.removeItem('token');
-    localStorage.removeItem('isLoggedIn');
-    localStorage.removeItem('currentUser');
+const username = localStorage.getItem('username') || localStorage.getItem('currentUser');
 
-    // Show ban message
-    document.getElementById('ban-message').style.display = 'flex';
-    document.body.style.overflow = 'hidden';
-
-    // Add click event to the OK button
-    document.getElementById('ban-ok-btn').onclick = function() {
-        // Redirect to login page with banned parameter
-        window.location.href = 'login.html?banned=true';
-    };
-
-    // Add hover effect to the button
-    document.getElementById('ban-ok-btn').addEventListener('mouseover', function() {
-        this.style.backgroundColor = '#b71c1c';
-    });
-    document.getElementById('ban-ok-btn').addEventListener('mouseout', function() {
-        this.style.backgroundColor = '#dc3545';
-    });
-
-    // Stop further script execution
+// Check if the user is banned using our ban system
+if (window.banSystem && window.banSystem.checkCurrentUserBan()) {
+    // Stop further script execution - the ban system will handle everything
     throw new Error('User is banned');
 }
 

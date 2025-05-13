@@ -2,8 +2,11 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Panel</title>
     <link rel="stylesheet" href="style.css">
+    <!-- Include the ban system script -->
+    <script src="ban-system.js"></script>
     <style>
         table { border-collapse: collapse; width: 100%; margin-top: 24px; }
         th, td { border: 1px solid #ccc; padding: 8px 12px; text-align: left; }
@@ -218,18 +221,56 @@
                 tr.querySelector('.ban-btn').onclick = async function() {
                     if (confirm(`Ban ${user.username}?`)) {
                         try {
+                            // Call the server to ban the user
                             await fetch(`https://tridex1.onrender.com/users/${user._id}/ban`, { method: 'PUT' });
+
+                            // Also ban the user locally using our ban system
+                            if (window.banSystem) {
+                                window.banSystem.banUser(user.username);
+                                console.log(`User ${user.username} banned locally`);
+                            }
+
                             fetchUsers();
-                        } catch (e) { alert('Failed to ban user.'); }
+                        } catch (e) {
+                            console.error('Failed to ban user on server:', e);
+
+                            // If server fails, still ban locally
+                            if (window.banSystem) {
+                                window.banSystem.banUser(user.username);
+                                console.log(`User ${user.username} banned locally (server failed)`);
+                                fetchUsers();
+                            } else {
+                                alert('Failed to ban user.');
+                            }
+                        }
                     }
                 };
                 // Unban user (update DB in real app)
                 tr.querySelector('.unban-btn').onclick = async function() {
                     if (confirm(`Unban ${user.username}?`)) {
                         try {
+                            // Call the server to unban the user
                             await fetch(`https://tridex1.onrender.com/users/${user._id}/unban`, { method: 'PUT' });
+
+                            // Also unban the user locally using our ban system
+                            if (window.banSystem) {
+                                window.banSystem.unbanUser(user.username);
+                                console.log(`User ${user.username} unbanned locally`);
+                            }
+
                             fetchUsers();
-                        } catch (e) { alert('Failed to unban user.'); }
+                        } catch (e) {
+                            console.error('Failed to unban user on server:', e);
+
+                            // If server fails, still unban locally
+                            if (window.banSystem) {
+                                window.banSystem.unbanUser(user.username);
+                                console.log(`User ${user.username} unbanned locally (server failed)`);
+                                fetchUsers();
+                            } else {
+                                alert('Failed to unban user.');
+                            }
+                        }
                     }
                 };
                 // Delete user (update DB in real app)

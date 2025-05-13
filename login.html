@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login Page</title>
     <link rel="stylesheet" href="auth.css">
+    <!-- Include the ban system script -->
+    <script src="ban-system.js"></script>
 </head>
 <body>
     <!-- Loading animation overlay -->
@@ -138,6 +140,14 @@
             // Scroll to the ban message
             document.getElementById('ban-message').scrollIntoView({ behavior: 'smooth' });
         }
+
+        // Check if the current user is banned
+        const username = localStorage.getItem('username') || localStorage.getItem('currentUser');
+        if (username && window.banSystem && window.banSystem.isUserBanned(username)) {
+            document.getElementById('ban-message').style.display = 'block';
+            // Scroll to the ban message
+            document.getElementById('ban-message').scrollIntoView({ behavior: 'smooth' });
+        }
     });
 
     document.getElementById('login-form').addEventListener('submit', async function(e) {
@@ -161,10 +171,10 @@
             return;
         }
 
-        // Check if user is banned
-        const bannedUsers = JSON.parse(localStorage.getItem('bannedUsers') || '[]');
-        if (bannedUsers.includes(userInput)) {
+        // Check if user is banned using our ban system
+        if (window.banSystem && window.banSystem.isUserBanned(userInput)) {
             document.getElementById('ban-message').style.display = 'block';
+            document.getElementById('ban-message').scrollIntoView({ behavior: 'smooth' });
             hideLoading();
             return;
         }
@@ -221,11 +231,9 @@
                 if (res.ok && result.token) {
                     // Check if user is banned (from server response)
                     if (result.isBanned) {
-                        // Add user to banned users list
-                        const bannedUsers = JSON.parse(localStorage.getItem('bannedUsers') || '[]');
-                        if (!bannedUsers.includes(result.username || userInput)) {
-                            bannedUsers.push(result.username || userInput);
-                            localStorage.setItem('bannedUsers', JSON.stringify(bannedUsers));
+                        // Ban the user using our ban system
+                        if (window.banSystem) {
+                            window.banSystem.banUser(result.username || userInput);
                         }
 
                         // Show ban message
@@ -263,15 +271,14 @@
 
                     // Check if the error is due to a ban
                     if (result.isBanned) {
-                        // Add user to banned users list
-                        const bannedUsers = JSON.parse(localStorage.getItem('bannedUsers') || '[]');
-                        if (!bannedUsers.includes(userInput)) {
-                            bannedUsers.push(userInput);
-                            localStorage.setItem('bannedUsers', JSON.stringify(bannedUsers));
+                        // Ban the user using our ban system
+                        if (window.banSystem) {
+                            window.banSystem.banUser(userInput);
                         }
 
                         // Show ban message
                         document.getElementById('ban-message').style.display = 'block';
+                        document.getElementById('ban-message').scrollIntoView({ behavior: 'smooth' });
                     } else {
                         // Show regular error message
                         document.getElementById('login-error').textContent = result.message || 'Incorrect username or password.';

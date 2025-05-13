@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Profile - Tridex</title>
     <link rel="stylesheet" href="style.css">
+    <!-- Include the ban system script -->
+    <script src="ban-system.js"></script>
     <style>
         /* Profile Page CSS */
         @keyframes spin {
@@ -257,25 +259,9 @@
             window.location.href = 'login.html';
         }
 
-        // Ban check logic
-        const bannedUsers = JSON.parse(localStorage.getItem('bannedUsers') || '[]');
-        if (username && bannedUsers.includes(username)) {
-            // Clear all login data
-            localStorage.removeItem('token');
-            localStorage.removeItem('isLoggedIn');
-            localStorage.removeItem('currentUser');
-
-            // Show ban message
-            document.getElementById('ban-message').style.display = 'flex';
-            document.body.style.overflow = 'hidden';
-
-            // Add click event to the OK button
-            document.getElementById('ban-ok-btn').onclick = function() {
-                // Redirect to login page with banned parameter
-                window.location.href = 'login.html?banned=true';
-            };
-
-            // Stop further script execution
+        // Ban check logic using our ban system
+        if (window.banSystem && window.banSystem.checkCurrentUserBan()) {
+            // Stop further script execution - the ban system will handle everything
             throw new Error('User is banned');
         }
 
