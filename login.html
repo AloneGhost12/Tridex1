@@ -153,7 +153,7 @@
             showLoading(true); // Show loading overlay
 
             try {
-                const res = await fetch('https://tridex1.onrender.com/login', {
+                const res = await fetch('https://tridex1.onrender.com/api/auth/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ username: userInput, password })
@@ -169,11 +169,12 @@
                     
                     // Redirect user based on role
                     if (result.isAdmin) {
-                        window.location.href = 'admin.html'; // Admin page (you can change this to your desired path)
+                        window.location.href = 'admin.html'; // Admin page
                     } else {
-                        window.location.href = 'index.html'; // User page (you can change this to your desired path)
+                        window.location.href = 'index.html'; // User page
                     }
                 } else {
+                    document.getElementById('login-error').textContent = result.message || 'Incorrect username or password.';
                     document.getElementById('login-error').style.display = 'block';
                 }
             } catch (err) {
@@ -207,18 +208,13 @@
             const token = localStorage.getItem('token');
             const isAdmin = localStorage.getItem('isAdmin');
             
-            if (!token) {
-                // No token, user is not logged in
-                return;
-            }
-
-            // User is logged in, check if they're an admin
-            if (isAdmin === 'true') {
-                alert('You are logged in as an admin!');
-                // Optionally, show admin content here
-            } else {
-                alert('You are logged in as a user!');
-                // Optionally, show user content here
+            if (token) {
+                // Redirect based on role if the user is already logged in
+                if (isAdmin === 'true') {
+                    window.location.href = 'admin.html';
+                } else {
+                    window.location.href = 'index.html';
+                }
             }
         });
     </script>
