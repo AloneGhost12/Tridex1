@@ -64,38 +64,6 @@
     </style>
 </head>
 <body>
-    <h2>Add New Product</h2>
-<form id="add-product-form" enctype="multipart/form-data">
-  <input type="text" name="name" placeholder="Product Name" required />
-  <input type="number" name="price" placeholder="Price" required />
-  <input type="text" name="desc" placeholder="Description" required />
-  <input type="file" name="image" accept="image/*" required />
-  <button type="submit">Upload</button>
-</form>
-
-<script>
-  const backendURL = 'https://tridex1.onrender.com'; // Replace with localhost if testing locally
-
-  document.getElementById('add-product-form').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const form = e.target;
-    const formData = new FormData(form);
-
-    try {
-      const res = await fetch(`${backendURL}/products`, {
-        method: 'POST',
-        body: formData,
-      });
-      const data = await res.json();
-      alert(data.message);
-      form.reset();
-    } catch (err) {
-      console.error(err);
-      alert('Upload failed');
-    }
-  });
-</script>
-
     <!-- Loading animation overlay -->
     <div id="loading-overlay" style="display:flex; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(255,255,255,0.7); z-index:99999; align-items:center; justify-content:center;">
         <div style="border:6px solid #f3f3f3; border-top:6px solid #007bff; border-radius:50%; width:48px; height:48px; animation:spin 1s linear infinite;"></div>
@@ -353,40 +321,107 @@
             }
             document.getElementById('product-image-file').value = '';
         }
+        // Handle image file upload and convert to base64
+        document.getElementById('product-image-file').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                // Check file size (limit to 5MB)
+                if (file.size > 5 * 1024 * 1024) {
+                    alert('Image size exceeds 5MB. Please choose a smaller image.');
+                    this.value = ''; // Clear the file input
+                    return;
+                }
+
+                // Show loading indicator
+                showLoading();
+
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    // Set the base64 string to the hidden input
+                    document.getElementById('product-image').value = event.target.result;
+                    // Show preview
+                    document.getElementById('product-image-preview').src = event.target.result;
+                    document.getElementById('product-image-preview').style.display = '';
+                    hideLoading();
+                };
+                reader.onerror = function() {
+                    alert('Failed to read the image file. Please try again.');
+                    hideLoading();
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
         // Add/Edit Product (DB version)
         document.getElementById('product-form').onsubmit = async function(e) {
             e.preventDefault();
+
+            // Show loading indicator
+            showLoading();
+
             const id = document.getElementById('product-id').value;
             const name = document.getElementById('product-name').value.trim();
             let image = document.getElementById('product-image').value.trim();
             const desc = document.getElementById('product-desc').value.trim();
             const price = document.getElementById('product-price').value.trim();
-            if (id) {
-                // Update
-                try {
-                    await fetch(`https://tridex1.onrender.com/products/${id}`, {
+
+            // Validate inputs
+            if (!name) {
+                alert('Product name is required');
+                hideLoading();
+                return;
+            }
+
+            if (!price || isNaN(price) || price <= 0) {
+                alert('Please enter a valid price');
+                hideLoading();
+                return;
+            }
+
+            try {
+                if (id) {
+                    // Update
+                    const response = await fetch(`https://tridex1.onrender.com/products/${id}`, {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ name, image, desc, price })
                     });
-                    fetchProducts();
-                } catch (e) { alert('Failed to update product.'); }
-            } else {
-                // Add
-                try {
-                    await fetch('https://tridex1.onrender.com/products', {
+
+                    if (!response.ok) {
+                        throw new Error(`Server returned ${response.status}: ${response.statusText}`);
+                    }
+
+                    alert('Product updated successfully!');
+                } else {
+                    // Add
+                    const response = await fetch('https://tridex1.onrender.com/products', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ name, image, desc, price })
                     });
-                    fetchProducts();
-                } catch (e) { alert('Failed to add product.'); }
+
+                    if (!response.ok) {
+                        throw new Error(`Server returned ${response.status}: ${response.statusText}`);
+                    }
+
+                    alert('Product added successfully!');
+                }
+
+                // Reset form
+                this.reset();
+                document.getElementById('product-save-btn').textContent = 'Add Product';
+                document.getElementById('product-cancel-btn').style.display = 'none';
+                document.getElementById('product-image-preview').style.display = 'none';
+                document.getElementById('product-image').value = '';
+
+                // Refresh product list
+                fetchProducts();
+            } catch (e) {
+                console.error('Product operation failed:', e);
+                alert(`Failed to ${id ? 'update' : 'add'} product: ${e.message}`);
+            } finally {
+                hideLoading();
             }
-            this.reset();
-            document.getElementById('product-save-btn').textContent = 'Add Product';
-            document.getElementById('product-cancel-btn').style.display = 'none';
-            document.getElementById('product-image-preview').style.display = 'none';
-            document.getElementById('product-image').value = '';
         };
         // Cancel edit
         document.getElementById('product-cancel-btn').onclick = function() {
@@ -411,20 +446,46 @@
         }
         document.getElementById('admin-mail-form').onsubmit = async function(e) {
             e.preventDefault();
+
+            // Show loading indicator
+            showLoading();
+
             const title = document.getElementById('mail-title').value.trim();
             const message = document.getElementById('mail-body').value.trim();
+
+            // Validate inputs
+            if (!title) {
+                alert('Announcement title is required');
+                hideLoading();
+                return;
+            }
+
+            if (!message) {
+                alert('Announcement message is required');
+                hideLoading();
+                return;
+            }
+
             try {
-                await fetch('https://tridex1.onrender.com/announcements', {
+                const response = await fetch('https://tridex1.onrender.com/announcements', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ title, message })
                 });
-                alert('Announcement sent!');
+
+                if (!response.ok) {
+                    throw new Error(`Server returned ${response.status}: ${response.statusText}`);
+                }
+
+                alert('Announcement sent successfully!');
                 document.getElementById('admin-mail-modal').style.display = 'none';
                 this.reset();
                 fetchAnnouncements();
             } catch (e) {
-                alert('Failed to send announcement.');
+                console.error('Failed to send announcement:', e);
+                alert(`Failed to send announcement: ${e.message}`);
+            } finally {
+                hideLoading();
             }
         };
         function renderAdminMessages() {
@@ -445,10 +506,23 @@
                     btn.onclick = async function() {
                         const id = this.getAttribute('data-id');
                         if (confirm('Delete this message?')) {
+                            // Show loading indicator
+                            showLoading();
+
                             try {
-                                await fetch(`https://tridex1.onrender.com/announcements/${id}`, { method: 'DELETE' });
+                                const response = await fetch(`https://tridex1.onrender.com/announcements/${id}`, { method: 'DELETE' });
+
+                                if (!response.ok) {
+                                    throw new Error(`Server returned ${response.status}: ${response.statusText}`);
+                                }
+
                                 fetchAnnouncements();
-                            } catch (e) { alert('Failed to delete announcement.'); }
+                            } catch (e) {
+                                console.error('Failed to delete announcement:', e);
+                                alert(`Failed to delete announcement: ${e.message}`);
+                            } finally {
+                                hideLoading();
+                            }
                         }
                     };
                 });
