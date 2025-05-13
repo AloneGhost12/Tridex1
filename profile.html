@@ -147,7 +147,7 @@
 </head>
 <body>
     <!-- Loading animation overlay -->
-    <div id="loading-overlay" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(255,255,255,0.7); z-index:99999; align-items:center; justify-content:center;">
+    <div id="loading-overlay" style="display:flex; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(255,255,255,0.7); z-index:99999; align-items:center; justify-content:center;">
         <div style="border:6px solid #f3f3f3; border-top:6px solid #007bff; border-radius:50%; width:48px; height:48px; animation:spin 1s linear infinite;"></div>
     </div>
 
@@ -237,7 +237,7 @@
     </div>
 
     <!-- Ban popup for banned users -->
-    <div id="ban-message" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.8); z-index:2000; align-items:center; justify-content:center;">
+    <div id="ban-message" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.8); z-index:999999; align-items:center; justify-content:center;">
         <div style="background:#fff; padding:32px 24px; border-radius:8px; box-shadow:0 2px 12px rgba(0,0,0,0.15); min-width:320px; max-width:90%; text-align:center;">
             <div style="margin-bottom:10px; font-size:3em; color:#d32f2f;">⚠️</div>
             <h2 style="margin-bottom:10px; color:#d32f2f; font-size:1.5em;">Account Banned</h2>
@@ -246,6 +246,20 @@
             <button id="ban-ok-btn" style="padding:10px 24px; background:#dc3545; color:#fff; border:none; border-radius:5px; font-size:1rem; cursor:pointer; font-weight:bold; transition:all 0.2s ease;">OK</button>
         </div>
     </div>
+
+    <script>
+        // Add click handler for the ban message OK button
+        document.getElementById('ban-ok-btn').addEventListener('click', function() {
+            // Clear all login data
+            localStorage.removeItem('token');
+            localStorage.removeItem('isLoggedIn');
+            localStorage.removeItem('username');
+            localStorage.removeItem('currentUser');
+
+            // Redirect to login page with banned parameter
+            window.location.href = 'login.html?banned=true';
+        });
+    </script>
 
     <script>
         // Check if user is logged in
@@ -261,6 +275,12 @@
 
         // Ban check logic using our ban system
         if (window.banSystem && window.banSystem.checkCurrentUserBan()) {
+            // Hide loading overlay if it's visible
+            const loadingOverlay = document.getElementById('loading-overlay');
+            if (loadingOverlay) {
+                loadingOverlay.style.display = 'none';
+            }
+
             // Stop further script execution - the ban system will handle everything
             throw new Error('User is banned');
         }
@@ -333,23 +353,24 @@
 
         // Loading overlay
         function showLoading() {
-            const loadingOverlay = document.createElement('div');
-            loadingOverlay.id = 'loading-overlay';
-            loadingOverlay.style.cssText = 'display:flex; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(255,255,255,0.7); z-index:99999; align-items:center; justify-content:center;';
-
-            const spinner = document.createElement('div');
-            spinner.style.cssText = 'border:6px solid #f3f3f3; border-top:6px solid #007bff; border-radius:50%; width:48px; height:48px; animation:spin 1s linear infinite;';
-
-            loadingOverlay.appendChild(spinner);
-            document.body.appendChild(loadingOverlay);
+            // Use the existing loading overlay instead of creating a new one
+            const loadingOverlay = document.getElementById('loading-overlay');
+            if (loadingOverlay) {
+                loadingOverlay.style.display = 'flex';
+            }
         }
 
         function hideLoading() {
             const loadingOverlay = document.getElementById('loading-overlay');
             if (loadingOverlay) {
-                loadingOverlay.remove();
+                loadingOverlay.style.display = 'none';
             }
         }
+
+        // Hide loading on page load
+        window.addEventListener('load', function() {
+            hideLoading();
+        });
 
         // Fetch user data from server
         async function fetchUserData() {
