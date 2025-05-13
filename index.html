@@ -414,10 +414,7 @@ document.getElementById('popup-logout-yes').onclick = function() {
         }
         async function fetchAndRenderProducts(filter = "") {
             try {
-                const res = await fetch('https://tridex1.onrender.com/products');
-                if (!res.ok) {
-                    throw new Error('Network response was not ok');
-                }
+                const res = await fetch('http://localhost:3000/products');
                 let products = await res.json();
                 const filtered = products.filter(product =>
                     !filter ||
@@ -502,13 +499,26 @@ document.getElementById('popup-logout-yes').onclick = function() {
         } catch (e) {
             messages = [];
         }
-        // Track last seen message count per user
-        const username = localStorage.getItem('username');
+
+        // Check login status with both methods
+        const isLoggedIn = localStorage.getItem('isLoggedIn');
+        const hasToken = localStorage.getItem('token');
+        const isActuallyLoggedIn = isLoggedIn || hasToken;
+
+        // Use username from either source
+        const username = localStorage.getItem('username') || localStorage.getItem('currentUser');
+
+        // If we have a token but no isLoggedIn flag, set it
+        if (hasToken && !isLoggedIn) {
+            localStorage.setItem('isLoggedIn', 'true');
+        }
+
         const lastSeenKey = username ? `mailLastSeen_${username}` : 'mailLastSeen_guest';
         const lastSeen = Number(localStorage.getItem(lastSeenKey) || 0);
         const newCount = Math.max(messages.length - lastSeen, 0);
         const mailCount = document.getElementById('mail-count');
-        if (!isLoggedIn) {
+
+        if (!isActuallyLoggedIn) {
             mailCount.style.display = 'none';
             return;
         }
@@ -525,8 +535,19 @@ document.getElementById('popup-logout-yes').onclick = function() {
     document.getElementById('mailIcon').onclick = function(e) {
         e.preventDefault();
         const isLoggedIn = localStorage.getItem('isLoggedIn');
-        if (!isLoggedIn) {
+        const hasToken = localStorage.getItem('token');
+
+        // If we have a token but no isLoggedIn flag, set it
+        if (hasToken && !isLoggedIn) {
+            localStorage.setItem('isLoggedIn', 'true');
+        }
+
+        // Check login status after potential update
+        const isActuallyLoggedIn = localStorage.getItem('isLoggedIn') || hasToken;
+
+        if (!isActuallyLoggedIn) {
             alert('You must login to view your mailbox.');
+            window.location.href = 'login.html';
             return;
         }
         // ...existing code for showing mailbox...
@@ -622,8 +643,25 @@ document.getElementById('popup-logout-yes').onclick = function() {
         // Cart icon logic
     function updateCartCount() {
         const isLoggedIn = localStorage.getItem('isLoggedIn');
-        const username = localStorage.getItem('currentUser');
-        if (!isLoggedIn || !username) {
+        // Check for token as well (for backward compatibility)
+        const hasToken = localStorage.getItem('token');
+        // Use username from either source
+        const username = localStorage.getItem('currentUser') || localStorage.getItem('username');
+
+        // If we have a token but no isLoggedIn flag, set it
+        if (hasToken && !isLoggedIn) {
+            localStorage.setItem('isLoggedIn', 'true');
+        }
+
+        // If we have a username but no currentUser, set it
+        if (localStorage.getItem('username') && !localStorage.getItem('currentUser')) {
+            localStorage.setItem('currentUser', localStorage.getItem('username'));
+        }
+
+        // Recheck login status after potential updates
+        const isActuallyLoggedIn = localStorage.getItem('isLoggedIn') || hasToken;
+
+        if (!isActuallyLoggedIn || !username) {
             document.getElementById('cart-count').style.display = 'none';
             return;
         }
@@ -660,10 +698,22 @@ document.getElementById('popup-logout-yes').onclick = function() {
     document.getElementById('cartIcon').onclick = function(e) {
         e.preventDefault();
         const isLoggedIn = localStorage.getItem('isLoggedIn');
-        if (!isLoggedIn) {
+        const hasToken = localStorage.getItem('token');
+
+        // If we have a token but no isLoggedIn flag, set it
+        if (hasToken && !isLoggedIn) {
+            localStorage.setItem('isLoggedIn', 'true');
+        }
+
+        // Check login status after potential update
+        const isActuallyLoggedIn = localStorage.getItem('isLoggedIn') || hasToken;
+
+        if (!isActuallyLoggedIn) {
             alert('You must login to view your cart.');
+            window.location.href = 'login.html';
             return;
         }
+
         window.location.href = 'cart.html';
     };
 

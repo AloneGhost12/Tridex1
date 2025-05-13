@@ -162,6 +162,16 @@
             window.location.href = 'index.html';
         }
 
+        // Make sure isLoggedIn flag is set (needed for cart and mailbox access)
+        if (localStorage.getItem('token') && !localStorage.getItem('isLoggedIn')) {
+            localStorage.setItem('isLoggedIn', 'true');
+        }
+
+        // Make sure currentUser is set (needed for cart functionality)
+        if (!localStorage.getItem('currentUser') && localStorage.getItem('username')) {
+            localStorage.setItem('currentUser', localStorage.getItem('username'));
+        }
+
         let users = [];
         let products = [];
         let announcements = [];

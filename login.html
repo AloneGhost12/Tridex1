@@ -198,6 +198,10 @@
                     // Store isAdmin as a string for consistent checking
                     localStorage.setItem('isAdmin', result.isAdmin ? 'true' : 'false');
                     localStorage.setItem('username', result.username || userInput);
+                    // Set isLoggedIn flag to true - this is needed for cart and mailbox access
+                    localStorage.setItem('isLoggedIn', 'true');
+                    // Also set currentUser for cart functionality
+                    localStorage.setItem('currentUser', result.username || userInput);
                     console.log('Login successful, redirecting...');
 
                     // Redirect based on user type
