@@ -19,6 +19,11 @@
     </style>
     <div class="login-container">
         <h2>Login</h2>
+        <!-- Ban message for banned users -->
+        <div id="ban-message" style="display:none; background:#ffebee; border:1px solid #f44336; padding:15px; margin-bottom:20px; border-radius:5px; text-align:center;">
+            <p style="margin:0 0 10px 0; font-size:1.1em; color:#d32f2f; font-weight:bold;">This account has been banned</p>
+            <p style="margin:0; font-size:0.9em; color:#555;">For more information, please contact support.</p>
+        </div>
         <form id="login-form" action="index.html" method="get">
             <label for="username">Username</label>
             <input type="text" id="username" name="username" required placeholder="Username / Email / Phone Number">
@@ -124,11 +129,23 @@
         }
     });
 
+    // Check for banned users on page load
+    window.addEventListener('load', function() {
+        // Check if the user was redirected here due to a ban
+        const banRedirect = new URLSearchParams(window.location.search).get('banned');
+        if (banRedirect === 'true') {
+            document.getElementById('ban-message').style.display = 'block';
+            // Scroll to the ban message
+            document.getElementById('ban-message').scrollIntoView({ behavior: 'smooth' });
+        }
+    });
+
     document.getElementById('login-form').addEventListener('submit', async function(e) {
         e.preventDefault();
 
         // Hide any previous error messages
         document.getElementById('login-error').style.display = 'none';
+        document.getElementById('ban-message').style.display = 'none';
 
         // Show loading indicator
         showLoading();
@@ -140,6 +157,14 @@
         if (!userInput || !password) {
             document.getElementById('login-error').textContent = 'Please enter both username and password.';
             document.getElementById('login-error').style.display = 'block';
+            hideLoading();
+            return;
+        }
+
+        // Check if user is banned
+        const bannedUsers = JSON.parse(localStorage.getItem('bannedUsers') || '[]');
+        if (bannedUsers.includes(userInput)) {
+            document.getElementById('ban-message').style.display = 'block';
             hideLoading();
             return;
         }
@@ -194,6 +219,29 @@
                 }
 
                 if (res.ok && result.token) {
+                    // Check if user is banned (from server response)
+                    if (result.isBanned) {
+                        // Add user to banned users list
+                        const bannedUsers = JSON.parse(localStorage.getItem('bannedUsers') || '[]');
+                        if (!bannedUsers.includes(result.username || userInput)) {
+                            bannedUsers.push(result.username || userInput);
+                            localStorage.setItem('bannedUsers', JSON.stringify(bannedUsers));
+                        }
+
+                        // Show ban message
+                        document.getElementById('ban-message').style.display = 'block';
+                        document.getElementById('ban-message').scrollIntoView({ behavior: 'smooth' });
+
+                        // Clear any existing login data
+                        localStorage.removeItem('token');
+                        localStorage.removeItem('isLoggedIn');
+                        localStorage.removeItem('username');
+                        localStorage.removeItem('currentUser');
+
+                        console.error('Login failed: User is banned');
+                        return;
+                    }
+
                     localStorage.setItem('token', result.token);
                     // Store isAdmin as a string for consistent checking
                     localStorage.setItem('isAdmin', result.isAdmin ? 'true' : 'false');
@@ -212,8 +260,23 @@
                     }
                 } else {
                     console.error('Login failed:', result);
-                    document.getElementById('login-error').textContent = result.message || 'Incorrect username or password.';
-                    document.getElementById('login-error').style.display = 'block';
+
+                    // Check if the error is due to a ban
+                    if (result.isBanned) {
+                        // Add user to banned users list
+                        const bannedUsers = JSON.parse(localStorage.getItem('bannedUsers') || '[]');
+                        if (!bannedUsers.includes(userInput)) {
+                            bannedUsers.push(userInput);
+                            localStorage.setItem('bannedUsers', JSON.stringify(bannedUsers));
+                        }
+
+                        // Show ban message
+                        document.getElementById('ban-message').style.display = 'block';
+                    } else {
+                        // Show regular error message
+                        document.getElementById('login-error').textContent = result.message || 'Incorrect username or password.';
+                        document.getElementById('login-error').style.display = 'block';
+                    }
                 }
             } catch (fetchError) {
                 // Handle fetch errors (network issues, timeouts, etc.)

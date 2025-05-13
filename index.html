@@ -262,10 +262,13 @@
         </div>
     </div>
     <!-- Ban popup for banned users -->
-    <div id="ban-message" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.7); z-index:2000; align-items:center; justify-content:center;">
-        <div style="background:#fff; padding:32px 24px; border-radius:8px; box-shadow:0 2px 12px rgba(0,0,0,0.15); min-width:260px; text-align:center;">
-            <p style="margin-bottom:24px; font-size:1.2em; color:red;">You are banned.</p>
-            <button id="ban-ok-btn" style="padding:8px 18px; background:#dc3545; color:#fff; border:none; border-radius:5px; font-size:1rem; cursor:pointer;">OK</button>
+    <div id="ban-message" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.8); z-index:2000; align-items:center; justify-content:center;">
+        <div style="background:#fff; padding:32px 24px; border-radius:8px; box-shadow:0 2px 12px rgba(0,0,0,0.15); min-width:320px; max-width:90%; text-align:center;">
+            <div style="margin-bottom:10px; font-size:3em; color:#d32f2f;">⚠️</div>
+            <h2 style="margin-bottom:10px; color:#d32f2f; font-size:1.5em;">Account Banned</h2>
+            <p style="margin-bottom:24px; font-size:1.1em; color:#555; line-height:1.5;">Your account has been banned by the administrator. You no longer have access to this site.</p>
+            <p style="margin-bottom:24px; font-size:0.9em; color:#777;">For more information, please contact support.</p>
+            <button id="ban-ok-btn" style="padding:10px 24px; background:#dc3545; color:#fff; border:none; border-radius:5px; font-size:1rem; cursor:pointer; font-weight:bold; transition:all 0.2s ease;">OK</button>
         </div>
     </div>
     <!-- Mailbox Modal -->
@@ -357,12 +360,29 @@ document.addEventListener('DOMContentLoaded', function() {
 const username = localStorage.getItem('username');
 const bannedUsers = JSON.parse(localStorage.getItem('bannedUsers') || '[]');
 if (username && bannedUsers.includes(username)) {
+    // Clear all login data
+    localStorage.removeItem('token');
+    localStorage.removeItem('isLoggedIn');
+    localStorage.removeItem('currentUser');
+
+    // Show ban message
     document.getElementById('ban-message').style.display = 'flex';
     document.body.style.overflow = 'hidden';
+
+    // Add click event to the OK button
     document.getElementById('ban-ok-btn').onclick = function() {
-        localStorage.removeItem('isLoggedIn');
-        window.location.href = 'login.html';
+        // Redirect to login page with banned parameter
+        window.location.href = 'login.html?banned=true';
     };
+
+    // Add hover effect to the button
+    document.getElementById('ban-ok-btn').addEventListener('mouseover', function() {
+        this.style.backgroundColor = '#b71c1c';
+    });
+    document.getElementById('ban-ok-btn').addEventListener('mouseout', function() {
+        this.style.backgroundColor = '#dc3545';
+    });
+
     // Stop further script execution
     throw new Error('User is banned');
 }
