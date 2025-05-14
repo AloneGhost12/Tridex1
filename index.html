@@ -261,9 +261,107 @@
            <a href="signup.html" class="dropdown-btn">Sign Up</a>
        </div>
    </header>
+
+   <!-- Category Navigation -->
+   <div class="category-nav" style="padding:20px 0; background:#f4f4f9; text-align:center; overflow-x:auto; white-space:nowrap; scrollbar-width:none; -ms-overflow-style:none;">
+       <div style="max-width:1200px; margin:0 auto; padding:0 15px;">
+           <h2 style="margin-bottom:15px; color:#333; font-size:1.5rem; text-align:center;">Shop by Category</h2>
+           <div id="category-icons" style="display:flex; gap:20px; justify-content:center; flex-wrap:wrap;">
+               <!-- Category icons will be rendered here by JS -->
+               <div class="category-loading" style="text-align:center; padding:20px;">
+                   <div style="display:inline-block; border:3px solid #f3f3f3; border-top:3px solid #007bff; border-radius:50%; width:30px; height:30px; animation:spin 1s linear infinite;"></div>
+                   <p style="margin-top:10px; color:#666;">Loading categories...</p>
+               </div>
+           </div>
+       </div>
+   </div>
+
    <section class="product-grid" id="product-grid">
        <!-- Product cards will be rendered here by JS -->
    </section>
+
+   <style>
+       /* Category Navigation Styles */
+       .category-item {
+           display: flex;
+           flex-direction: column;
+           align-items: center;
+           cursor: pointer;
+           transition: transform 0.3s ease;
+           padding: 10px;
+           min-width: 100px;
+       }
+
+       .category-item:hover {
+           transform: translateY(-5px);
+       }
+
+       .category-icon {
+           width: 80px;
+           height: 80px;
+           border-radius: 50%;
+           background: #fff;
+           display: flex;
+           align-items: center;
+           justify-content: center;
+           margin-bottom: 8px;
+           box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+           overflow: hidden;
+           transition: all 0.3s ease;
+           border: 2px solid #e0e0e0;
+       }
+
+       .category-icon img {
+           width: 100%;
+           height: 100%;
+           object-fit: cover;
+           border-radius: 50%;
+       }
+
+       .category-item:hover .category-icon {
+           box-shadow: 0 6px 15px rgba(0,123,255,0.3);
+           border-color: #007bff;
+       }
+
+       .category-name {
+           font-size: 0.9rem;
+           color: #333;
+           margin-top: 5px;
+           text-align: center;
+           font-weight: 500;
+       }
+
+       /* Hide scrollbar but keep functionality */
+       .category-nav::-webkit-scrollbar {
+           display: none;
+       }
+
+       @media (max-width: 768px) {
+           .category-icon {
+               width: 70px;
+               height: 70px;
+           }
+
+           .category-name {
+               font-size: 0.8rem;
+           }
+       }
+
+       @media (max-width: 480px) {
+           .category-icon {
+               width: 60px;
+               height: 60px;
+           }
+
+           .category-name {
+               font-size: 0.75rem;
+           }
+
+           .category-nav {
+               padding: 15px 0;
+           }
+       }
+   </style>
 
     <!-- Ban popup for banned users -->
     <div id="ban-message" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.8); z-index:999999; align-items:center; justify-content:center;">
@@ -616,8 +714,56 @@ if (!isLoggedIn) {
                 hideLoading();
             }
         }
+        // Fetch and render categories
+        async function fetchAndRenderCategories() {
+            try {
+                const res = await fetch('https://tridex1.onrender.com/categories');
+                const categories = await res.json();
+
+                const categoryContainer = document.getElementById('category-icons');
+
+                // Remove loading indicator
+                const loadingElement = document.querySelector('.category-loading');
+                if (loadingElement) {
+                    loadingElement.remove();
+                }
+
+                if (!categories || categories.length === 0) {
+                    categoryContainer.innerHTML = '<p style="text-align:center; color:#888; padding:10px;">No categories available.</p>';
+                    return;
+                }
+
+                // Render each category
+                categories.forEach(category => {
+                    const categoryItem = document.createElement('div');
+                    categoryItem.className = 'category-item';
+                    categoryItem.innerHTML = `
+                        <div class="category-icon">
+                            <img src="${category.icon || 'https://via.placeholder.com/80?text=' + category.name.charAt(0)}"
+                                 alt="${category.name}"
+                                 onerror="this.src='https://via.placeholder.com/80?text=${category.name.charAt(0)}'">
+                        </div>
+                        <div class="category-name">${category.name}</div>
+                    `;
+
+                    // Add click handler to redirect to category page
+                    categoryItem.addEventListener('click', () => {
+                        window.location.href = `category.html?id=${category._id}`;
+                    });
+
+                    categoryContainer.appendChild(categoryItem);
+                });
+            } catch (error) {
+                console.error('Error fetching categories:', error);
+                const categoryContainer = document.getElementById('category-icons');
+                categoryContainer.innerHTML = '<p style="text-align:center; color:#888; padding:10px;">Failed to load categories.</p>';
+            }
+        }
+
         // Initial render
         fetchAndRenderProducts();
+        fetchAndRenderCategories();
+
         // Search form
         document.getElementById('search-form').onsubmit = function(e) {
             e.preventDefault();

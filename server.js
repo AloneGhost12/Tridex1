@@ -5,6 +5,7 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const User = require('./models/User'); // Make sure the path is correct
 const Product = require('./models/Product');
+const Category = require('./models/Category');
 const Announcement = require('./models/Announcement');
 
 // Load environment variables
@@ -521,34 +522,129 @@ app.put('/users/change-password', async (req, res) => {
 });
 
 
+// ========== CATEGORY ROUTES ==========
+
+app.get('/categories', async (req, res) => {
+    try {
+        const categories = await Category.find().sort({ name: 1 });
+        res.json(categories);
+    } catch (err) {
+        console.error('Error fetching categories:', err);
+        res.status(500).json({ message: 'Error fetching categories' });
+    }
+});
+
+app.post('/categories', async (req, res) => {
+    try {
+        const { name, icon, description } = req.body;
+
+        // Check if category already exists
+        const existingCategory = await Category.findOne({ name });
+        if (existingCategory) {
+            return res.status(400).json({ message: 'Category already exists' });
+        }
+
+        const category = new Category({ name, icon, description });
+        await category.save();
+        res.json({ message: 'Category added', category });
+    } catch (err) {
+        console.error('Error adding category:', err);
+        res.status(500).json({ message: 'Error adding category' });
+    }
+});
+
+app.put('/categories/:id', async (req, res) => {
+    try {
+        const { name, icon, description } = req.body;
+
+        // Check if updated name already exists (and it's not this category)
+        if (name) {
+            const existingCategory = await Category.findOne({
+                name,
+                _id: { $ne: req.params.id }
+            });
+
+            if (existingCategory) {
+                return res.status(400).json({ message: 'Category name already exists' });
+            }
+        }
+
+        await Category.findByIdAndUpdate(req.params.id, { name, icon, description });
+        res.json({ message: 'Category updated' });
+    } catch (err) {
+        console.error('Error updating category:', err);
+        res.status(500).json({ message: 'Error updating category' });
+    }
+});
+
+app.delete('/categories/:id', async (req, res) => {
+    try {
+        // Check if category is used by any products
+        const productsWithCategory = await Product.countDocuments({ category: req.params.id });
+
+        if (productsWithCategory > 0) {
+            return res.status(400).json({
+                message: `Cannot delete category: ${productsWithCategory} products are using this category`
+            });
+        }
+
+        await Category.findByIdAndDelete(req.params.id);
+        res.json({ message: 'Category deleted' });
+    } catch (err) {
+        console.error('Error deleting category:', err);
+        res.status(500).json({ message: 'Error deleting category' });
+    }
+});
+
+// Get products by category
+app.get('/categories/:id/products', async (req, res) => {
+    try {
+        const products = await Product.find({ category: req.params.id });
+        res.json(products);
+    } catch (err) {
+        console.error('Error fetching products by category:', err);
+        res.status(500).json({ message: 'Error fetching products by category' });
+    }
+});
+
 // ========== PRODUCT ROUTES ==========
 
 app.get('/products', async (req, res) => {
     try {
-        const products = await Product.find();
+        // If category query parameter is provided, filter by category
+        const filter = {};
+        if (req.query.category) {
+            filter.category = req.query.category;
+        }
+
+        // Populate the category field to get category details
+        const products = await Product.find(filter).populate('category');
         res.json(products);
     } catch (err) {
+        console.error('Error fetching products:', err);
         res.status(500).json({ message: 'Error fetching products' });
     }
 });
 
 app.post('/products', async (req, res) => {
     try {
-        const { name, image, desc, price } = req.body;
-        const product = new Product({ name, image, desc, price });
+        const { name, image, desc, price, category } = req.body;
+        const product = new Product({ name, image, desc, price, category });
         await product.save();
         res.json({ message: 'Product added', product });
     } catch (err) {
+        console.error('Error adding product:', err);
         res.status(500).json({ message: 'Error adding product' });
     }
 });
 
 app.put('/products/:id', async (req, res) => {
     try {
-        const { name, image, desc, price } = req.body;
-        await Product.findByIdAndUpdate(req.params.id, { name, image, desc, price });
+        const { name, image, desc, price, category } = req.body;
+        await Product.findByIdAndUpdate(req.params.id, { name, image, desc, price, category });
         res.json({ message: 'Product updated' });
     } catch (err) {
+        console.error('Error updating product:', err);
         res.status(500).json({ message: 'Error updating product' });
     }
 });
@@ -558,6 +654,7 @@ app.delete('/products/:id', async (req, res) => {
         await Product.findByIdAndDelete(req.params.id);
         res.json({ message: 'Product deleted' });
     } catch (err) {
+        console.error('Error deleting product:', err);
         res.status(500).json({ message: 'Error deleting product' });
     }
 });

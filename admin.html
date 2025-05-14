@@ -83,6 +83,7 @@
     <div style="margin-bottom:24px;">
         <button class="admin-nav-btn active" id="show-users-btn">User Details</button>
         <button class="admin-nav-btn" id="show-products-btn">Product Management</button>
+        <button class="admin-nav-btn" id="show-categories-btn">Categories</button>
         <button class="admin-nav-btn" id="show-mail-btn" title="Send Announcement">&#9993; Mail</button>
     </div>
 
@@ -129,6 +130,12 @@
             <img id="product-image-preview" src="" alt="Preview" style="display:none;max-width:80px;max-height:80px;margin-bottom:8px;">
             <label>Description: <textarea id="product-desc" required></textarea></label>
             <label>Price: <input type="number" id="product-price" min="1" required></label>
+            <label>Category:
+                <select id="product-category">
+                    <option value="">-- Select Category --</option>
+                    <!-- Categories will be loaded dynamically -->
+                </select>
+            </label>
             <button type="submit" id="product-save-btn">Add Product</button>
             <button type="button" id="product-cancel-btn" style="display:none;">Cancel</button>
         </form>
@@ -139,11 +146,41 @@
                     <th>Name</th>
                     <th>Description</th>
                     <th>Price</th>
+                    <th>Category</th>
                     <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
                 <!-- Product rows will be rendered here -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Category Management Section -->
+    <div id="category-section" style="display:none;">
+        <form id="category-form">
+            <input type="hidden" id="category-id">
+            <label>Category Name: <input type="text" id="category-name" required></label>
+            <!-- Icon upload and preview -->
+            <label>Icon: <input type="file" id="category-icon-file" accept="image/*"></label>
+            <input type="hidden" id="category-icon">
+            <img id="category-icon-preview" src="" alt="Preview" style="display:none;max-width:80px;max-height:80px;margin-bottom:8px;">
+            <label>Description: <textarea id="category-desc"></textarea></label>
+            <button type="submit" id="category-save-btn">Add Category</button>
+            <button type="button" id="category-cancel-btn" style="display:none;">Cancel</button>
+        </form>
+        <table id="category-list">
+            <thead>
+                <tr>
+                    <th>Icon</th>
+                    <th>Name</th>
+                    <th>Description</th>
+                    <th>Products</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Category rows will be rendered here -->
             </tbody>
         </table>
     </div>
@@ -1099,14 +1136,23 @@
         document.getElementById('show-users-btn').onclick = function() {
             document.getElementById('user-section').style.display = '';
             document.getElementById('product-section').style.display = 'none';
-            document.getElementById('show-users-btn').classList.add('active');
-            document.getElementById('show-products-btn').classList.remove('active');
+            document.getElementById('category-section').style.display = 'none';
+            document.querySelectorAll('.admin-nav-btn').forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
         };
         document.getElementById('show-products-btn').onclick = function() {
             document.getElementById('user-section').style.display = 'none';
             document.getElementById('product-section').style.display = '';
-            document.getElementById('show-products-btn').classList.add('active');
-            document.getElementById('show-users-btn').classList.remove('active');
+            document.getElementById('category-section').style.display = 'none';
+            document.querySelectorAll('.admin-nav-btn').forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
+        };
+        document.getElementById('show-categories-btn').onclick = function() {
+            document.getElementById('user-section').style.display = 'none';
+            document.getElementById('product-section').style.display = 'none';
+            document.getElementById('category-section').style.display = '';
+            document.querySelectorAll('.admin-nav-btn').forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
         };
 
         function showLoading() {
@@ -1349,9 +1395,410 @@
             verifyProductImages();
         });
 
+        // --- Category Management ---
+        let categories = [];
+
+        async function fetchCategories() {
+            try {
+                const res = await fetch('https://tridex1.onrender.com/categories');
+                categories = await res.json();
+                renderCategories();
+                populateCategoryDropdown();
+            } catch (e) {
+                console.error('Failed to load categories:', e);
+                categories = [];
+                renderCategories();
+                alert('Failed to load categories from database.');
+            }
+        }
+
+        function renderCategories() {
+            const tbody = document.querySelector('#category-list tbody');
+            tbody.innerHTML = '';
+
+            if (!categories || categories.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px; color:#888;">No categories found. Add your first category above.</td></tr>';
+                return;
+            }
+
+            categories.forEach(category => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>
+                        <img src="${category.icon || 'https://via.placeholder.com/50?text=No+Icon'}"
+                             alt="${category.name}"
+                             style="width:50px; height:50px; object-fit:contain; border-radius:50%; background:#f9f9f9;">
+                    </td>
+                    <td>${category.name}</td>
+                    <td>${category.description || ''}</td>
+                    <td><span class="product-count" data-id="${category._id}">Loading...</span></td>
+                    <td>
+                        <button class="edit-btn" data-id="${category._id}">Edit</button>
+                        <button class="delete-btn" data-id="${category._id}">Delete</button>
+                        <button class="view-products-btn" data-id="${category._id}">View Products</button>
+                    </td>
+                `;
+
+                // Get product count for this category
+                getProductCountForCategory(category._id);
+
+                // Add event handlers
+                tr.querySelector('.edit-btn').onclick = function() {
+                    setCategoryForm(category);
+                };
+
+                tr.querySelector('.delete-btn').onclick = async function() {
+                    if (confirm('Delete this category? This will not delete the products in this category.')) {
+                        try {
+                            showLoading();
+                            const response = await fetch(`https://tridex1.onrender.com/categories/${category._id}`, {
+                                method: 'DELETE'
+                            });
+
+                            if (!response.ok) {
+                                const errorData = await response.json();
+                                throw new Error(errorData.message || 'Failed to delete category');
+                            }
+
+                            fetchCategories();
+                        } catch (e) {
+                            alert(e.message || 'Failed to delete category.');
+                        } finally {
+                            hideLoading();
+                        }
+                    }
+                };
+
+                tr.querySelector('.view-products-btn').onclick = function() {
+                    window.open(`category.html?id=${category._id}`, '_blank');
+                };
+
+                tbody.appendChild(tr);
+            });
+        }
+
+        async function getProductCountForCategory(categoryId) {
+            try {
+                const res = await fetch(`https://tridex1.onrender.com/categories/${categoryId}/products`);
+                const products = await res.json();
+
+                // Update the count in the table
+                const countSpan = document.querySelector(`.product-count[data-id="${categoryId}"]`);
+                if (countSpan) {
+                    countSpan.textContent = products.length;
+                }
+            } catch (e) {
+                console.error(`Failed to get product count for category ${categoryId}:`, e);
+                const countSpan = document.querySelector(`.product-count[data-id="${categoryId}"]`);
+                if (countSpan) {
+                    countSpan.textContent = 'Error';
+                }
+            }
+        }
+
+        function setCategoryForm(category) {
+            document.getElementById('category-id').value = category._id;
+            document.getElementById('category-name').value = category.name;
+            document.getElementById('category-icon').value = category.icon || '';
+            document.getElementById('category-desc').value = category.description || '';
+            document.getElementById('category-save-btn').textContent = 'Update Category';
+            document.getElementById('category-cancel-btn').style.display = '';
+
+            if (category.icon) {
+                document.getElementById('category-icon-preview').src = category.icon;
+                document.getElementById('category-icon-preview').style.display = '';
+            } else {
+                document.getElementById('category-icon-preview').style.display = 'none';
+            }
+        }
+
+        // Handle category icon file upload
+        document.getElementById('category-icon-file').onchange = async function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            try {
+                showLoading();
+
+                // Upload to Cloudinary
+                const iconUrl = await uploadToCloudinary(file, 'category_icons');
+
+                // Set the icon URL in the hidden input
+                document.getElementById('category-icon').value = iconUrl;
+
+                // Show preview
+                document.getElementById('category-icon-preview').src = iconUrl;
+                document.getElementById('category-icon-preview').style.display = '';
+            } catch (error) {
+                console.error('Error uploading category icon:', error);
+                alert('Failed to upload icon: ' + error.message);
+            } finally {
+                hideLoading();
+            }
+        };
+
+        // Add/Edit Category
+        document.getElementById('category-form').onsubmit = async function(e) {
+            e.preventDefault();
+
+            showLoading();
+
+            const id = document.getElementById('category-id').value;
+            const name = document.getElementById('category-name').value.trim();
+            const icon = document.getElementById('category-icon').value.trim();
+            const description = document.getElementById('category-desc').value.trim();
+
+            // Validate inputs
+            if (!name) {
+                alert('Category name is required');
+                hideLoading();
+                return;
+            }
+
+            try {
+                const categoryData = { name, description };
+
+                // Only include icon if it's not empty
+                if (icon) {
+                    categoryData.icon = icon;
+                }
+
+                if (id) {
+                    // Update
+                    const response = await fetch(`https://tridex1.onrender.com/categories/${id}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(categoryData)
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.message || `Server returned ${response.status}`);
+                    }
+
+                    alert('Category updated successfully!');
+                } else {
+                    // Add
+                    const response = await fetch('https://tridex1.onrender.com/categories', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(categoryData)
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.message || `Server returned ${response.status}`);
+                    }
+
+                    alert('Category added successfully!');
+                }
+
+                // Reset form
+                this.reset();
+                document.getElementById('category-save-btn').textContent = 'Add Category';
+                document.getElementById('category-cancel-btn').style.display = 'none';
+                document.getElementById('category-icon-preview').style.display = 'none';
+                document.getElementById('category-icon').value = '';
+
+                // Refresh categories
+                fetchCategories();
+            } catch (e) {
+                console.error('Category operation failed:', e);
+                alert(`Failed to ${id ? 'update' : 'add'} category: ${e.message}`);
+            } finally {
+                hideLoading();
+            }
+        };
+
+        // Cancel category edit
+        document.getElementById('category-cancel-btn').onclick = function() {
+            document.getElementById('category-form').reset();
+            document.getElementById('category-save-btn').textContent = 'Add Category';
+            this.style.display = 'none';
+            document.getElementById('category-icon-preview').style.display = 'none';
+            document.getElementById('category-icon').value = '';
+        };
+
+        // Populate category dropdown in product form
+        function populateCategoryDropdown() {
+            const select = document.getElementById('product-category');
+
+            // Keep the first option (-- Select Category --)
+            const firstOption = select.options[0];
+            select.innerHTML = '';
+            select.appendChild(firstOption);
+
+            // Add categories
+            categories.forEach(category => {
+                const option = document.createElement('option');
+                option.value = category._id;
+                option.textContent = category.name;
+                select.appendChild(option);
+            });
+        }
+
+        // Update product form to include category
+        const originalSetProductForm = window.setProductForm;
+        window.setProductForm = function(product) {
+            originalSetProductForm(product);
+
+            // Set category if it exists
+            if (product.category) {
+                document.getElementById('product-category').value =
+                    typeof product.category === 'object' ? product.category._id : product.category;
+            } else {
+                document.getElementById('product-category').value = '';
+            }
+        };
+
+        // Update product rendering to include category
+        const originalRenderProducts = window.renderProducts;
+        window.renderProducts = function() {
+            const tbody = document.querySelector('#product-list tbody');
+            tbody.innerHTML = '';
+            (products || []).forEach(product => {
+                const tr = document.createElement('tr');
+
+                // Get category name
+                let categoryName = 'None';
+                if (product.category) {
+                    const categoryId = typeof product.category === 'object' ? product.category._id : product.category;
+                    const category = categories.find(c => c._id === categoryId);
+                    if (category) {
+                        categoryName = category.name;
+                    }
+                }
+
+                tr.innerHTML = `
+                    <td><img src="${product.image || ''}" alt="${product.name}" style="cursor:pointer;" class="product-img" data-id="${product._id}"></td>
+                    <td>${product.name}</td>
+                    <td>${product.desc}</td>
+                    <td>₹${product.price}</td>
+                    <td>${categoryName}</td>
+                    <td>
+                        <button class="edit-btn" data-id="${product._id}">Edit</button>
+                        <button class="delete-btn" data-id="${product._id}">Delete</button>
+                    </td>
+                `;
+                tr.querySelector('.product-img').onclick = function() {
+                    window.location.href = `product-details.html?id=${product._id}`;
+                };
+                tr.querySelector('.edit-btn').onclick = function() {
+                    setProductForm(product);
+                };
+                tr.querySelector('.delete-btn').onclick = async function() {
+                    if (confirm('Delete this product?')) {
+                        try {
+                            await fetch(`https://tridex1.onrender.com/products/${product._id}`, { method: 'DELETE' });
+                            fetchProducts();
+                        } catch (e) { alert('Failed to delete product.'); }
+                    }
+                };
+                tbody.appendChild(tr);
+            });
+        };
+
+        // Update product form submission to include category
+        const originalProductFormSubmit = document.getElementById('product-form').onsubmit;
+        document.getElementById('product-form').onsubmit = async function(e) {
+            e.preventDefault();
+
+            // Show loading indicator
+            showLoading();
+
+            const id = document.getElementById('product-id').value;
+            const name = document.getElementById('product-name').value.trim();
+            let image = document.getElementById('product-image').value.trim();
+            const desc = document.getElementById('product-desc').value.trim();
+            const price = document.getElementById('product-price').value.trim();
+            const category = document.getElementById('product-category').value;
+
+            // Validate inputs
+            if (!name) {
+                alert('Product name is required');
+                hideLoading();
+                return;
+            }
+
+            if (!price || isNaN(price) || price <= 0) {
+                alert('Please enter a valid price');
+                hideLoading();
+                return;
+            }
+
+            try {
+                // Prepare the product data
+                const productData = { name, desc, price };
+
+                // Only include image if it's not empty
+                if (image) {
+                    productData.image = image;
+                }
+
+                // Only include category if it's not empty
+                if (category) {
+                    productData.category = category;
+                }
+
+                if (id) {
+                    // Update
+                    const response = await fetch(`https://tridex1.onrender.com/products/${id}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(productData)
+                    });
+
+                    if (!response.ok) {
+                        if (response.status === 413) {
+                            throw new Error('The image is too large for the server to process. Please use a smaller image.');
+                        } else {
+                            throw new Error(`Server returned ${response.status}: ${response.statusText}`);
+                        }
+                    }
+
+                    alert('Product updated successfully!');
+                } else {
+                    // Add
+                    const response = await fetch('https://tridex1.onrender.com/products', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(productData)
+                    });
+
+                    if (!response.ok) {
+                        if (response.status === 413) {
+                            throw new Error('The image is too large for the server to process. Please use a smaller image.');
+                        } else {
+                            throw new Error(`Server returned ${response.status}: ${response.statusText}`);
+                        }
+                    }
+
+                    alert('Product added successfully!');
+                }
+
+                // Reset form
+                this.reset();
+                document.getElementById('product-save-btn').textContent = 'Add Product';
+                document.getElementById('product-cancel-btn').style.display = 'none';
+                document.getElementById('product-image-preview').style.display = 'none';
+                document.getElementById('product-image').value = '';
+
+                // Refresh product list
+                fetchProducts();
+            } catch (e) {
+                console.error('Product operation failed:', e);
+                alert(`Failed to ${id ? 'update' : 'add'} product: ${e.message}`);
+            } finally {
+                hideLoading();
+            }
+
+            return false; // Prevent default form submission
+        };
+
         // On load
         fetchUsers();
         fetchProducts();
+        fetchCategories();
     </script>
 </body>
 </html>

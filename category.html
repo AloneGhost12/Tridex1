@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Category Products - Tridex</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Include the ban system script -->
+    <script src="ban-system.js"></script>
+    <style>
+        /* Responsive Navbar */
+        @media (max-width: 900px) {
+            header > div {
+                flex-direction: column;
+                align-items: flex-start !important;
+            }
+            nav ul {
+                gap: 10px !important;
+            }
+            .search-bar {
+                max-width: 98vw !important;
+            }
+        }
+        @media (max-width: 600px) {
+            header > div {
+                flex-direction: column;
+                align-items: flex-start !important;
+                padding: 0 8px;
+            }
+            h1 {
+                font-size: 1.5rem !important;
+                margin-bottom: 8px !important;
+            }
+            nav ul {
+                flex-wrap: wrap;
+                gap: 6px !important;
+                font-size: 0.98em;
+            }
+            .search-bar {
+                flex-direction: column !important;
+                max-width: 100vw !important;
+                margin: 10px 0 0 0 !important;
+                position: relative !important;
+            }
+            .search-bar input {
+                border-radius: 5px !important;
+                margin-bottom: 0;
+                padding-right: 38px !important;
+            }
+            .search-bar button {
+                border-radius: 5px !important;
+                width: auto;
+                position: absolute !important;
+                right: 8px;
+                top: 50%;
+                transform: translateY(-50%);
+                padding: 0 !important;
+                background: none !important;
+                box-shadow: none !important;
+                height: 32px;
+                min-width: 32px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            .search-bar .search-icon {
+                font-size: 1.2em;
+                color: #007bff;
+            }
+            #username-display {
+                font-size: 0.98em !important;
+            }
+        }
+        @media (max-width: 420px) {
+            h1 {
+                font-size: 1.1rem !important;
+            }
+            nav ul {
+                font-size: 0.9em;
+            }
+            .product-card h3, .product-card p {
+                font-size: 0.95em;
+            }
+        }
+        /* Responsive Product Grid */
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 18px;
+            padding: 24px 12px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .product-card {
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            padding: 18px 12px;
+            text-align: center;
+            transition: box-shadow 0.2s;
+        }
+        .product-card img {
+            width: 100%;
+            height: 180px;
+            object-fit: contain;
+            margin-bottom: 10px;
+            border-radius: 6px;
+            background-color: #f9f9f9;
+            padding: 8px;
+        }
+        .product-card:hover {
+            box-shadow: 0 4px 16px rgba(0,0,0,0.13);
+        }
+        .product-image-container {
+            height: 180px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 10px;
+        }
+        /* Category Header */
+        .category-header {
+            text-align: center;
+            padding: 20px 0;
+            background: #f4f4f9;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #eee;
+        }
+        .category-header h1 {
+            color: #333;
+            margin: 0;
+            font-size: 2rem;
+        }
+        .category-header p {
+            color: #666;
+            margin-top: 10px;
+            font-size: 1.1rem;
+        }
+        .back-to-home {
+            display: inline-block;
+            margin-top: 15px;
+            padding: 8px 16px;
+            background: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            font-size: 0.9rem;
+            transition: background 0.3s;
+        }
+        .back-to-home:hover {
+            background: #0056b3;
+        }
+        @media (max-width: 600px) {
+            .category-header h1 {
+                font-size: 1.5rem;
+            }
+            .category-header p {
+                font-size: 0.95rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading animation overlay -->
+    <div id="loading-overlay" style="display:flex; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(255,255,255,0.7); z-index:99999; align-items:center; justify-content:center;">
+        <div style="border:6px solid #f3f3f3; border-top:6px solid #007bff; border-radius:50%; width:48px; height:48px; animation:spin 1s linear infinite;"></div>
+    </div>
+    <style>
+        @keyframes spin {
+            0% { transform: rotate(0deg);}
+            100% { transform: rotate(360deg);}
+        }
+    </style>
+    <header style="background-color: #333; color: white; padding: 15px 0; position:relative;">
+        <div style="display:flex; align-items:center; justify-content:space-between; padding:0 15px;">
+            <div style="display:flex; align-items:center;">
+                <h1>Tridex</h1>
+                <span id="username-display"></span>
+            </div>
+
+            <!-- Hamburger icon for mobile -->
+            <button id="hamburger-menu" style="background:none; border:none; cursor:pointer; display:none; padding:10px; z-index:1000;">
+                <div style="width:30px; height:3px; background-color:white; margin:6px 0; transition:0.4s;"></div>
+                <div style="width:30px; height:3px; background-color:white; margin:6px 0; transition:0.4s;"></div>
+                <div style="width:30px; height:3px; background-color:white; margin:6px 0; transition:0.4s;"></div>
+            </button>
+
+            <nav id="main-nav" style="display:flex;">
+                <ul id="nav" style="display:flex; list-style:none; margin:0; padding:0; align-items:center;">
+                    <li class="nav"><a href="index.html">Home</a></li>
+                    <li class="nav"><a href="about.html">About</a></li>
+                    <li class="nav"><a href="#">More</a></li>
+                    <li><a href="#" class="nav-icon" id="userIcon">👤</a></li>
+                    <li>
+                        <a href="#" class="nav-icon" id="mailIcon" title="Mailbox">
+                            &#9993;
+                            <span id="mail-count">0</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="cart.html" class="nav-icon" id="cartIcon" title="Cart">
+                            🛒<span id="cart-count">0</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+        <form class="search-bar" id="search-form">
+            <input type="text" id="search-input" placeholder="Search...">
+            <button type="submit">
+                <span class="search-icon">🔍</span>
+            </button>
+        </form>
+        <div class="dropdown-menu" id="userDropdown" style="display:none;">
+            <a href="login.html" class="dropdown-btn">Login</a>
+            <a href="signup.html" class="dropdown-btn">Sign Up</a>
+        </div>
+    </header>
+
+    <!-- Category Header -->
+    <div class="category-header">
+        <h1 id="category-title">Category Products</h1>
+        <p id="category-description"></p>
+        <a href="index.html" class="back-to-home">Back to Home</a>
+    </div>
+
+    <section class="product-grid" id="product-grid">
+        <!-- Product cards will be rendered here by JS -->
+    </section>
+
+    <!-- Ban popup for banned users -->
+    <div id="ban-message" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.8); z-index:999999; align-items:center; justify-content:center;">
+        <div style="background:#fff; padding:32px 24px; border-radius:8px; box-shadow:0 2px 12px rgba(0,0,0,0.15); min-width:320px; max-width:90%; text-align:center;">
+            <div style="margin-bottom:10px; font-size:3em; color:#d32f2f;">⚠️</div>
+            <h2 style="margin-bottom:10px; color:#d32f2f; font-size:1.5em;">Account Banned</h2>
+            <p style="margin-bottom:24px; font-size:1.1em; color:#555; line-height:1.5;">Your account has been banned by the administrator. You no longer have access to this site.</p>
+            <p style="margin-bottom:24px; font-size:0.9em; color:#777;">For more information, please contact support.</p>
+            <button id="ban-ok-btn" style="padding:10px 24px; background:#dc3545; color:#fff; border:none; border-radius:5px; font-size:1rem; cursor:pointer; font-weight:bold; transition:all 0.2s ease;">OK</button>
+        </div>
+    </div>
+
+    <script>
+        // Add click handler for the ban message OK button
+        document.getElementById('ban-ok-btn').addEventListener('click', function() {
+            // Clear all login data
+            localStorage.removeItem('token');
+            localStorage.removeItem('isLoggedIn');
+            localStorage.removeItem('username');
+            localStorage.removeItem('currentUser');
+
+            // Redirect to login page with banned parameter
+            window.location.href = 'login.html?banned=true';
+        });
+    </script>
+
+    <!-- Footer (fixed at bottom) -->
+    <footer style="position:fixed; left:0; bottom:0; width:100vw; background:#222; color:#fff; text-align:center; padding:12px 0; font-size:1rem; z-index:9999;">
+        &copy; 2025 Tridex. All rights reserved. Made with <span style="color:#e25555;">&#10084;&#65039;</span> by Tridex.
+    </footer>
+    <script>
+        // --- withLoading helper for loading overlay ---
+        function withLoading(action) {
+            return async function(...args) {
+                const loadingOverlay = document.getElementById('loading-overlay');
+                if (loadingOverlay) loadingOverlay.style.display = 'flex';
+                try {
+                    await action(...args);
+                } catch (error) {
+                    console.error('Error during action:', error);
+                } finally {
+                    if (loadingOverlay) loadingOverlay.style.display = 'none';
+                }
+            };
+        }
+
+        // --- Loading overlay helpers ---
+        function showLoading() {
+            document.getElementById('loading-overlay').style.display = 'flex';
+        }
+        function hideLoading() {
+            document.getElementById('loading-overlay').style.display = 'none';
+        }
+
+        // --- Hamburger menu functionality ---
+        document.addEventListener('DOMContentLoaded', function() {
+            const hamburger = document.getElementById('hamburger-menu');
+            const nav = document.getElementById('nav');
+
+            // Toggle navigation when hamburger is clicked
+            hamburger.addEventListener('click', function() {
+                nav.classList.toggle('show');
+
+                // Animate hamburger icon
+                const spans = hamburger.querySelectorAll('span');
+                spans.forEach(span => span.classList.toggle('active'));
+            });
+
+            // Close navigation when clicking outside
+            document.addEventListener('click', function(event) {
+                if (!hamburger.contains(event.target) && !nav.contains(event.target) && nav.classList.contains('show')) {
+                    nav.classList.remove('show');
+
+                    // Reset hamburger icon
+                    const spans = hamburger.querySelectorAll('span');
+                    spans.forEach(span => span.classList.remove('active'));
+                }
+            });
+
+            // Close navigation when window is resized
+            window.addEventListener('resize', function() {
+                if (window.innerWidth > 992 && nav.classList.contains('show')) {
+                    nav.classList.remove('show');
+
+                    // Reset hamburger icon
+                    const spans = hamburger.querySelectorAll('span');
+                    spans.forEach(span => span.classList.remove('active'));
+                }
+            });
+        });
+
+        // Get category id from URL
+        function getCategoryId() {
+            const params = new URLSearchParams(window.location.search);
+            return params.get('id');
+        }
+
+        // Main function to initialize the page
+        async function initCategoryPage() {
+            try {
+                showLoading();
+                
+                const categoryId = getCategoryId();
+                if (!categoryId) {
+                    window.location.href = 'index.html';
+                    return;
+                }
+
+                // Fetch category details
+                const categoryRes = await fetch(`https://tridex1.onrender.com/categories/${categoryId}`);
+                if (!categoryRes.ok) {
+                    throw new Error('Category not found');
+                }
+                
+                const category = await categoryRes.json();
+                
+                // Update page title and description
+                document.getElementById('category-title').textContent = category.name;
+                document.getElementById('category-description').textContent = category.description || '';
+                document.title = `${category.name} - Tridex`;
+
+                // Fetch products for this category
+                const productsRes = await fetch(`https://tridex1.onrender.com/categories/${categoryId}/products`);
+                const products = await productsRes.json();
+                
+                // Render products
+                renderProducts(products);
+            } catch (error) {
+                console.error('Error initializing category page:', error);
+                document.getElementById('product-grid').innerHTML = `
+                    <div style="text-align:center; color:#888; font-size:1.2em; padding:32px 0;">
+                        <p>Unable to load category products at this time.</p>
+                        <p style="font-size:0.9em; margin-top:10px;">Please try again later or contact support.</p>
+                        <button onclick="initCategoryPage()" style="margin-top:15px; padding:8px 16px; background:#007bff; color:#fff; border:none; border-radius:5px; cursor:pointer;">
+                            Try Again
+                        </button>
+                    </div>`;
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Render products function
+        function renderProducts(products) {
+            try {
+                const grid = document.getElementById('product-grid');
+                grid.innerHTML = '';
+                if (!products || products.length === 0) {
+                    grid.innerHTML = '<div style="text-align:center; color:#888; font-size:1.2em; padding:32px 0;">No products found in this category.</div>';
+                    return;
+                }
+                products.forEach(product => {
+                    try {
+                        const div = document.createElement('div');
+                        div.className = 'product-card';
+                        div.innerHTML = `
+                            <div class="product-image-container">
+                                <img src="${product.image || ''}" alt="${product.name}" style="cursor:pointer;" data-id="${product._id}">
+                            </div>
+                            <h3>${product.name}</h3>
+                            <p>₹${product.price}</p>
+                        `;
+                        div.querySelector('img').onclick = function() {
+                            window.location.href = `product-details.html?id=${product._id}`;
+                        };
+                        grid.appendChild(div);
+                    } catch (err) {
+                        console.error('Error rendering product:', product, err);
+                    }
+                });
+            } catch (err) {
+                console.error('Error in renderProducts:', err);
+                document.getElementById('product-grid').innerHTML = '<div style="text-align:center; color:#888; font-size:1.2em; padding:32px 0;">Failed to render products.<br>' + err + '</div>';
+            }
+        }
+
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', initCategoryPage);
+
+        // Search form
+        document.getElementById('search-form').onsubmit = function(e) {
+            e.preventDefault();
+            const filter = document.getElementById('search-input').value.trim().toLowerCase();
+            window.location.href = `index.html?search=${encodeURIComponent(filter)}`;
+        };
+
+        // Cart icon click
+        document.getElementById('cartIcon').onclick = withLoading(function(e) {
+            e.preventDefault();
+            window.location.href = 'cart.html';
+        });
+
+        // User icon click
+        const userIcon = document.getElementById('userIcon');
+        const dropdown = document.getElementById('userDropdown');
+        userIcon.onclick = function(e) {
+            e.preventDefault();
+            dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+        };
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!userIcon.contains(e.target) && !dropdown.contains(e.target)) {
+                dropdown.style.display = 'none';
+            }
+        });
+
+        // Ban check logic using our ban system
+        if (window.banSystem && window.banSystem.checkCurrentUserBan()) {
+            // Show ban message
+            document.getElementById('ban-message').style.display = 'flex';
+            // Stop further script execution
+            throw new Error('User is banned');
+        }
+    </script>
+</body>
+</html>
