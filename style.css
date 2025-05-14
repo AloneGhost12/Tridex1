@@ -99,6 +99,8 @@ h1 {
     margin-left: 10px;
     font-weight: normal;
     font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }.card {
     background-color: #2ecc40;
     color: white;
