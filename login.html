@@ -137,6 +137,12 @@
             if (loadingOverlay) {
                 loadingOverlay.style.display = 'none';
             }
+
+            // Clear all login data to prevent auto-login
+            localStorage.removeItem('token');
+            localStorage.removeItem('isLoggedIn');
+            localStorage.removeItem('username');
+            localStorage.removeItem('currentUser');
         }
     });
 
@@ -163,8 +169,16 @@
 
         // Check if user is banned using our ban system
         if (window.banSystem && window.banSystem.isUserBanned(userInput)) {
+            console.log(`Login attempt by banned user: ${userInput}`);
             document.getElementById('login-ban-message').style.display = 'block';
             document.getElementById('login-ban-message').scrollIntoView({ behavior: 'smooth' });
+
+            // Clear any existing login data
+            localStorage.removeItem('token');
+            localStorage.removeItem('isLoggedIn');
+            localStorage.removeItem('username');
+            localStorage.removeItem('currentUser');
+
             hideLoading();
             return;
         }
@@ -291,8 +305,16 @@
                 if (user) {
                     // Check if user is banned
                     if (window.banSystem && window.banSystem.isUserBanned(userInput)) {
+                        console.log(`Local login attempt by banned user: ${userInput}`);
                         document.getElementById('login-ban-message').style.display = 'block';
                         document.getElementById('login-ban-message').scrollIntoView({ behavior: 'smooth' });
+
+                        // Clear any existing login data
+                        localStorage.removeItem('token');
+                        localStorage.removeItem('isLoggedIn');
+                        localStorage.removeItem('username');
+                        localStorage.removeItem('currentUser');
+
                         return;
                     }
 
@@ -319,6 +341,21 @@
                     // Check hardcoded admin/user credentials as a last resort
                     if ((userInput === 'admin' && password === 'admin123') ||
                         (userInput === 'user' && password === 'user123')) {
+
+                        // Check if user is banned
+                        if (window.banSystem && window.banSystem.isUserBanned(userInput)) {
+                            console.log(`Hardcoded login attempt by banned user: ${userInput}`);
+                            document.getElementById('login-ban-message').style.display = 'block';
+                            document.getElementById('login-ban-message').scrollIntoView({ behavior: 'smooth' });
+
+                            // Clear any existing login data
+                            localStorage.removeItem('token');
+                            localStorage.removeItem('isLoggedIn');
+                            localStorage.removeItem('username');
+                            localStorage.removeItem('currentUser');
+
+                            return;
+                        }
 
                         // Create a fake token
                         const token = 'fake-jwt-token-' + Date.now();

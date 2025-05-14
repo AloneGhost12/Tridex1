@@ -101,10 +101,10 @@ function showBanMessage() {
         const banMessage = document.createElement('div');
         banMessage.id = 'ban-message';
         // Set z-index to 999999 to ensure it's above everything, including loading screens
-        banMessage.style.cssText = 'display:flex; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.8); z-index:999999; align-items:center; justify-content:center;';
+        banMessage.style.cssText = 'display:flex; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:999999; align-items:center; justify-content:center;';
 
         const messageContent = document.createElement('div');
-        messageContent.style.cssText = 'background:#fff; padding:32px 24px; border-radius:8px; box-shadow:0 2px 12px rgba(0,0,0,0.15); min-width:320px; max-width:90%; text-align:center;';
+        messageContent.style.cssText = 'background:#fff; padding:32px 24px; border-radius:8px; box-shadow:0 2px 12px rgba(0,0,0,0.15); min-width:280px; max-width:90%; text-align:center;';
 
         messageContent.innerHTML = `
             <div style="margin-bottom:10px; font-size:3em; color:#d32f2f;">⚠️</div>
@@ -115,30 +115,33 @@ function showBanMessage() {
         `;
 
         banMessage.appendChild(messageContent);
-        document.body.appendChild(banMessage);
 
-        // Add click event to the OK button
-        document.getElementById('ban-ok-btn').onclick = function() {
-            // Clear all login data
-            localStorage.removeItem('token');
-            localStorage.removeItem('isLoggedIn');
-            localStorage.removeItem('username');
-            localStorage.removeItem('currentUser');
-
-            // Redirect to login page with banned parameter
-            window.location.href = 'login.html?banned=true';
-        };
-
-        // Add hover effect to the button
-        document.getElementById('ban-ok-btn').addEventListener('mouseover', function() {
-            this.style.backgroundColor = '#b71c1c';
-        });
-        document.getElementById('ban-ok-btn').addEventListener('mouseout', function() {
-            this.style.backgroundColor = '#dc3545';
-        });
+        // Ensure the ban message is added to the body
+        // Wait for the DOM to be fully loaded
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', function() {
+                document.body.appendChild(banMessage);
+                setupBanButtonHandlers();
+            });
+        } else {
+            document.body.appendChild(banMessage);
+            setupBanButtonHandlers();
+        }
     } else {
-        // Show the existing ban message
-        document.getElementById('ban-message').style.display = 'flex';
+        // If the ban message already exists, just show it
+        const banMessage = document.getElementById('ban-message');
+        banMessage.style.display = 'flex';
+
+        // Ensure the ban message is visible on mobile
+        banMessage.style.position = 'fixed';
+        banMessage.style.top = '0';
+        banMessage.style.left = '0';
+        banMessage.style.width = '100%';
+        banMessage.style.height = '100%';
+        banMessage.style.zIndex = '999999';
+
+        // Make sure the button handlers are set up
+        setupBanButtonHandlers();
 
         // Hide any loading screen that might be visible
         if (loadingOverlay) {
@@ -150,11 +153,46 @@ function showBanMessage() {
     document.body.style.overflow = 'hidden';
 }
 
+// Helper function to set up ban button handlers
+function setupBanButtonHandlers() {
+    const banOkBtn = document.getElementById('ban-ok-btn');
+    if (banOkBtn) {
+        // Remove any existing event listeners to prevent duplicates
+        const newBanOkBtn = banOkBtn.cloneNode(true);
+        banOkBtn.parentNode.replaceChild(newBanOkBtn, banOkBtn);
+
+        // Add click event to the OK button
+        newBanOkBtn.onclick = function() {
+            // Clear all login data
+            localStorage.removeItem('token');
+            localStorage.removeItem('isLoggedIn');
+            localStorage.removeItem('username');
+            localStorage.removeItem('currentUser');
+
+            // Allow scrolling again
+            document.body.style.overflow = '';
+
+            // Redirect to login page with banned parameter
+            window.location.href = 'login.html?banned=true';
+        };
+
+        // Add hover effect to the button
+        newBanOkBtn.addEventListener('mouseover', function() {
+            this.style.backgroundColor = '#b71c1c';
+        });
+        newBanOkBtn.addEventListener('mouseout', function() {
+            this.style.backgroundColor = '#dc3545';
+        });
+    }
+}
+
 // Function to check if the current user is banned and handle accordingly
 function checkCurrentUserBan() {
     const username = localStorage.getItem('username') || localStorage.getItem('currentUser');
 
     if (isUserBanned(username)) {
+        console.log(`User ${username} is banned. Showing ban message.`);
+
         // Hide any loading screen that might be visible
         const loadingOverlay = document.getElementById('loading-overlay');
         if (loadingOverlay) {
@@ -167,8 +205,15 @@ function checkCurrentUserBan() {
         localStorage.removeItem('username');
         localStorage.removeItem('currentUser');
 
-        // Show the ban message
-        showBanMessage();
+        // Ensure the ban message is shown even if the DOM isn't fully loaded yet
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', function() {
+                showBanMessage();
+            });
+        } else {
+            // Show the ban message immediately
+            showBanMessage();
+        }
 
         return true; // User is banned
     }
