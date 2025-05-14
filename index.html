@@ -379,8 +379,8 @@
    </style>
 
     <!-- Ban popup for banned users -->
-    <div id="ban-message" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.8); z-index:999999; align-items:center; justify-content:center;">
-        <div style="background:#fff; padding:32px 24px; border-radius:8px; box-shadow:0 2px 12px rgba(0,0,0,0.15); min-width:320px; max-width:90%; text-align:center;">
+    <div id="ban-message" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:999999; align-items:center; justify-content:center;">
+        <div style="background:#fff; padding:32px 24px; border-radius:8px; box-shadow:0 2px 12px rgba(0,0,0,0.15); min-width:280px; max-width:90%; text-align:center;">
             <div style="margin-bottom:10px; font-size:3em; color:#d32f2f;">⚠️</div>
             <h2 style="margin-bottom:10px; color:#d32f2f; font-size:1.5em;">Account Banned</h2>
             <p style="margin-bottom:24px; font-size:1.1em; color:#555; line-height:1.5;">Your account has been banned by the administrator. You no longer have access to this site.</p>
@@ -391,15 +391,23 @@
 
     <script>
         // Add click handler for the ban message OK button
-        document.getElementById('ban-ok-btn').addEventListener('click', function() {
-            // Clear all login data
-            localStorage.removeItem('token');
-            localStorage.removeItem('isLoggedIn');
-            localStorage.removeItem('username');
-            localStorage.removeItem('currentUser');
+        document.addEventListener('DOMContentLoaded', function() {
+            const banOkBtn = document.getElementById('ban-ok-btn');
+            if (banOkBtn) {
+                banOkBtn.addEventListener('click', function() {
+                    // Clear all login data
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('isLoggedIn');
+                    localStorage.removeItem('username');
+                    localStorage.removeItem('currentUser');
 
-            // Redirect to login page with banned parameter
-            window.location.href = 'login.html?banned=true';
+                    // Allow scrolling again
+                    document.body.style.overflow = '';
+
+                    // Redirect to login page with banned parameter
+                    window.location.href = 'login.html?banned=true';
+                });
+            }
         });
     </script>
     <!-- Mailbox Modal -->
@@ -614,11 +622,31 @@ document.addEventListener('DOMContentLoaded', function() {
 // Ban check logic (must be first in script)
 const username = localStorage.getItem('username') || localStorage.getItem('currentUser');
 
-// Check if the user is banned using our ban system
-if (window.banSystem && window.banSystem.checkCurrentUserBan()) {
-    // Stop further script execution - the ban system will handle everything
+// Function to check ban status after DOM is loaded
+function checkBanStatus() {
+    // Check if the user is banned using our ban system
+    if (window.banSystem && window.banSystem.isUserBanned(username)) {
+        console.log('User is banned, showing ban message');
+        // Use the ban system to handle the ban
+        window.banSystem.checkCurrentUserBan();
+        // Stop further script execution
+        throw new Error('User is banned');
+    }
+}
+
+// Check ban status immediately
+if (window.banSystem && window.banSystem.isUserBanned(username)) {
+    console.log('User is banned, showing ban message');
+    // Use the ban system to handle the ban
+    window.banSystem.checkCurrentUserBan();
+    // Stop further script execution
     throw new Error('User is banned');
 }
+
+// Also check after DOM is loaded to ensure the ban message is displayed
+document.addEventListener('DOMContentLoaded', function() {
+    checkBanStatus();
+});
 
 // Fix: define verifiedUsers as an empty array to prevent JS errors
 const verifiedUsers = [];
