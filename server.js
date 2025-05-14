@@ -740,8 +740,15 @@ app.post('/users/reset-password', async (req, res) => {
 app.get('/cloudinary-config', (req, res) => {
     try {
         // Only return the cloud name, not the API key or secret
+        const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
+
+        if (!cloudName || cloudName === 'your_cloud_name') {
+            console.error('Cloudinary cloud name not properly configured in environment variables');
+            return res.status(500).json({ message: 'Cloudinary not properly configured' });
+        }
+
         res.json({
-            cloudName: process.env.CLOUDINARY_CLOUD_NAME || 'your_cloud_name'
+            cloudName: cloudName
         });
     } catch (err) {
         console.error('Error providing Cloudinary config:', err);
