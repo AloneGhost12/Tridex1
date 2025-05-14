@@ -486,37 +486,63 @@
                     // Process the image (compress and convert to base64)
                     const processedImageUrl = await uploadToCloudinary(file);
 
-                    // Check if the processed image is still too large
-                    if (processedImageUrl.length > 1.5 * 1024 * 1024) {
-                        console.warn('Processed image is still large: ' + Math.round(processedImageUrl.length/1024) + 'KB');
-                        alert('The image is still too large after compression. Please choose a smaller or simpler image.');
-                        this.value = ''; // Clear the file input
-                        hideLoading();
-                        return;
-                    }
-
-                    // Set the processed image to the hidden input
+                    // Set the Cloudinary URL to the hidden input
                     document.getElementById('product-image').value = processedImageUrl;
 
                     // Show preview
                     document.getElementById('product-image-preview').src = processedImageUrl;
                     document.getElementById('product-image-preview').style.display = '';
 
-                    // Show image size info
-                    const sizeKB = Math.round(processedImageUrl.length/1024);
-                    console.log('Image processed, final size:', sizeKB + 'KB');
+                    // Check if it's a Cloudinary URL
+                    if (processedImageUrl.includes('cloudinary.com')) {
+                        console.log('Using Cloudinary URL:', processedImageUrl);
 
-                    // Add size indicator next to preview
-                    const sizeIndicator = document.createElement('span');
-                    sizeIndicator.textContent = ' (' + sizeKB + 'KB)';
-                    sizeIndicator.style.fontSize = '0.8em';
-                    sizeIndicator.style.color = sizeKB > 800 ? '#dc3545' : '#28a745';
+                        // Add Cloudinary indicator next to preview
+                        const cloudinaryIndicator = document.createElement('span');
+                        cloudinaryIndicator.textContent = ' (Cloudinary)';
+                        cloudinaryIndicator.style.fontSize = '0.8em';
+                        cloudinaryIndicator.style.color = '#28a745'; // Green for Cloudinary
 
-                    const previewImg = document.getElementById('product-image-preview');
-                    if (previewImg.nextSibling && previewImg.nextSibling.tagName === 'SPAN') {
-                        previewImg.parentNode.removeChild(previewImg.nextSibling);
+                        const previewImg = document.getElementById('product-image-preview');
+                        if (previewImg.nextSibling && previewImg.nextSibling.tagName === 'SPAN') {
+                            previewImg.parentNode.removeChild(previewImg.nextSibling);
+                        }
+                        previewImg.parentNode.insertBefore(cloudinaryIndicator, previewImg.nextSibling);
+                    } else {
+                        // It's a base64 string (fallback)
+                        // Show image size info
+                        const sizeKB = Math.round(processedImageUrl.length/1024);
+                        console.log('Using base64 image, size:', sizeKB + 'KB');
+
+                        // Check if the base64 string is too large
+                        if (sizeKB > 2000) {
+                            console.warn('Base64 image is very large:', sizeKB + 'KB');
+                            alert('The image is too large. Please choose a smaller image or try again.');
+                            this.value = ''; // Clear the file input
+                            hideLoading();
+                            return;
+                        }
+
+                        // Add size indicator next to preview
+                        const sizeIndicator = document.createElement('span');
+                        sizeIndicator.textContent = ' (' + sizeKB + 'KB - Local)';
+                        sizeIndicator.style.fontSize = '0.8em';
+
+                        // Color code based on size
+                        if (sizeKB < 800) {
+                            sizeIndicator.style.color = '#28a745'; // Green for good size
+                        } else if (sizeKB < 1500) {
+                            sizeIndicator.style.color = '#ffc107'; // Yellow for medium size
+                        } else {
+                            sizeIndicator.style.color = '#dc3545'; // Red for large size
+                        }
+
+                        const previewImg = document.getElementById('product-image-preview');
+                        if (previewImg.nextSibling && previewImg.nextSibling.tagName === 'SPAN') {
+                            previewImg.parentNode.removeChild(previewImg.nextSibling);
+                        }
+                        previewImg.parentNode.insertBefore(sizeIndicator, previewImg.nextSibling);
                     }
-                    previewImg.parentNode.insertBefore(sizeIndicator, previewImg.nextSibling);
 
                 } catch (error) {
                     console.error('Image processing failed:', error);
@@ -528,37 +554,61 @@
             }
         });
 
-        // Function to process image for upload
+        // Function to upload image to Cloudinary
         async function uploadToCloudinary(file) {
             try {
-                // Compress and resize the image before converting to base64
-                const compressedImage = await compressImage(file, 800, 0.7); // max width 800px, quality 70%
+                // Get the original dimensions and size for comparison
+                const originalImage = await loadImage(file);
+                console.log('Original dimensions:', originalImage.width + 'x' + originalImage.height);
+                console.log('Original file size:', Math.round(file.size/1024) + 'KB');
 
-                // Convert compressed image to base64
-                const base64String = await fileToBase64(compressedImage);
+                // Create a FormData object to send the file
+                const formData = new FormData();
+                formData.append('file', file);
+                formData.append('upload_preset', 'ml_default'); // Using the default unsigned upload preset
 
-                // Check if the base64 string is too large (over 1MB)
-                if (base64String.length > 1024 * 1024) {
-                    console.warn('Image is large (' + Math.round(base64String.length/1024) + 'KB), compressing further');
+                // Show upload progress in console
+                console.log('Uploading to Cloudinary...');
 
-                    // Try compressing more aggressively
-                    const moreCompressedImage = await compressImage(file, 600, 0.5); // max width 600px, quality 50%
-                    const smallerBase64 = await fileToBase64(moreCompressedImage);
+                // Upload to Cloudinary
+                const response = await fetch('https://api.cloudinary.com/v1_1/dtzhskby3/image/upload', {
+                    method: 'POST',
+                    body: formData
+                });
 
-                    console.log('Original size: ' + Math.round(base64String.length/1024) + 'KB, Compressed size: ' + Math.round(smallerBase64.length/1024) + 'KB');
-                    return smallerBase64;
+                if (!response.ok) {
+                    throw new Error(`Cloudinary upload failed: ${response.status} ${response.statusText}`);
                 }
 
-                console.log('Image processed successfully, size: ' + Math.round(base64String.length/1024) + 'KB');
-                return base64String;
+                const data = await response.json();
+                console.log('Cloudinary upload successful:', data);
+
+                // Return the secure URL of the uploaded image
+                return data.secure_url;
             } catch (error) {
-                console.error('Error processing image:', error);
-                throw error;
+                console.error('Error uploading to Cloudinary:', error);
+
+                // If Cloudinary upload fails, fall back to base64 encoding
+                console.log('Falling back to base64 encoding...');
+
+                try {
+                    // Compress and resize the image
+                    const compressedImage = await compressImage(file, 1200, 0.9);
+
+                    // Convert to base64
+                    const base64String = await fileToBase64(compressedImage);
+                    console.log('Fallback to base64 successful, size:', Math.round(base64String.length/1024) + 'KB');
+
+                    return base64String;
+                } catch (fallbackError) {
+                    console.error('Fallback to base64 failed:', fallbackError);
+                    throw error; // Throw the original error
+                }
             }
         }
 
-        // Helper function to compress and resize an image
-        function compressImage(file, maxWidth, quality) {
+        // Helper function to load an image and get its dimensions
+        function loadImage(file) {
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
                 reader.readAsDataURL(file);
@@ -566,28 +616,63 @@
                     const img = new Image();
                     img.src = event.target.result;
                     img.onload = function() {
-                        // Calculate new dimensions
+                        resolve(img);
+                    };
+                    img.onerror = function(error) {
+                        reject(error);
+                    };
+                };
+                reader.onerror = function(error) {
+                    reject(error);
+                };
+            });
+        }
+
+        // Helper function to compress and resize an image with better quality preservation
+        function compressImage(file, maxDimension, quality) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = function(event) {
+                    const img = new Image();
+                    img.src = event.target.result;
+                    img.onload = function() {
+                        // Calculate new dimensions while preserving aspect ratio
                         let width = img.width;
                         let height = img.height;
 
-                        if (width > maxWidth) {
-                            height = Math.round(height * maxWidth / width);
-                            width = maxWidth;
+                        // Determine which dimension to constrain
+                        if (width > height) {
+                            // Landscape image
+                            if (width > maxDimension) {
+                                height = Math.round(height * maxDimension / width);
+                                width = maxDimension;
+                            }
+                        } else {
+                            // Portrait or square image
+                            if (height > maxDimension) {
+                                width = Math.round(width * maxDimension / height);
+                                height = maxDimension;
+                            }
                         }
+
+                        console.log('Resizing to:', width + 'x' + height, 'with quality:', quality);
 
                         // Create canvas for resizing
                         const canvas = document.createElement('canvas');
                         canvas.width = width;
                         canvas.height = height;
 
-                        // Draw and compress image on canvas
+                        // Draw and compress image on canvas with better quality
                         const ctx = canvas.getContext('2d');
+                        ctx.imageSmoothingEnabled = true;
+                        ctx.imageSmoothingQuality = 'high';
                         ctx.drawImage(img, 0, 0, width, height);
 
                         // Convert to blob with compression
                         canvas.toBlob(function(blob) {
                             resolve(blob);
-                        }, file.type, quality);
+                        }, 'image/jpeg', quality); // Always use JPEG for better compression
                     };
                     img.onerror = function(error) {
                         reject(error);
@@ -635,17 +720,23 @@
                 return;
             }
 
-            // Check if image is too large (over 1.5MB)
-            if (image && image.length > 1.5 * 1024 * 1024) {
-                console.warn('Image is very large: ' + Math.round(image.length/1024) + 'KB');
-                alert('The image is too large. Please choose a smaller image or reduce the image quality.');
-                hideLoading();
-                return;
-            }
-
-            // Log the image size for debugging
+            // Check if it's a Cloudinary URL or base64
             if (image) {
-                console.log('Submitting product with image size:', Math.round(image.length/1024) + 'KB');
+                if (image.includes('cloudinary.com')) {
+                    console.log('Submitting product with Cloudinary URL:', image);
+                } else {
+                    // It's a base64 string, check size
+                    const sizeKB = Math.round(image.length/1024);
+                    console.log('Submitting product with base64 image, size:', sizeKB + 'KB');
+
+                    // Check if image is too large (over 2MB)
+                    if (image.length > 2 * 1024 * 1024) {
+                        console.warn('Image is very large:', sizeKB + 'KB');
+                        alert('The image is too large. Please choose a smaller image or reduce the image quality.');
+                        hideLoading();
+                        return;
+                    }
+                }
             }
 
             try {
