@@ -704,25 +704,80 @@
 
         // Add product to cart
         function addToCart() {
-            let cart = JSON.parse(localStorage.getItem('cart')) || [];
+            // Get the current username
+            const username = localStorage.getItem('username') || localStorage.getItem('currentUser');
+
+            // Check if user is logged in
+            if (!username) {
+                showActionMessage('Please log in to add items to cart', 'error');
+                setTimeout(() => {
+                    window.location.href = 'login.html';
+                }, 1500);
+                return;
+            }
+
+            // Get the cart
+            let cart = [];
+            try {
+                cart = JSON.parse(localStorage.getItem('cart')) || [];
+            } catch (e) {
+                cart = [];
+            }
+
+            // Check if product is already in cart
             const isInCart = cart.some(p => p._id === currentProduct._id);
 
             if (isInCart) {
                 showActionMessage('Already in cart');
             } else {
+                // Add product to cart
                 cart.push(currentProduct);
                 localStorage.setItem('cart', JSON.stringify(cart));
+
+                // Also save to user-specific cart
+                localStorage.setItem('cart_' + username, JSON.stringify(cart));
+                localStorage.setItem('cartUser', username);
+
+                // Show success message
                 showActionMessage('Added to cart');
+
+                // Update cart count if updateCartCount function exists
+                if (window.updateCartCount) {
+                    window.updateCartCount();
+                }
             }
         }
 
         // Buy now functionality
         function buyNow() {
-            // Add to cart first
-            let cart = JSON.parse(localStorage.getItem('cart')) || [];
+            // Get the current username
+            const username = localStorage.getItem('username') || localStorage.getItem('currentUser');
+
+            // Check if user is logged in
+            if (!username) {
+                showActionMessage('Please log in to purchase items', 'error');
+                setTimeout(() => {
+                    window.location.href = 'login.html';
+                }, 1500);
+                return;
+            }
+
+            // Get the cart
+            let cart = [];
+            try {
+                cart = JSON.parse(localStorage.getItem('cart')) || [];
+            } catch (e) {
+                cart = [];
+            }
+
+            // Add to cart first if not already there
             if (!cart.some(p => p._id === currentProduct._id)) {
                 cart.push(currentProduct);
                 localStorage.setItem('cart', JSON.stringify(cart));
+
+                // Also save to user-specific cart
+                localStorage.setItem('cart_' + username, JSON.stringify(cart));
+                localStorage.setItem('cartUser', username);
             }
 
             // Redirect to checkout page (you would create this page)
@@ -766,7 +821,7 @@
             }
 
             // Get current user (or use 'Anonymous' if not logged in)
-            const username = localStorage.getItem('username') || 'Anonymous';
+            const username = localStorage.getItem('username') || localStorage.getItem('currentUser') || 'Anonymous';
 
             // Create new review
             const newReview = {

@@ -308,7 +308,7 @@
     <script>
         function renderCart() {
             // Ensure cart is isolated per user
-            const username = localStorage.getItem('currentUser');
+            const username = localStorage.getItem('username') || localStorage.getItem('currentUser');
             const cartUser = localStorage.getItem('cartUser');
             if (cartUser !== username) {
                 const userCart = localStorage.getItem('cart_' + username);
