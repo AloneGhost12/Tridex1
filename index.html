@@ -517,32 +517,112 @@ document.getElementById('popup-logout-yes').onclick = function() {
         });
 
         // Mailbox open
-        document.getElementById('mailIcon').onclick = withLoading(function(e) {
+        document.getElementById('mailIcon').onclick = withLoading(async function(e) {
             e.preventDefault();
-            // ...existing code for showing mailbox...
+
+            const isLoggedIn = localStorage.getItem('isLoggedIn');
+            const hasToken = localStorage.getItem('token');
+            const username = localStorage.getItem('username');
+
+            // If we have a token but no isLoggedIn flag, set it
+            if (hasToken && !isLoggedIn) {
+                localStorage.setItem('isLoggedIn', 'true');
+            }
+
+            // Check login status after potential update
+            const isActuallyLoggedIn = localStorage.getItem('isLoggedIn') || hasToken;
+
+            if (!isActuallyLoggedIn) {
+                alert('You must login to view your mailbox.');
+                window.location.href = 'login.html';
+                return;
+            }
+
+            // Fetch announcements from server including user-specific ones
             let messages = [];
             try {
-                messages = JSON.parse(localStorage.getItem('adminMessages')) || [];
+                const response = await fetch(`https://tridex1.onrender.com/announcements?username=${encodeURIComponent(username)}`);
+                if (response.ok) {
+                    messages = await response.json();
+                } else {
+                    console.error('Failed to fetch announcements:', response.status);
+                    // Fallback to local storage if server fetch fails
+                    messages = JSON.parse(localStorage.getItem('adminMessages')) || [];
+                }
             } catch (e) {
-                messages = [];
+                console.error('Error fetching announcements:', e);
+                // Fallback to local storage
+                messages = JSON.parse(localStorage.getItem('adminMessages')) || [];
             }
-            const username = localStorage.getItem('username');
+
             const lastSeenKey = username ? `mailLastSeen_${username}` : 'mailLastSeen_guest';
             localStorage.setItem(lastSeenKey, messages.length);
             updateMailCount();
+
             const mailbox = document.getElementById('mailbox-modal');
             const messagesDiv = document.getElementById('mailbox-messages');
+
             if (messages.length === 0) {
                 messagesDiv.innerHTML = '<p style="color:#888;">No messages.</p>';
             } else {
-                messagesDiv.innerHTML = messages.map(msg =>
-                    `<div style="border-bottom:1px solid #eee; padding:8px 0;">
-                        <strong>${msg.title || 'Announcement'}</strong>
-                        <div style="font-size:0.97em; margin-top:4px;">${msg.body}</div>
-                        <div style="font-size:0.85em; color:#888; margin-top:2px;">${msg.date || ''}</div>
-                    </div>`
-                ).join('');
+                messagesDiv.innerHTML = messages.map(msg => {
+                    // Check if it's a welcome message that hasn't been read
+                    const isWelcomeMessage = msg.isWelcomeMessage && !msg.isRead;
+                    const welcomeClass = isWelcomeMessage ? 'welcome-message' : '';
+                    const welcomeStyle = isWelcomeMessage ? 'background-color:#f8f9fa; border-left:4px solid #28a745; padding-left:12px;' : '';
+
+                    return `
+                        <div class="message-item ${welcomeClass}" data-id="${msg._id}" style="border-bottom:1px solid #eee; padding:12px 0; ${welcomeStyle}">
+                            <strong>${msg.title || 'Announcement'}</strong>
+                            <div style="font-size:0.97em; margin-top:4px;">${msg.message || msg.body}</div>
+                            <div style="font-size:0.85em; color:#888; margin-top:2px; display:flex; justify-content:space-between;">
+                                <span>${new Date(msg.createdAt).toLocaleString() || msg.date || ''}</span>
+                                ${isWelcomeMessage ?
+                                    `<button class="mark-read-btn" data-id="${msg._id}" style="background:#28a745; color:white; border:none; border-radius:4px; padding:2px 8px; cursor:pointer; font-size:0.9em;">Mark as Read</button>`
+                                    : ''}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                // Add event listeners to "Mark as Read" buttons
+                const markReadButtons = document.querySelectorAll('.mark-read-btn');
+                markReadButtons.forEach(button => {
+                    button.addEventListener('click', async function(e) {
+                        e.stopPropagation(); // Prevent event bubbling
+
+                        const messageId = this.getAttribute('data-id');
+                        try {
+                            const response = await fetch(`https://tridex1.onrender.com/announcements/${messageId}/read`, {
+                                method: 'PUT',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                }
+                            });
+
+                            if (response.ok) {
+                                // Remove the welcome message styling
+                                const messageItem = this.closest('.message-item');
+                                messageItem.classList.remove('welcome-message');
+                                messageItem.style.backgroundColor = '';
+                                messageItem.style.borderLeft = '';
+                                messageItem.style.paddingLeft = '';
+
+                                // Remove the button
+                                this.remove();
+
+                                // Update the count
+                                updateMailCount();
+                            } else {
+                                console.error('Failed to mark message as read:', response.status);
+                            }
+                        } catch (error) {
+                            console.error('Error marking message as read:', error);
+                        }
+                    });
+                });
             }
+
             mailbox.style.display = 'flex';
         });
 
@@ -564,14 +644,7 @@ document.getElementById('popup-logout-yes').onclick = function() {
         });
 
         // Mail notification count logic
-    function updateMailCount() {
-        let messages = [];
-        try {
-            messages = JSON.parse(localStorage.getItem('adminMessages')) || [];
-        } catch (e) {
-            messages = [];
-        }
-
+    async function updateMailCount() {
         // Check login status with both methods
         const isLoggedIn = localStorage.getItem('isLoggedIn');
         const hasToken = localStorage.getItem('token');
@@ -585,17 +658,52 @@ document.getElementById('popup-logout-yes').onclick = function() {
             localStorage.setItem('isLoggedIn', 'true');
         }
 
-        const lastSeenKey = username ? `mailLastSeen_${username}` : 'mailLastSeen_guest';
-        const lastSeen = Number(localStorage.getItem(lastSeenKey) || 0);
-        const newCount = Math.max(messages.length - lastSeen, 0);
+        // If not logged in, hide the mail count
         const mailCount = document.getElementById('mail-count');
-
-        if (!isActuallyLoggedIn) {
+        if (!isActuallyLoggedIn || !username) {
             mailCount.style.display = 'none';
             return;
         }
-        if (newCount > 0) {
-            mailCount.textContent = newCount;
+
+        // Try to fetch from server first
+        let messages = [];
+        let unreadCount = 0;
+
+        try {
+            const response = await fetch(`https://tridex1.onrender.com/announcements?username=${encodeURIComponent(username)}`);
+            if (response.ok) {
+                messages = await response.json();
+
+                // Count unread welcome messages
+                unreadCount = messages.filter(msg => msg.isWelcomeMessage && !msg.isRead).length;
+
+                // Store the messages in localStorage for offline access
+                localStorage.setItem('adminMessages', JSON.stringify(messages));
+            } else {
+                console.error('Failed to fetch announcements for count:', response.status);
+                // Fallback to local storage
+                messages = JSON.parse(localStorage.getItem('adminMessages')) || [];
+            }
+        } catch (e) {
+            console.error('Error fetching announcements for count:', e);
+            // Fallback to local storage
+            try {
+                messages = JSON.parse(localStorage.getItem('adminMessages')) || [];
+            } catch (e) {
+                messages = [];
+            }
+        }
+
+        // If we didn't get unread count from server, calculate from local storage
+        if (unreadCount === 0) {
+            const lastSeenKey = username ? `mailLastSeen_${username}` : 'mailLastSeen_guest';
+            const lastSeen = Number(localStorage.getItem(lastSeenKey) || 0);
+            unreadCount = Math.max(messages.length - lastSeen, 0);
+        }
+
+        // Update the badge
+        if (unreadCount > 0) {
+            mailCount.textContent = unreadCount;
             mailCount.style.display = '';
         } else {
             mailCount.style.display = 'none';
@@ -603,51 +711,7 @@ document.getElementById('popup-logout-yes').onclick = function() {
     }
     updateMailCount();
 
-    // When mailbox is opened, mark all as seen
-    document.getElementById('mailIcon').onclick = function(e) {
-        e.preventDefault();
-        const isLoggedIn = localStorage.getItem('isLoggedIn');
-        const hasToken = localStorage.getItem('token');
-
-        // If we have a token but no isLoggedIn flag, set it
-        if (hasToken && !isLoggedIn) {
-            localStorage.setItem('isLoggedIn', 'true');
-        }
-
-        // Check login status after potential update
-        const isActuallyLoggedIn = localStorage.getItem('isLoggedIn') || hasToken;
-
-        if (!isActuallyLoggedIn) {
-            alert('You must login to view your mailbox.');
-            window.location.href = 'login.html';
-            return;
-        }
-        // ...existing code for showing mailbox...
-        let messages = [];
-        try {
-            messages = JSON.parse(localStorage.getItem('adminMessages')) || [];
-        } catch (e) {
-            messages = [];
-        }
-        const username = localStorage.getItem('username');
-        const lastSeenKey = username ? `mailLastSeen_${username}` : 'mailLastSeen_guest';
-        localStorage.setItem(lastSeenKey, messages.length);
-        updateMailCount();
-        const mailbox = document.getElementById('mailbox-modal');
-        const messagesDiv = document.getElementById('mailbox-messages');
-        if (messages.length === 0) {
-            messagesDiv.innerHTML = '<p style="color:#888;">No messages.</p>';
-        } else {
-            messagesDiv.innerHTML = messages.map(msg =>
-                `<div style="border-bottom:1px solid #eee; padding:8px 0;">
-                    <strong>${msg.title || 'Announcement'}</strong>
-                    <div style="font-size:0.97em; margin-top:4px;">${msg.body}</div>
-                    <div style="font-size:0.85em; color:#888; margin-top:2px;">${msg.date || ''}</div>
-                </div>`
-            ).join('');
-        }
-        mailbox.style.display = 'flex';
-    };
+    // This mailbox click handler is now handled above with the enhanced implementation
 
     // Fix: Ensure close button works even if DOMContentLoaded is not fired yet
     document.getElementById('close-mailbox').onclick = function() {

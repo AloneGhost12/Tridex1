@@ -85,7 +85,20 @@ app.post('/signup', async (req, res) => {
             password: hashedPassword
         });
 
-        await newUser.save();
+        // Save the new user
+        const savedUser = await newUser.save();
+
+        // Create a welcome message for the user
+        const welcomeMessage = new Announcement({
+            title: `Welcome to Tridex, ${username}!`,
+            message: `Thank you for creating an account with us. We're excited to have you join our community! Feel free to explore our products and services. If you have any questions, please don't hesitate to contact us.`,
+            forUser: username, // This field will be used to identify user-specific messages
+            isWelcomeMessage: true // Flag to identify this as a welcome message
+        });
+
+        // Save the welcome message
+        await welcomeMessage.save();
+
         res.status(201).json({ message: 'Signup successful!' });
 
     } catch (err) {
@@ -263,9 +276,23 @@ app.delete('/products/:id', async (req, res) => {
 
 app.get('/announcements', async (req, res) => {
     try {
-        const announcements = await Announcement.find().sort({ createdAt: -1 });
+        const { username } = req.query;
+
+        // If username is provided, get general announcements + user-specific ones
+        let query = {};
+        if (username) {
+            query = {
+                $or: [
+                    { forUser: null }, // General announcements for everyone
+                    { forUser: username } // User-specific announcements
+                ]
+            };
+        }
+
+        const announcements = await Announcement.find(query).sort({ createdAt: -1 });
         res.json(announcements);
     } catch (err) {
+        console.error('Error fetching announcements:', err);
         res.status(500).json({ message: 'Error fetching announcements' });
     }
 });
@@ -287,6 +314,26 @@ app.delete('/announcements/:id', async (req, res) => {
         res.json({ message: 'Announcement deleted' });
     } catch (err) {
         res.status(500).json({ message: 'Error deleting announcement' });
+    }
+});
+
+// Mark an announcement as read
+app.put('/announcements/:id/read', async (req, res) => {
+    try {
+        const announcement = await Announcement.findByIdAndUpdate(
+            req.params.id,
+            { isRead: true },
+            { new: true }
+        );
+
+        if (!announcement) {
+            return res.status(404).json({ message: 'Announcement not found' });
+        }
+
+        res.json({ message: 'Announcement marked as read', announcement });
+    } catch (err) {
+        console.error('Error marking announcement as read:', err);
+        res.status(500).json({ message: 'Error marking announcement as read' });
     }
 });
 
