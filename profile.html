@@ -405,11 +405,12 @@
             showLoading();
             try {
                 // First try to get user data from server
-                const response = await fetch(`https://tridex1.onrender.com/users/profile`, {
+                const response = await fetch(`https://tridex1.onrender.com/users/profile?username=${encodeURIComponent(username)}`, {
                     method: 'GET',
                     headers: {
                         'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'X-Username': username
                     }
                 });
 
@@ -548,11 +549,12 @@
 
             try {
                 // Try to update user on server
-                const response = await fetch(`https://tridex1.onrender.com/users/update`, {
+                const response = await fetch(`https://tridex1.onrender.com/users/update?username=${encodeURIComponent(username)}`, {
                     method: 'PUT',
                     headers: {
                         'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'X-Username': username
                     },
                     body: JSON.stringify(updatedUser)
                 });
@@ -654,11 +656,12 @@
 
             try {
                 // Try to update password on server
-                const response = await fetch(`https://tridex1.onrender.com/users/change-password`, {
+                const response = await fetch(`https://tridex1.onrender.com/users/change-password?username=${encodeURIComponent(username)}`, {
                     method: 'PUT',
                     headers: {
                         'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'X-Username': username
                     },
                     body: JSON.stringify({
                         oldPassword: oldPwd,

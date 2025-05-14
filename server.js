@@ -263,17 +263,46 @@ app.get('/users/profile', async (req, res) => {
             return res.status(401).json({ message: 'Unauthorized' });
         }
 
-        // Extract username from token (simplified for demo)
+        // Extract username from query parameter or request header
+        const usernameFromQuery = req.query.username;
+
+        // Get username from token (simplified for demo)
         const token = authHeader.split(' ')[1];
-        const username = token.includes('admin') ? 'admin' :
-                        (token.includes('user') ? 'user' : null);
+
+        // Check for hardcoded tokens first
+        let username = null;
+        if (token === 'dev-admin-token') {
+            username = 'admin';
+        } else if (token === 'dev-user-token') {
+            username = 'user';
+        } else if (token.startsWith('fake-jwt-token-')) {
+            // For dynamically generated tokens, get username from query or localStorage
+            username = usernameFromQuery || req.headers['x-username'];
+        }
+
+        console.log('Profile request for username:', username);
 
         if (!username) {
-            return res.status(401).json({ message: 'Invalid token' });
+            return res.status(401).json({ message: 'Invalid token or missing username' });
         }
 
         // Find user by username
         const user = await User.findOne({ username }, '-password');
+
+        // If user not found in database but using hardcoded credentials, create a mock user
+        if (!user && (username === 'admin' || username === 'user')) {
+            return res.json({
+                username: username,
+                name: username === 'admin' ? 'Administrator' : 'Test User',
+                email: username === 'admin' ? 'admin@example.com' : 'user@example.com',
+                phone: '1234567890',
+                age: '30',
+                gender: 'other',
+                verified: username === 'admin' ? true : false,
+                isAdmin: username === 'admin' ? true : false
+            });
+        }
+
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }
@@ -294,17 +323,51 @@ app.put('/users/update', async (req, res) => {
             return res.status(401).json({ message: 'Unauthorized' });
         }
 
-        // Extract username from token (simplified for demo)
+        // Extract username from request body or query parameter
+        const usernameFromBody = req.body.username;
+        const usernameFromQuery = req.query.username;
+
+        // Get username from token (simplified for demo)
         const token = authHeader.split(' ')[1];
-        const username = token.includes('admin') ? 'admin' :
-                        (token.includes('user') ? 'user' : null);
+
+        // Check for hardcoded tokens first
+        let username = null;
+        if (token === 'dev-admin-token') {
+            username = 'admin';
+        } else if (token === 'dev-user-token') {
+            username = 'user';
+        } else if (token.startsWith('fake-jwt-token-')) {
+            // For dynamically generated tokens, get username from body, query or header
+            username = usernameFromBody || usernameFromQuery || req.headers['x-username'];
+        }
+
+        console.log('Update profile request for username:', username);
 
         if (!username) {
-            return res.status(401).json({ message: 'Invalid token' });
+            return res.status(401).json({ message: 'Invalid token or missing username' });
         }
 
         // Find user by username
         const user = await User.findOne({ username });
+
+        // Handle hardcoded users
+        if (!user && (username === 'admin' || username === 'user')) {
+            // For hardcoded users, just return success without actually updating
+            return res.json({
+                message: 'Profile updated successfully (demo mode)',
+                user: {
+                    username: username,
+                    name: req.body.name || (username === 'admin' ? 'Administrator' : 'Test User'),
+                    email: req.body.email || (username === 'admin' ? 'admin@example.com' : 'user@example.com'),
+                    phone: req.body.phone || '1234567890',
+                    age: req.body.age || '30',
+                    gender: req.body.gender || 'other',
+                    verified: username === 'admin' ? true : false,
+                    isAdmin: username === 'admin' ? true : false
+                }
+            });
+        }
+
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }
@@ -336,42 +399,65 @@ app.put('/users/change-password', async (req, res) => {
             return res.status(401).json({ message: 'Unauthorized' });
         }
 
-        // Extract username from token (simplified for demo)
-        const token = authHeader.split(' ')[1];
-        const username = token.includes('admin') ? 'admin' :
-                        (token.includes('user') ? 'user' : null);
+        // Extract username from query parameter or header
+        const usernameFromQuery = req.query.username;
 
-        if (!username) {
-            return res.status(401).json({ message: 'Invalid token' });
+        // Get username from token (simplified for demo)
+        const token = authHeader.split(' ')[1];
+
+        // Check for hardcoded tokens first
+        let username = null;
+        if (token === 'dev-admin-token') {
+            username = 'admin';
+        } else if (token === 'dev-user-token') {
+            username = 'user';
+        } else if (token.startsWith('fake-jwt-token-')) {
+            // For dynamically generated tokens, get username from query or header
+            username = usernameFromQuery || req.headers['x-username'];
         }
 
-        // Find user by username
-        const user = await User.findOne({ username });
-        if (!user) {
-            return res.status(404).json({ message: 'User not found' });
+        console.log('Change password request for username:', username);
+
+        if (!username) {
+            return res.status(401).json({ message: 'Invalid token or missing username' });
         }
 
         // Verify old password
         const { oldPassword, newPassword } = req.body;
 
-        // For hardcoded users (admin/user), use simple comparison
-        let isMatch = false;
-        if (username === 'admin' && oldPassword === 'admin123') {
-            isMatch = true;
-        } else if (username === 'user' && oldPassword === 'user123') {
-            isMatch = true;
-        } else {
-            // For regular users, compare with bcrypt
-            isMatch = await bcrypt.compare(oldPassword, user.password);
-        }
-
-        if (!isMatch) {
-            return res.status(401).json({ message: 'Old password is incorrect' });
-        }
-
         // Validate new password
         if (!newPassword || newPassword.length < 6) {
             return res.status(400).json({ message: 'New password must be at least 6 characters' });
+        }
+
+        // Handle hardcoded users
+        if (username === 'admin' || username === 'user') {
+            // For hardcoded users, check against hardcoded passwords
+            let isMatch = false;
+            if (username === 'admin' && oldPassword === 'admin123') {
+                isMatch = true;
+            } else if (username === 'user' && oldPassword === 'user123') {
+                isMatch = true;
+            }
+
+            if (!isMatch) {
+                return res.status(401).json({ message: 'Old password is incorrect' });
+            }
+
+            // For demo users, just return success without actually updating
+            return res.json({ message: 'Password updated successfully (demo mode)' });
+        }
+
+        // For regular users, find in database
+        const user = await User.findOne({ username });
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Verify old password with bcrypt
+        const isMatch = await bcrypt.compare(oldPassword, user.password);
+        if (!isMatch) {
+            return res.status(401).json({ message: 'Old password is incorrect' });
         }
 
         // Hash and update password
