@@ -559,27 +559,52 @@
         &copy; 2025 Tridex. All rights reserved. Made with <span style="color:#e25555;">&#10084;&#65039;</span> by Tridex.
     </footer>
     <script>
-        // --- withLoading helper for loading overlay ---
+        // --- Loading overlay helper functions ---
+function showLoading() {
+    const loadingOverlay = document.getElementById('loading-overlay');
+    if (loadingOverlay) loadingOverlay.style.display = 'flex';
+}
+
+function hideLoading() {
+    const loadingOverlay = document.getElementById('loading-overlay');
+    if (loadingOverlay) loadingOverlay.style.display = 'none';
+}
+
+// --- withLoading helper for loading overlay ---
 function withLoading(action) {
     return async function(...args) {
-        const loadingOverlay = document.getElementById('loading-overlay');
-        if (loadingOverlay) loadingOverlay.style.display = 'flex';
+        showLoading();
         try {
             await action(...args);
         } catch (error) {
             console.error('Error during action:', error);
         } finally {
-            if (loadingOverlay) loadingOverlay.style.display = 'none';
+            hideLoading();
         }
     };
 }
 
-// --- Loading overlay helpers ---
-function showLoading() {
-    document.getElementById('loading-overlay').style.display = 'flex';
-}
-function hideLoading() {
-    document.getElementById('loading-overlay').style.display = 'none';
+// Add event listeners for page load/unload
+window.addEventListener('load', function() {
+    hideLoading();
+});
+window.addEventListener('beforeunload', function() {
+    showLoading();
+});
+// Cart count update function
+function updateCartCount() {
+    const cartCountElement = document.getElementById('cart-count');
+    if (cartCountElement) {
+        const username = localStorage.getItem('username') || localStorage.getItem('currentUser');
+        let cart = [];
+        try {
+            cart = JSON.parse(localStorage.getItem('cart')) || [];
+        } catch (e) {
+            cart = [];
+        }
+        cartCountElement.textContent = cart.length || '';
+        cartCountElement.style.display = cart.length ? 'inline-block' : 'none';
+    }
 }
 
 // --- Hamburger menu functionality ---
