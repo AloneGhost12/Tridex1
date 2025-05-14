@@ -221,7 +221,8 @@
                         <button type="button" class="ban-btn"${user.banned ? ' style="display:none;"' : ''}>Ban</button>
                         <button type="button" class="unban-btn"${!user.banned ? ' style="display:none;"' : ''}>Unban</button>
                         <button type="button" class="delete-btn">Delete</button>
-                        <button type="button" class="verify-btn"${user.verified ? ' style="display:none;"' : ''}>Verify</button>
+                        <button type="button" class="verify-btn"${user.verified ? ' style="display:none;"' : ''} style="background:#1da1f2; color:white; border:none; border-radius:4px; padding:5px 14px; cursor:pointer; margin-right:6px;">Verify</button>
+                        <button type="button" class="unverify-btn"${!user.verified ? ' style="display:none;"' : ''} style="background:#6c757d; color:white; border:none; border-radius:4px; padding:5px 14px; cursor:pointer;">Unverify</button>
                     </td>
                 `;
                 // Show user details on username click
@@ -385,12 +386,49 @@
                         } catch (e) { alert('Failed to delete user.'); }
                     }
                 };
-                // Verify user (update DB in real app)
+                // Verify user
                 tr.querySelector('.verify-btn').onclick = async function() {
                     try {
+                        showLoading();
                         await fetch(`https://tridex1.onrender.com/users/${user._id}/verify`, { method: 'PUT' });
+
+                        // Create a verification announcement for the user
+                        const verificationMessage = {
+                            title: "Account Verified! ✓",
+                            message: `Congratulations ${user.username}! Your account has been verified by an administrator. You now have a verified badge on your profile.`,
+                            forUser: user.username
+                        };
+
+                        // Send the verification announcement
+                        await fetch('https://tridex1.onrender.com/announcements', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify(verificationMessage)
+                        });
+
                         fetchUsers();
-                    } catch (e) { alert('Failed to verify user.'); }
+                    } catch (e) {
+                        console.error('Failed to verify user:', e);
+                        alert('Failed to verify user.');
+                    } finally {
+                        hideLoading();
+                    }
+                };
+
+                // Unverify user
+                tr.querySelector('.unverify-btn').onclick = async function() {
+                    try {
+                        showLoading();
+                        await fetch(`https://tridex1.onrender.com/users/${user._id}/unverify`, { method: 'PUT' });
+                        fetchUsers();
+                    } catch (e) {
+                        console.error('Failed to unverify user:', e);
+                        alert('Failed to unverify user.');
+                    } finally {
+                        hideLoading();
+                    }
                 };
                 tbody.appendChild(tr);
             });
