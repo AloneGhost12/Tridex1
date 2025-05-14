@@ -11,11 +11,21 @@ const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(cors({
-    origin: '*',
+    origin: ['https://aloneghost12.github.io', 'http://localhost:3000', 'http://127.0.0.1:5500', '*'],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization']
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true
 }));
 app.options('*', cors());
+
+// Add specific CORS headers for all responses as a fallback
+app.use((req, res, next) => {
+    res.header('Access-Control-Allow-Origin', 'https://aloneghost12.github.io');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+    res.header('Access-Control-Allow-Credentials', 'true');
+    next();
+});
 app.use(express.json());
 
 // MongoDB Connection
@@ -167,6 +177,7 @@ app.post('/login', async (req, res) => {
             message: 'Login successful!',
             isAdmin: user.isAdmin || false,
             username: user.username,
+            verified: user.verified || false,
             token: 'fake-jwt-token-' + Date.now()
         });
 
@@ -217,6 +228,15 @@ app.put('/users/:id/verify', async (req, res) => {
         res.json({ message: 'User verified' });
     } catch (err) {
         res.status(500).json({ message: 'Error verifying user' });
+    }
+});
+
+app.put('/users/:id/unverify', async (req, res) => {
+    try {
+        await User.findByIdAndUpdate(req.params.id, { verified: false });
+        res.json({ message: 'User unverified' });
+    } catch (err) {
+        res.status(500).json({ message: 'Error unverifying user' });
     }
 });
 
