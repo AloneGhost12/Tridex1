@@ -665,7 +665,7 @@
         });
 
         // Function to upload image to Cloudinary using unsigned upload preset
-        async function uploadToCloudinary(file) {
+        async function uploadToCloudinary(file, folderName = 'product_images') {
             try {
                 // Log file details
                 console.log('Uploading image to Cloudinary:', file.name, 'Size:', Math.round(file.size/1024) + 'KB');
@@ -678,7 +678,7 @@
                 formData.append('upload_preset', 'tridex_products'); // Replace with your actual preset name if different
 
                 // Use a specific folder to make it easier to find uploads (this is optional if you set folder in preset)
-                formData.append('folder', 'product_images');
+                formData.append('folder', folderName);
 
                 // Add a unique public_id to avoid conflicts
                 const uniqueId = 'product_' + Date.now();
@@ -1208,8 +1208,11 @@
 
                 console.log('Testing Cloudinary connection with upload preset "tridex_products"...');
 
+                // Get Cloudinary cloud name from server environment
+                const cloudName = await getCloudinaryConfig();
+
                 // Try the upload
-                const uploadResponse = await fetch('https://api.cloudinary.com/v1_1/dtzhskby3/image/upload', {
+                const uploadResponse = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
                     method: 'POST',
                     body: formData
                 });
