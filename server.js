@@ -679,11 +679,17 @@ app.get('/announcements', async (req, res) => {
 
 app.post('/announcements', async (req, res) => {
     try {
-        const { title, message } = req.body;
-        const announcement = new Announcement({ title, message });
+        const { title, message, forUser, isWelcomeMessage } = req.body;
+        const announcement = new Announcement({
+            title,
+            message,
+            forUser, // Include the forUser field to make messages user-specific
+            isWelcomeMessage: isWelcomeMessage || false
+        });
         await announcement.save();
         res.json({ message: 'Announcement sent', announcement });
     } catch (err) {
+        console.error('Error sending announcement:', err);
         res.status(500).json({ message: 'Error sending announcement' });
     }
 });
