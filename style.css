@@ -186,13 +186,29 @@ h1 {
 }
 .product-card img {
     width: 100%;
-    max-width: 150px;
+    height: 180px;
+    object-fit: contain;
     border-radius: 8px;
     margin-bottom: 12px;
+    background-color: #f9f9f9;
+    padding: 8px;
 }
+.product-image-container {
+    height: 180px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 10px;
+}
+
 .product-card h3 {
     font-size: 1.1rem;
     margin: 8px 0 4px 0;
+    height: 42px;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
 }
 .product-card p {
     color: #27ae38;
