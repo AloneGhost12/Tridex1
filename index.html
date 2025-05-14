@@ -100,13 +100,23 @@
            transition: box-shadow 0.2s;
        }
        .product-card img {
-           max-width: 100%;
-           max-height: 140px;
+           width: 100%;
+           height: 180px;
+           object-fit: contain;
            margin-bottom: 10px;
            border-radius: 6px;
+           background-color: #f9f9f9;
+           padding: 8px;
        }
        .product-card:hover {
            box-shadow: 0 4px 16px rgba(0,0,0,0.13);
+       }
+       .product-image-container {
+           height: 180px;
+           display: flex;
+           align-items: center;
+           justify-content: center;
+           margin-bottom: 10px;
        }
        /* Responsive logout button */
        @media (max-width: 600px) {
@@ -448,7 +458,9 @@ document.getElementById('popup-logout-yes').onclick = function() {
                         const div = document.createElement('div');
                         div.className = 'product-card';
                         div.innerHTML = `
-                            <img src="${product.image || ''}" alt="${product.name}" style="cursor:pointer;" data-id="${product._id}">
+                            <div class="product-image-container">
+                                <img src="${product.image || ''}" alt="${product.name}" style="cursor:pointer;" data-id="${product._id}">
+                            </div>
                             <h3>${product.name}</h3>
                             <p>₹${product.price}</p>
                         `;
