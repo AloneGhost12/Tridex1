@@ -409,8 +409,7 @@
                     method: 'GET',
                     headers: {
                         'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json',
-                        'X-Username': username
+                        'Content-Type': 'application/json'
                     }
                 });
 
@@ -553,8 +552,7 @@
                     method: 'PUT',
                     headers: {
                         'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json',
-                        'X-Username': username
+                        'Content-Type': 'application/json'
                     },
                     body: JSON.stringify(updatedUser)
                 });
@@ -660,12 +658,12 @@
                     method: 'PUT',
                     headers: {
                         'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json',
-                        'X-Username': username
+                        'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
                         oldPassword: oldPwd,
-                        newPassword: newPwd
+                        newPassword: newPwd,
+                        username: username // Include username in the body as well
                     })
                 });
 
