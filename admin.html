@@ -216,7 +216,15 @@
         // Function to get Cloudinary configuration from server
         async function getCloudinaryConfig() {
             try {
-                const response = await fetch('https://tridex1.onrender.com/cloudinary-config');
+                // First try the production server
+                let response;
+                try {
+                    response = await fetch('https://tridex1.onrender.com/cloudinary-config');
+                } catch (fetchError) {
+                    console.warn('Could not reach production server, trying local server...');
+                    // If production server fails, try local server
+                    response = await fetch('http://localhost:3000/cloudinary-config');
+                }
 
                 if (!response.ok) {
                     throw new Error(`Server returned ${response.status}: ${response.statusText}`);
@@ -228,17 +236,51 @@
                     throw new Error('Cloudinary cloud name not properly configured on the server');
                 }
 
-                // We'll proceed even if the API key is missing
-                // The upload will fall back to base64 if Cloudinary rejects it
+                // Check if API key is missing
                 if (!data.apiKey) {
-                    console.warn('Cloudinary API key not provided by the server - uploads may fail');
+                    console.error('Cloudinary API key not provided by the server');
+                    console.error('Please check your server .env file and make sure it contains a valid CLOUDINARY_API_KEY');
+
+                    // Show a more detailed error message
+                    const errorDiv = document.createElement('div');
+                    errorDiv.style.cssText = 'position:fixed; top:20px; right:20px; background:#f8d7da; color:#721c24; padding:15px; border-radius:5px; box-shadow:0 2px 10px rgba(0,0,0,0.2); z-index:1000; max-width:400px;';
+                    errorDiv.innerHTML = `
+                        <h3 style="margin-top:0;">Cloudinary Configuration Error</h3>
+                        <p>The API key is missing from the server configuration.</p>
+                        <p>Images will be stored as base64 until this is fixed.</p>
+                        <p><strong>To fix this:</strong></p>
+                        <ol>
+                            <li>Check your server's .env file</li>
+                            <li>Make sure CLOUDINARY_API_KEY is set correctly</li>
+                            <li>Restart the server</li>
+                        </ol>
+                        <button onclick="this.parentNode.remove()" style="padding:5px 10px; background:#721c24; color:white; border:none; border-radius:3px; cursor:pointer;">Close</button>
+                    `;
+                    document.body.appendChild(errorDiv);
                 }
 
                 console.log('Successfully retrieved Cloudinary configuration');
                 return data;
             } catch (error) {
                 console.error('Error fetching Cloudinary config:', error);
-                alert('Cloudinary configuration error: ' + error.message + '\nImages will be stored as base64 until this is fixed.');
+
+                // Show a more detailed error message
+                const errorDiv = document.createElement('div');
+                errorDiv.style.cssText = 'position:fixed; top:20px; right:20px; background:#f8d7da; color:#721c24; padding:15px; border-radius:5px; box-shadow:0 2px 10px rgba(0,0,0,0.2); z-index:1000; max-width:400px;';
+                errorDiv.innerHTML = `
+                    <h3 style="margin-top:0;">Cloudinary Configuration Error</h3>
+                    <p>${error.message}</p>
+                    <p>Images will be stored as base64 until this is fixed.</p>
+                    <p><strong>To fix this:</strong></p>
+                    <ol>
+                        <li>Check your server's .env file</li>
+                        <li>Make sure CLOUDINARY_CLOUD_NAME and CLOUDINARY_API_KEY are set correctly</li>
+                        <li>Restart the server</li>
+                    </ol>
+                    <button onclick="this.parentNode.remove()" style="padding:5px 10px; background:#721c24; color:white; border:none; border-radius:3px; cursor:pointer;">Close</button>
+                `;
+                document.body.appendChild(errorDiv);
+
                 // Fallback to a placeholder - this will fail but won't expose credentials
                 return { cloudName: 'your_cloud_name', apiKey: 'missing_api_key' };
             }
@@ -693,7 +735,10 @@
                 formData.append('file', file);
 
                 // Use the unsigned upload preset you created in Cloudinary dashboard
-                formData.append('upload_preset', 'Tridex_products'); // Exact match with the preset name in Cloudinary dashboard
+                formData.append('upload_preset', 'tridex_products'); // Exact match with the preset name in Cloudinary dashboard
+
+                // Note: The upload preset name is case-sensitive
+                // If 'tridex_products' doesn't work, try 'Tridex_products' or check the exact name in your Cloudinary dashboard
 
                 // Use a specific folder to make it easier to find uploads (this is optional if you set folder in preset)
                 formData.append('folder', folderName);
@@ -723,14 +768,48 @@
                     // Get Cloudinary configuration from server environment
                     const cloudinaryConfig = await getCloudinaryConfig();
 
+                    // Check if we have a valid cloud name
+                    if (!cloudinaryConfig.cloudName || cloudinaryConfig.cloudName === 'your_cloud_name') {
+                        console.error('Invalid Cloudinary cloud name');
+
+                        // Remove the status notification
+                        if (document.getElementById('upload-status-notification')) {
+                            document.getElementById('upload-status-notification').remove();
+                        }
+
+                        // Fall back to base64
+                        console.log('Falling back to base64 encoding due to invalid cloud name...');
+                        return await fallbackToBase64(file);
+                    }
+
                     // Add API key to the form data for authentication if available
                     if (cloudinaryConfig.apiKey && cloudinaryConfig.apiKey !== 'missing_api_key') {
                         formData.append('api_key', cloudinaryConfig.apiKey);
                         console.log('Using API key from server for authentication');
                     } else {
                         console.log('No API key available, attempting unsigned upload');
+
+                        // Show a warning about missing API key
+                        const warningDiv = document.createElement('div');
+                        warningDiv.style.cssText = 'position:fixed; top:20px; left:20px; background:#fff3cd; color:#856404; padding:15px; border-radius:5px; box-shadow:0 2px 10px rgba(0,0,0,0.2); z-index:1000; max-width:400px;';
+                        warningDiv.innerHTML = `
+                            <h3 style="margin-top:0;">Cloudinary API Key Missing</h3>
+                            <p>Attempting unsigned upload, but this may fail.</p>
+                            <p>Check your server's .env file and make sure CLOUDINARY_API_KEY is set correctly.</p>
+                            <button onclick="this.parentNode.remove()" style="padding:5px 10px; background:#856404; color:white; border:none; border-radius:3px; cursor:pointer;">Close</button>
+                        `;
+                        document.body.appendChild(warningDiv);
+
+                        // Set a timeout to remove the warning after 10 seconds
+                        setTimeout(() => {
+                            if (document.body.contains(warningDiv)) {
+                                document.body.removeChild(warningDiv);
+                            }
+                        }, 10000);
                     }
 
+                    // Try to upload to Cloudinary
+                    console.log(`Uploading to Cloudinary cloud: ${cloudinaryConfig.cloudName}`);
                     const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudinaryConfig.cloudName}/image/upload`, {
                         method: 'POST',
                         body: formData,
@@ -748,6 +827,24 @@
                     if (!response.ok) {
                         const errorText = await response.text();
                         console.error('Cloudinary error response:', errorText);
+
+                        // Show error details
+                        const errorDetails = document.createElement('div');
+                        errorDetails.style.cssText = 'position:fixed; bottom:20px; right:20px; background:#f8d7da; color:#721c24; padding:15px; border-radius:5px; box-shadow:0 2px 10px rgba(0,0,0,0.2); z-index:1000; max-width:400px;';
+                        errorDetails.innerHTML = `
+                            <h3 style="margin-top:0;">Cloudinary Upload Failed</h3>
+                            <p>Error: ${errorText}</p>
+                            <p>Falling back to base64 encoding...</p>
+                            <button onclick="this.parentNode.remove()" style="padding:5px 10px; background:#721c24; color:white; border:none; border-radius:3px; cursor:pointer;">Close</button>
+                        `;
+                        document.body.appendChild(errorDetails);
+
+                        // Set a timeout to remove the error after 10 seconds
+                        setTimeout(() => {
+                            if (document.body.contains(errorDetails)) {
+                                document.body.removeChild(errorDetails);
+                            }
+                        }, 10000);
 
                         // Fall back to base64 if Cloudinary upload fails
                         console.log('Falling back to base64 encoding...');
@@ -1228,14 +1325,24 @@
                 // Create a FormData object to send the file
                 const formData = new FormData();
                 formData.append('file', file);
-                formData.append('upload_preset', 'Tridex_products'); // Exact match with the preset name in Cloudinary dashboard
+
+                // Try both uppercase and lowercase preset names
+                // The preset name is case-sensitive and must match exactly what's in your Cloudinary dashboard
+                const presetName = 'tridex_products'; // Try lowercase first
+                formData.append('upload_preset', presetName);
+
                 formData.append('folder', 'test_uploads');
                 formData.append('public_id', 'connection_test_' + Date.now());
 
-                console.log('Testing Cloudinary connection with upload preset "Tridex_products"...');
+                console.log(`Testing Cloudinary connection with upload preset "${presetName}"...`);
 
                 // Get Cloudinary configuration from server environment
                 const cloudinaryConfig = await getCloudinaryConfig();
+
+                // Check if we have a valid cloud name
+                if (!cloudinaryConfig.cloudName || cloudinaryConfig.cloudName === 'your_cloud_name') {
+                    throw new Error('Invalid Cloudinary cloud name. Please check your server configuration.');
+                }
 
                 // Add API key to the form data for authentication if available
                 if (cloudinaryConfig.apiKey && cloudinaryConfig.apiKey !== 'missing_api_key') {
@@ -1243,114 +1350,137 @@
                     console.log('Using API key from server for authentication');
                 } else {
                     console.log('No API key available, attempting unsigned upload');
+
+                    // Show a warning about missing API key
+                    const warningDiv = document.createElement('div');
+                    warningDiv.style.cssText = 'position:fixed; top:20px; left:20px; background:#fff3cd; color:#856404; padding:15px; border-radius:5px; box-shadow:0 2px 10px rgba(0,0,0,0.2); z-index:1000; max-width:400px;';
+                    warningDiv.innerHTML = `
+                        <h3 style="margin-top:0;">Cloudinary API Key Missing</h3>
+                        <p>Attempting unsigned upload, but this may fail.</p>
+                        <p>Check your server's .env file and make sure CLOUDINARY_API_KEY is set correctly.</p>
+                        <button onclick="this.parentNode.remove()" style="padding:5px 10px; background:#856404; color:white; border:none; border-radius:3px; cursor:pointer;">Close</button>
+                    `;
+                    document.body.appendChild(warningDiv);
+
+                    // Set a timeout to remove the warning after 10 seconds
+                    setTimeout(() => {
+                        if (document.body.contains(warningDiv)) {
+                            document.body.removeChild(warningDiv);
+                        }
+                    }, 10000);
                 }
 
                 // Try the upload
+                console.log(`Uploading to Cloudinary cloud: ${cloudinaryConfig.cloudName}`);
                 const uploadResponse = await fetch(`https://api.cloudinary.com/v1_1/${cloudinaryConfig.cloudName}/image/upload`, {
                     method: 'POST',
                     body: formData
                 });
 
-                // Check the response
-                if (!uploadResponse.ok) {
-                    const errorText = await uploadResponse.text();
-                    console.error('Cloudinary test upload failed:', errorText);
-
-                    // Show error report
-                    const errorReport = document.createElement('div');
-                    errorReport.style.cssText = 'position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); background:#fff; color:#333; padding:20px; border-radius:5px; box-shadow:0 5px 15px rgba(0,0,0,0.3); z-index:1001; max-width:600px; width:90%;';
-                    errorReport.innerHTML = `
-                        <h3>Cloudinary Upload Preset Not Working</h3>
-
-                        <p><strong>Error:</strong> ${errorText}</p>
-
-                        <p><strong>Possible Issues:</strong></p>
-                        <ul>
-                            <li>The upload preset "Tridex_products" may not exist</li>
-                            <li>The upload preset may not be set to "Unsigned" mode</li>
-                            <li>There might be restrictions on your Cloudinary account</li>
-                        </ul>
-
-                        <p><strong>Next Steps:</strong></p>
-                        <ol>
-                            <li>Verify that you created the upload preset correctly</li>
-                            <li>Make sure it's named "Tridex_products" (or update the code to match your preset name)</li>
-                            <li>Ensure the preset is set to "Unsigned" mode</li>
-                        </ol>
-
-                        <p>For now, the system will fall back to base64 storage until the preset is configured correctly.</p>
-
-                        <button class="btn btn-primary" onclick="this.parentNode.remove()" style="padding:8px 16px; background:#007bff; color:white; border:none; border-radius:4px; cursor:pointer; margin-top:10px;">Close</button>
-                    `;
-                    document.body.appendChild(errorReport);
+                // Check if the upload was successful
+                if (uploadResponse.ok) {
+                    const uploadResult = await uploadResponse.json();
+                    console.log('Cloudinary test upload successful!', uploadResult);
 
                     // Update status
                     if (statusSpan) {
-                        statusSpan.textContent = 'Upload preset not working (see report)';
-                        statusSpan.style.color = '#dc3545';
+                        statusSpan.textContent = 'Connected';
+                        statusSpan.style.color = '#28a745';
                     }
 
-                    return false;
+                    // Show success message
+                    const successReport = document.createElement('div');
+                    successReport.style.cssText = 'position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); background:white; padding:20px; border-radius:5px; box-shadow:0 2px 10px rgba(0,0,0,0.2); z-index:1000; max-width:600px;';
+                    successReport.innerHTML = `
+                        <h3 style="margin-top:0; color:#28a745;">✅ Cloudinary Connection Successful</h3>
+                        <p>Successfully connected to Cloudinary and uploaded a test image.</p>
+                        <p><strong>Cloud Name:</strong> ${cloudinaryConfig.cloudName}</p>
+                        <p><strong>Upload Preset:</strong> ${presetName}</p>
+                        <p><strong>API Key Available:</strong> ${cloudinaryConfig.apiKey ? 'Yes' : 'No'}</p>
+                        <p><strong>Test Image URL:</strong> <a href="${uploadResult.secure_url}" target="_blank">${uploadResult.secure_url}</a></p>
+                        <img src="${uploadResult.secure_url}" style="max-width:100px; margin:10px 0; border:1px solid #ddd;">
+                        <p>Your Cloudinary configuration is working correctly.</p>
+                        <button class="btn btn-primary" onclick="this.parentNode.remove()">Close</button>
+                    `;
+                    document.body.appendChild(successReport);
+
+                    return true;
+                } else {
+                    const errorText = await uploadResponse.text();
+                    console.error('Cloudinary test upload failed:', errorText);
+
+                    // Try with uppercase preset name if lowercase failed
+                    if (presetName === 'tridex_products') {
+                        console.log('Trying with uppercase preset name "Tridex_products"...');
+
+                        // Create a new FormData object
+                        const formData2 = new FormData();
+                        formData2.append('file', file);
+                        formData2.append('upload_preset', 'Tridex_products');
+                        formData2.append('folder', 'test_uploads');
+                        formData2.append('public_id', 'connection_test_uppercase_' + Date.now());
+
+                        // Add API key if available
+                        if (cloudinaryConfig.apiKey && cloudinaryConfig.apiKey !== 'missing_api_key') {
+                            formData2.append('api_key', cloudinaryConfig.apiKey);
+                        }
+
+                        try {
+                            // Try the upload with uppercase preset
+                            const uploadResponse2 = await fetch(`https://api.cloudinary.com/v1_1/${cloudinaryConfig.cloudName}/image/upload`, {
+                                method: 'POST',
+                                body: formData2
+                            });
+
+                            if (uploadResponse2.ok) {
+                                const uploadResult2 = await uploadResponse2.json();
+                                console.log('Cloudinary test upload successful with uppercase preset!', uploadResult2);
+
+                                // Update status
+                                if (statusSpan) {
+                                    statusSpan.textContent = 'Connected';
+                                    statusSpan.style.color = '#28a745';
+                                }
+
+                                // Show success message
+                                const successReport = document.createElement('div');
+                                successReport.style.cssText = 'position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); background:white; padding:20px; border-radius:5px; box-shadow:0 2px 10px rgba(0,0,0,0.2); z-index:1000; max-width:600px;';
+                                successReport.innerHTML = `
+                                    <h3 style="margin-top:0; color:#28a745;">✅ Cloudinary Connection Successful</h3>
+                                    <p>Successfully connected to Cloudinary and uploaded a test image.</p>
+                                    <p><strong>Cloud Name:</strong> ${cloudinaryConfig.cloudName}</p>
+                                    <p><strong>Upload Preset:</strong> Tridex_products (uppercase worked)</p>
+                                    <p><strong>API Key Available:</strong> ${cloudinaryConfig.apiKey ? 'Yes' : 'No'}</p>
+                                    <p><strong>Test Image URL:</strong> <a href="${uploadResult2.secure_url}" target="_blank">${uploadResult2.secure_url}</a></p>
+                                    <img src="${uploadResult2.secure_url}" style="max-width:100px; margin:10px 0; border:1px solid #ddd;">
+                                    <p>Your Cloudinary configuration is working correctly, but you should update your code to use "Tridex_products" (uppercase T) as the preset name.</p>
+                                    <button class="btn btn-primary" onclick="this.parentNode.remove()">Close</button>
+                                `;
+                                document.body.appendChild(successReport);
+
+                                return true;
+                            } else {
+                                // Both lowercase and uppercase failed
+                                const errorText2 = await uploadResponse2.text();
+                                console.error('Cloudinary test upload failed with uppercase preset:', errorText2);
+
+                                // Continue to show error message for both attempts
+                                showErrorMessage(cloudinaryConfig, errorText, errorText2);
+                                return false;
+                            }
+                        } catch (error2) {
+                            console.error('Error testing Cloudinary connection with uppercase preset:', error2);
+                            showErrorMessage(cloudinaryConfig, errorText, error2.message);
+                            return false;
+                        }
+                    } else {
+                        // Show error message for the first attempt
+                        showErrorMessage(cloudinaryConfig, errorText);
+                        return false;
+                    }
                 }
-
-                // Parse the successful response
-                const data = await uploadResponse.json();
-                console.log('✅ Cloudinary connection test successful!', data);
-
-                // Show success report
-                const successReport = document.createElement('div');
-                successReport.style.cssText = 'position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); background:#fff; color:#333; padding:20px; border-radius:5px; box-shadow:0 5px 15px rgba(0,0,0,0.3); z-index:1001; max-width:600px; width:90%;';
-                successReport.innerHTML = `
-                    <h3>Cloudinary Connection Successful!</h3>
-
-                    <p><strong>Upload Preset Working:</strong> The "Tridex_products" preset is configured correctly.</p>
-
-                    <p><strong>Test Image:</strong> A test image was successfully uploaded to your Cloudinary account.</p>
-
-                    <p><strong>Image URL:</strong> <a href="${data.secure_url}" target="_blank">${data.secure_url}</a></p>
-
-                    <p><strong>What This Means:</strong></p>
-                    <ul>
-                        <li>Your product images will now be uploaded to Cloudinary</li>
-                        <li>Images will be stored in the "product_images" folder in your Cloudinary Media Library</li>
-                        <li>Your database will store Cloudinary URLs instead of base64 strings</li>
-                        <li>This will improve performance and reduce database size</li>
-                    </ul>
-
-                    <button class="btn btn-success" onclick="this.parentNode.remove()" style="padding:8px 16px; background:#28a745; color:white; border:none; border-radius:4px; cursor:pointer; margin-top:10px;">Close</button>
-                `;
-                document.body.appendChild(successReport);
-
-                // Update status
-                if (statusSpan) {
-                    statusSpan.textContent = 'Connected to Cloudinary';
-                    statusSpan.style.color = '#28a745';
-                }
-
-                return true;
             } catch (error) {
-                console.error('Error checking Cloudinary setup:', error);
-
-                // Show error report
-                const errorReport = document.createElement('div');
-                errorReport.style.cssText = 'position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); background:#fff; color:#333; padding:20px; border-radius:5px; box-shadow:0 5px 15px rgba(0,0,0,0.3); z-index:1001; max-width:600px; width:90%;';
-                errorReport.innerHTML = `
-                    <h3>Cloudinary Connection Error</h3>
-
-                    <p><strong>Error:</strong> ${error.message}</p>
-
-                    <p><strong>Possible Issues:</strong></p>
-                    <ul>
-                        <li>Network connectivity problems</li>
-                        <li>Cloudinary service might be temporarily unavailable</li>
-                        <li>There might be an issue with your Cloudinary account</li>
-                    </ul>
-
-                    <p>For now, the system will fall back to base64 storage until the connection issues are resolved.</p>
-
-                    <button class="btn btn-primary" onclick="this.parentNode.remove()" style="padding:8px 16px; background:#007bff; color:white; border:none; border-radius:4px; cursor:pointer; margin-top:10px;">Close</button>
-                `;
-                document.body.appendChild(errorReport);
+                console.error('Error testing Cloudinary connection:', error);
 
                 // Update status
                 const statusSpan = document.getElementById('cloudinary-status');
@@ -1359,8 +1489,81 @@
                     statusSpan.style.color = '#dc3545';
                 }
 
+                // Show error message
+                const errorReport = document.createElement('div');
+                errorReport.style.cssText = 'position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); background:white; padding:20px; border-radius:5px; box-shadow:0 2px 10px rgba(0,0,0,0.2); z-index:1000; max-width:600px;';
+                errorReport.innerHTML = `
+                    <h3 style="margin-top:0; color:#dc3545;">❌ Cloudinary Connection Error</h3>
+                    <p>An error occurred while testing the Cloudinary connection.</p>
+                    <p><strong>Error:</strong> ${error.message}</p>
+                    <p><strong>Possible issues:</strong></p>
+                    <ul>
+                        <li>Server is not providing Cloudinary configuration</li>
+                        <li>Network connectivity issues</li>
+                        <li>Invalid Cloudinary credentials</li>
+                    </ul>
+
+                    <p>For now, the system will fall back to base64 storage until the connection issues are resolved.</p>
+
+                    <button class="btn btn-primary" onclick="this.parentNode.remove()" style="padding:8px 16px; background:#007bff; color:white; border:none; border-radius:4px; cursor:pointer; margin-top:10px;">Close</button>
+                `;
+                document.body.appendChild(errorReport);
+
                 return false;
             }
+        }
+
+        // Helper function to show error message for Cloudinary connection
+        function showErrorMessage(cloudinaryConfig, errorText, errorText2 = null) {
+            // Update status
+            const statusSpan = document.getElementById('cloudinary-status');
+            if (statusSpan) {
+                statusSpan.textContent = 'Connection error';
+                statusSpan.style.color = '#dc3545';
+            }
+
+            // Show error message
+            const errorReport = document.createElement('div');
+            errorReport.style.cssText = 'position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); background:white; padding:20px; border-radius:5px; box-shadow:0 2px 10px rgba(0,0,0,0.2); z-index:1000; max-width:600px; overflow-y:auto; max-height:80vh;';
+
+            let errorContent = `
+                <h3 style="margin-top:0; color:#dc3545;">❌ Cloudinary Connection Failed</h3>
+                <p>Failed to connect to Cloudinary or upload a test image.</p>
+                <p><strong>Cloud Name:</strong> ${cloudinaryConfig.cloudName}</p>
+                <p><strong>API Key Available:</strong> ${cloudinaryConfig.apiKey ? 'Yes' : 'No'}</p>
+                <p><strong>Error with lowercase preset (tridex_products):</strong> ${errorText}</p>
+            `;
+
+            if (errorText2) {
+                errorContent += `<p><strong>Error with uppercase preset (Tridex_products):</strong> ${errorText2}</p>`;
+            }
+
+            errorContent += `
+                <p><strong>Possible issues:</strong></p>
+                <ul>
+                    <li>API key is missing or invalid in your .env file</li>
+                    <li>Upload preset doesn't exist in your Cloudinary account</li>
+                    <li>Upload preset is not set to "unsigned"</li>
+                    <li>The preset name is case-sensitive and must match exactly</li>
+                    <li>Network connectivity issues</li>
+                </ul>
+
+                <p><strong>How to fix:</strong></p>
+                <ol>
+                    <li>Check your server's .env file and make sure CLOUDINARY_API_KEY is set correctly</li>
+                    <li>Go to your Cloudinary dashboard > Settings > Upload > Upload presets</li>
+                    <li>Create a new preset named "tridex_products" (or check if it exists)</li>
+                    <li>Make sure the preset is set to "unsigned"</li>
+                    <li>Restart your server after making changes to the .env file</li>
+                </ol>
+
+                <p>For now, the system will fall back to base64 storage until the connection issues are resolved.</p>
+
+                <button class="btn btn-primary" onclick="this.parentNode.remove()" style="padding:8px 16px; background:#007bff; color:white; border:none; border-radius:4px; cursor:pointer; margin-top:10px;">Close</button>
+            `;
+
+            errorReport.innerHTML = errorContent;
+            document.body.appendChild(errorReport);
         }
 
         // Function to verify if product images are stored in Cloudinary
