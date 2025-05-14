@@ -762,19 +762,27 @@ app.get('/cloudinary-config', (req, res) => {
         console.log('- Cloud name available:', !!cloudName);
         console.log('- API key available:', !!apiKey);
 
-        // Always return the cloud name, even if it's a placeholder
-        // This allows the client to at least attempt the upload
+        // Check if API key is available
+        if (!apiKey) {
+            console.error('CLOUDINARY_API_KEY is missing in environment variables');
+            console.error('Please check your .env file and make sure it contains a valid CLOUDINARY_API_KEY');
+        }
+
+        // Create response object with cloud name
         const response = {
             cloudName: cloudName
         };
 
         // Always include the API key if it exists
-        // We'll let Cloudinary validate it instead of doing it ourselves
         if (apiKey) {
             response.apiKey = apiKey;
             console.log('Providing Cloudinary configuration with API key');
         } else {
-            console.log('Providing Cloudinary configuration without API key');
+            console.log('Providing Cloudinary configuration without API key - uploads will fail');
+
+            // For development/testing, you can uncomment this line to use a placeholder API key
+            // This should only be used for testing, not in production
+            // response.apiKey = '438531956929485'; // Example API key (not valid)
         }
 
         res.json(response);
