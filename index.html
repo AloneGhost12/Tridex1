@@ -182,6 +182,7 @@
         border-bottom: 1px solid #333;
         padding: 12px 18px;
         text-align: left;
+        position: relative; /* Ensure proper positioning for notification badges */
     }
     #nav li:last-child {
         border-bottom: none;
@@ -197,6 +198,20 @@
     }
     .nav-icon {
         font-size: 1.1em !important; /* Make nav icons smaller in hamburger */
+    }
+    /* Ensure notification badges are visible in mobile menu */
+    #mail-count, #cart-count {
+        position: absolute !important;
+        top: 12px !important;
+        right: 18px !important;
+        z-index: 1001 !important;
+    }
+    /* Ensure dropdown menus appear properly in mobile view */
+    .dropdown-menu {
+        position: fixed !important;
+        top: 120px !important;
+        right: 20px !important;
+        z-index: 1002 !important;
     }
 }
 @media (max-width: 600px) {
@@ -610,10 +625,13 @@ const verifiedUsers = [];
 
 // Show/hide buttons based on login status
 const isLoggedIn = localStorage.getItem('isLoggedIn');
-// Display username if available
+// Display name if available (for personalization), fallback to username
 if (isLoggedIn && username) {
+    // Try to get the user's name from localStorage for personalization
+    const userName = localStorage.getItem('name') || username;
+
     document.getElementById('username-display').innerHTML =
-        `Welcome, <span style="text-transform:uppercase; letter-spacing:0.5px; font-weight:500;">${username}</span> ${verifiedUsers.includes(username) ? '<span title="Verified" style="color:#1da1f2; font-size:1.1em;">&#10004;&#65039;</span>' : ''}`;
+        `Welcome, <span style="text-transform:uppercase; letter-spacing:0.5px; font-weight:500;">${userName}</span> ${verifiedUsers.includes(username) ? '<span title="Verified" style="color:#1da1f2; font-size:1.1em;">&#10004;&#65039;</span>' : ''}`;
 }
 // Hide or show login/signup in dropdown and handle profile icon click
 document.addEventListener('DOMContentLoaded', function() {
@@ -1410,10 +1428,29 @@ if (!isLoggedIn) {
                 const navItems = document.querySelectorAll('#nav li');
                 navItems.forEach(item => {
                     item.style.width = '100%';
-                    item.style.textAlign = 'center';
+                    item.style.textAlign = 'left';
                     item.style.padding = '10px 0';
                     item.style.borderBottom = '1px solid #444';
+                    item.style.position = 'relative'; // Ensure proper positioning for notification badges
                 });
+
+                // Ensure notification badges are visible
+                const mailCount = document.getElementById('mail-count');
+                const cartCount = document.getElementById('cart-count');
+
+                if (mailCount) {
+                    mailCount.style.position = 'absolute';
+                    mailCount.style.right = '18px';
+                    mailCount.style.top = '12px';
+                    mailCount.style.zIndex = '1001';
+                }
+
+                if (cartCount) {
+                    cartCount.style.position = 'absolute';
+                    cartCount.style.right = '18px';
+                    cartCount.style.top = '12px';
+                    cartCount.style.zIndex = '1001';
+                }
             } else {
                 nav.style.display = 'none';
             }
