@@ -472,9 +472,9 @@
         document.getElementById('product-image-file').addEventListener('change', async function(e) {
             const file = e.target.files[0];
             if (file) {
-                // Check file size (limit to 5MB for initial upload)
-                if (file.size > 5 * 1024 * 1024) {
-                    alert('Image size exceeds 5MB. Please choose a smaller image.');
+                // Check file size (limit to 10MB for Cloudinary's free tier)
+                if (file.size > 10 * 1024 * 1024) {
+                    alert('Image size exceeds 10MB, which is Cloudinary\'s limit. Please choose a smaller image.');
                     this.value = ''; // Clear the file input
                     return;
                 }
@@ -482,26 +482,45 @@
                 // Show loading indicator
                 showLoading();
 
-                try {
-                    // Process the image (compress and convert to base64)
-                    const processedImageUrl = await uploadToCloudinary(file);
+                // Show upload status message
+                const statusDiv = document.createElement('div');
+                statusDiv.id = 'upload-status';
+                statusDiv.style.cssText = 'margin-top:10px; font-size:0.9em; color:#007bff;';
+                statusDiv.textContent = 'Uploading to Cloudinary... Please wait.';
 
-                    // Set the Cloudinary URL to the hidden input
-                    document.getElementById('product-image').value = processedImageUrl;
+                const previewContainer = document.getElementById('product-image-preview').parentNode;
+                if (document.getElementById('upload-status')) {
+                    document.getElementById('upload-status').remove();
+                }
+                previewContainer.appendChild(statusDiv);
+
+                try {
+                    // Upload the image to Cloudinary
+                    const imageUrl = await uploadToCloudinary(file);
+
+                    // Update status
+                    if (document.getElementById('upload-status')) {
+                        document.getElementById('upload-status').textContent = 'Upload complete!';
+                        document.getElementById('upload-status').style.color = '#28a745';
+                    }
+
+                    // Set the image URL to the hidden input
+                    document.getElementById('product-image').value = imageUrl;
 
                     // Show preview
-                    document.getElementById('product-image-preview').src = processedImageUrl;
+                    document.getElementById('product-image-preview').src = imageUrl;
                     document.getElementById('product-image-preview').style.display = '';
 
                     // Check if it's a Cloudinary URL
-                    if (processedImageUrl.includes('cloudinary.com')) {
-                        console.log('Using Cloudinary URL:', processedImageUrl);
+                    if (imageUrl.includes('cloudinary.com')) {
+                        console.log('Successfully uploaded to Cloudinary:', imageUrl);
 
                         // Add Cloudinary indicator next to preview
                         const cloudinaryIndicator = document.createElement('span');
                         cloudinaryIndicator.textContent = ' (Cloudinary)';
-                        cloudinaryIndicator.style.fontSize = '0.8em';
+                        cloudinaryIndicator.style.fontSize = '0.9em';
                         cloudinaryIndicator.style.color = '#28a745'; // Green for Cloudinary
+                        cloudinaryIndicator.style.fontWeight = 'bold';
 
                         const previewImg = document.getElementById('product-image-preview');
                         if (previewImg.nextSibling && previewImg.nextSibling.tagName === 'SPAN') {
@@ -510,81 +529,93 @@
                         previewImg.parentNode.insertBefore(cloudinaryIndicator, previewImg.nextSibling);
                     } else {
                         // It's a base64 string (fallback)
-                        // Show image size info
-                        const sizeKB = Math.round(processedImageUrl.length/1024);
-                        console.log('Using base64 image, size:', sizeKB + 'KB');
+                        console.log('Using base64 image (Cloudinary upload failed)');
 
-                        // Check if the base64 string is too large
-                        if (sizeKB > 2000) {
-                            console.warn('Base64 image is very large:', sizeKB + 'KB');
-                            alert('The image is too large. Please choose a smaller image or try again.');
-                            this.value = ''; // Clear the file input
-                            hideLoading();
-                            return;
-                        }
-
-                        // Add size indicator next to preview
-                        const sizeIndicator = document.createElement('span');
-                        sizeIndicator.textContent = ' (' + sizeKB + 'KB - Local)';
-                        sizeIndicator.style.fontSize = '0.8em';
-
-                        // Color code based on size
-                        if (sizeKB < 800) {
-                            sizeIndicator.style.color = '#28a745'; // Green for good size
-                        } else if (sizeKB < 1500) {
-                            sizeIndicator.style.color = '#ffc107'; // Yellow for medium size
-                        } else {
-                            sizeIndicator.style.color = '#dc3545'; // Red for large size
-                        }
+                        // Add fallback indicator next to preview
+                        const fallbackIndicator = document.createElement('span');
+                        fallbackIndicator.textContent = ' (Local Storage)';
+                        fallbackIndicator.style.fontSize = '0.9em';
+                        fallbackIndicator.style.color = '#ffc107'; // Yellow for fallback
+                        fallbackIndicator.style.fontWeight = 'bold';
 
                         const previewImg = document.getElementById('product-image-preview');
                         if (previewImg.nextSibling && previewImg.nextSibling.tagName === 'SPAN') {
                             previewImg.parentNode.removeChild(previewImg.nextSibling);
                         }
-                        previewImg.parentNode.insertBefore(sizeIndicator, previewImg.nextSibling);
+                        previewImg.parentNode.insertBefore(fallbackIndicator, previewImg.nextSibling);
                     }
 
                 } catch (error) {
-                    console.error('Image processing failed:', error);
-                    alert('Failed to process image. Please try again with a different image.');
+                    console.error('Image upload failed:', error);
+
+                    // Update status
+                    if (document.getElementById('upload-status')) {
+                        document.getElementById('upload-status').textContent = 'Upload failed: ' + error.message;
+                        document.getElementById('upload-status').style.color = '#dc3545';
+                    }
+
+                    alert('Failed to upload image. Please try again with a different image.');
                     this.value = ''; // Clear the file input
                 } finally {
                     hideLoading();
+
+                    // Remove status after 5 seconds
+                    setTimeout(() => {
+                        if (document.getElementById('upload-status')) {
+                            document.getElementById('upload-status').remove();
+                        }
+                    }, 5000);
                 }
             }
         });
 
-        // Function to upload image to Cloudinary
+        // Function to upload image to Cloudinary - simplified and more reliable
         async function uploadToCloudinary(file) {
             try {
-                // Get the original dimensions and size for comparison
-                const originalImage = await loadImage(file);
-                console.log('Original dimensions:', originalImage.width + 'x' + originalImage.height);
-                console.log('Original file size:', Math.round(file.size/1024) + 'KB');
+                // Log file details
+                console.log('Uploading file to Cloudinary:', file.name, 'Size:', Math.round(file.size/1024) + 'KB');
 
                 // Create a FormData object to send the file
                 const formData = new FormData();
                 formData.append('file', file);
                 formData.append('upload_preset', 'ml_default'); // Using the default unsigned upload preset
 
+                // Add timestamp to avoid caching issues
+                formData.append('timestamp', Date.now().toString());
+
                 // Show upload progress in console
-                console.log('Uploading to Cloudinary...');
+                console.log('Starting Cloudinary upload...');
 
-                // Upload to Cloudinary
-                const response = await fetch('https://api.cloudinary.com/v1_1/dtzhskby3/image/upload', {
-                    method: 'POST',
-                    body: formData
-                });
+                // Upload to Cloudinary with longer timeout
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
 
-                if (!response.ok) {
-                    throw new Error(`Cloudinary upload failed: ${response.status} ${response.statusText}`);
+                try {
+                    const response = await fetch('https://api.cloudinary.com/v1_1/dtzhskby3/image/upload', {
+                        method: 'POST',
+                        body: formData,
+                        signal: controller.signal
+                    });
+
+                    clearTimeout(timeoutId); // Clear the timeout
+
+                    // Check for errors
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        console.error('Cloudinary error response:', errorText);
+                        throw new Error(`Cloudinary upload failed: ${response.status} ${response.statusText}`);
+                    }
+
+                    // Parse the response
+                    const data = await response.json();
+                    console.log('Cloudinary upload successful!', data);
+
+                    // Return the secure URL of the uploaded image
+                    return data.secure_url;
+                } catch (fetchError) {
+                    clearTimeout(timeoutId); // Clear the timeout
+                    throw fetchError;
                 }
-
-                const data = await response.json();
-                console.log('Cloudinary upload successful:', data);
-
-                // Return the secure URL of the uploaded image
-                return data.secure_url;
             } catch (error) {
                 console.error('Error uploading to Cloudinary:', error);
 
@@ -592,12 +623,9 @@
                 console.log('Falling back to base64 encoding...');
 
                 try {
-                    // Compress and resize the image
-                    const compressedImage = await compressImage(file, 1200, 0.9);
-
-                    // Convert to base64
-                    const base64String = await fileToBase64(compressedImage);
-                    console.log('Fallback to base64 successful, size:', Math.round(base64String.length/1024) + 'KB');
+                    // Convert to base64 without compression
+                    const base64String = await fileToBase64(file);
+                    console.log('Fallback to base64 successful');
 
                     return base64String;
                 } catch (fallbackError) {
@@ -720,22 +748,14 @@
                 return;
             }
 
-            // Check if it's a Cloudinary URL or base64
+            // Log image information
             if (image) {
                 if (image.includes('cloudinary.com')) {
                     console.log('Submitting product with Cloudinary URL:', image);
                 } else {
-                    // It's a base64 string, check size
+                    // It's a base64 string
                     const sizeKB = Math.round(image.length/1024);
                     console.log('Submitting product with base64 image, size:', sizeKB + 'KB');
-
-                    // Check if image is too large (over 2MB)
-                    if (image.length > 2 * 1024 * 1024) {
-                        console.warn('Image is very large:', sizeKB + 'KB');
-                        alert('The image is too large. Please choose a smaller image or reduce the image quality.');
-                        hideLoading();
-                        return;
-                    }
                 }
             }
 
