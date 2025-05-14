@@ -253,6 +253,141 @@ app.delete('/users/:id', async (req, res) => {
     }
 });
 
+// User profile endpoint
+app.get('/users/profile', async (req, res) => {
+    try {
+        // In a real app, you would extract the user ID from the JWT token
+        // For now, we'll use the username from the Authorization header
+        const authHeader = req.headers.authorization;
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            return res.status(401).json({ message: 'Unauthorized' });
+        }
+
+        // Extract username from token (simplified for demo)
+        const token = authHeader.split(' ')[1];
+        const username = token.includes('admin') ? 'admin' :
+                        (token.includes('user') ? 'user' : null);
+
+        if (!username) {
+            return res.status(401).json({ message: 'Invalid token' });
+        }
+
+        // Find user by username
+        const user = await User.findOne({ username }, '-password');
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        res.json(user);
+    } catch (err) {
+        console.error('Error fetching user profile:', err);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// Update user profile
+app.put('/users/update', async (req, res) => {
+    try {
+        // In a real app, you would extract the user ID from the JWT token
+        const authHeader = req.headers.authorization;
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            return res.status(401).json({ message: 'Unauthorized' });
+        }
+
+        // Extract username from token (simplified for demo)
+        const token = authHeader.split(' ')[1];
+        const username = token.includes('admin') ? 'admin' :
+                        (token.includes('user') ? 'user' : null);
+
+        if (!username) {
+            return res.status(401).json({ message: 'Invalid token' });
+        }
+
+        // Find user by username
+        const user = await User.findOne({ username });
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Update user fields
+        const { name, age, gender, email, phone } = req.body;
+        user.name = name || user.name;
+        user.age = age || user.age;
+        user.gender = gender || user.gender;
+        user.email = email || user.email;
+        user.phone = phone || user.phone;
+
+        // Save updated user
+        await user.save();
+
+        res.json({ message: 'Profile updated successfully', user });
+    } catch (err) {
+        console.error('Error updating user profile:', err);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// Change password endpoint
+app.put('/users/change-password', async (req, res) => {
+    try {
+        // In a real app, you would extract the user ID from the JWT token
+        const authHeader = req.headers.authorization;
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            return res.status(401).json({ message: 'Unauthorized' });
+        }
+
+        // Extract username from token (simplified for demo)
+        const token = authHeader.split(' ')[1];
+        const username = token.includes('admin') ? 'admin' :
+                        (token.includes('user') ? 'user' : null);
+
+        if (!username) {
+            return res.status(401).json({ message: 'Invalid token' });
+        }
+
+        // Find user by username
+        const user = await User.findOne({ username });
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Verify old password
+        const { oldPassword, newPassword } = req.body;
+
+        // For hardcoded users (admin/user), use simple comparison
+        let isMatch = false;
+        if (username === 'admin' && oldPassword === 'admin123') {
+            isMatch = true;
+        } else if (username === 'user' && oldPassword === 'user123') {
+            isMatch = true;
+        } else {
+            // For regular users, compare with bcrypt
+            isMatch = await bcrypt.compare(oldPassword, user.password);
+        }
+
+        if (!isMatch) {
+            return res.status(401).json({ message: 'Old password is incorrect' });
+        }
+
+        // Validate new password
+        if (!newPassword || newPassword.length < 6) {
+            return res.status(400).json({ message: 'New password must be at least 6 characters' });
+        }
+
+        // Hash and update password
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        user.password = hashedPassword;
+
+        // Save updated user
+        await user.save();
+
+        res.json({ message: 'Password updated successfully' });
+    } catch (err) {
+        console.error('Error changing password:', err);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
 
 // ========== PRODUCT ROUTES ==========
 
@@ -295,6 +430,80 @@ app.delete('/products/:id', async (req, res) => {
     }
 });
 
+
+// ========== PASSWORD RESET ROUTES ==========
+
+// Verify user credentials for password reset
+app.post('/users/verify-credentials', async (req, res) => {
+    try {
+        const { email, phone } = req.body;
+
+        if (!email || !phone) {
+            return res.status(400).json({ message: 'Email and phone number are required' });
+        }
+
+        // Find user by email and phone
+        const user = await User.findOne({
+            email: email.toLowerCase(),
+            phone: phone
+        }, '-password');
+
+        if (!user) {
+            return res.status(404).json({ message: 'No account found with this email and phone number' });
+        }
+
+        // Return user info without password
+        res.json({
+            message: 'User verified',
+            user: {
+                email: user.email,
+                phone: user.phone,
+                username: user.username
+            }
+        });
+    } catch (err) {
+        console.error('Error verifying credentials:', err);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// Reset password
+app.post('/users/reset-password', async (req, res) => {
+    try {
+        const { email, phone, newPassword } = req.body;
+
+        if (!email || !phone || !newPassword) {
+            return res.status(400).json({ message: 'Email, phone number, and new password are required' });
+        }
+
+        // Validate new password
+        if (newPassword.length < 6) {
+            return res.status(400).json({ message: 'New password must be at least 6 characters' });
+        }
+
+        // Find user by email and phone
+        const user = await User.findOne({
+            email: email.toLowerCase(),
+            phone: phone
+        });
+
+        if (!user) {
+            return res.status(404).json({ message: 'No account found with this email and phone number' });
+        }
+
+        // Hash and update password
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        user.password = hashedPassword;
+
+        // Save updated user
+        await user.save();
+
+        res.json({ message: 'Password reset successful' });
+    } catch (err) {
+        console.error('Error resetting password:', err);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
 
 // ========== CLOUDINARY CONFIG ==========
 
