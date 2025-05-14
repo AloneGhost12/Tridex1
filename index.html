@@ -731,6 +731,9 @@ const verifiedUsers = [];
 
 // Show/hide buttons based on login status
 const isLoggedIn = localStorage.getItem('isLoggedIn');
+// Get username from localStorage
+const username = localStorage.getItem('username') || localStorage.getItem('currentUser');
+
 // Display name if available (for personalization), fallback to username
 if (isLoggedIn && username) {
     // Try to get the user's name from localStorage for personalization
@@ -907,7 +910,7 @@ if (!isLoggedIn) {
 
             const isLoggedIn = localStorage.getItem('isLoggedIn');
             const hasToken = localStorage.getItem('token');
-            const username = localStorage.getItem('username');
+            const username = localStorage.getItem('username') || localStorage.getItem('currentUser');
 
             // If we have a token but no isLoggedIn flag, set it
             if (hasToken && !isLoggedIn) {
