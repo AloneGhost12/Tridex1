@@ -17,16 +17,17 @@ const PORT = process.env.PORT || 3000;
 app.use(cors({
     origin: ['https://aloneghost12.github.io', 'http://localhost:3000', 'http://127.0.0.1:5500', '*'],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Username', 'X-Requested-With', 'Accept', 'Origin'],
+    exposedHeaders: ['Content-Type', 'Authorization'],
     credentials: true
 }));
 app.options('*', cors());
 
 // Add specific CORS headers for all responses as a fallback
 app.use((req, res, next) => {
-    res.header('Access-Control-Allow-Origin', 'https://aloneghost12.github.io');
+    res.header('Access-Control-Allow-Origin', '*');
     res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, X-Username');
     res.header('Access-Control-Allow-Credentials', 'true');
     next();
 });
@@ -399,8 +400,9 @@ app.put('/users/change-password', async (req, res) => {
             return res.status(401).json({ message: 'Unauthorized' });
         }
 
-        // Extract username from query parameter or header
+        // Extract username from query parameter, body, or header
         const usernameFromQuery = req.query.username;
+        const usernameFromBody = req.body.username;
 
         // Get username from token (simplified for demo)
         const token = authHeader.split(' ')[1];
@@ -412,8 +414,8 @@ app.put('/users/change-password', async (req, res) => {
         } else if (token === 'dev-user-token') {
             username = 'user';
         } else if (token.startsWith('fake-jwt-token-')) {
-            // For dynamically generated tokens, get username from query or header
-            username = usernameFromQuery || req.headers['x-username'];
+            // For dynamically generated tokens, get username from query, body, or header
+            username = usernameFromQuery || usernameFromBody || req.headers['x-username'];
         }
 
         console.log('Change password request for username:', username);
