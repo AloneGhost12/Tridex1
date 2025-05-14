@@ -740,29 +740,29 @@ app.post('/users/reset-password', async (req, res) => {
 app.get('/cloudinary-config', (req, res) => {
     try {
         // Get Cloudinary credentials from environment variables
-        const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
+        const cloudName = process.env.CLOUDINARY_CLOUD_NAME || 'dtzhskby3'; // Use the known cloud name as fallback
         const apiKey = process.env.CLOUDINARY_API_KEY;
 
-        // Check if credentials are properly configured
-        if (!cloudName || cloudName === 'your_cloud_name' || cloudName === 'your_new_cloud_name') {
-            console.error('Cloudinary cloud name not properly configured in environment variables');
-            return res.status(500).json({ message: 'Cloudinary not properly configured' });
+        // Log what we're working with (without showing the actual values)
+        console.log('Cloudinary config request:');
+        console.log('- Cloud name available:', !!cloudName);
+        console.log('- API key available:', !!apiKey);
+
+        // Always return the cloud name, even if it's a placeholder
+        // This allows the client to at least attempt the upload
+        const response = {
+            cloudName: cloudName
+        };
+
+        // Only include the API key if it seems valid
+        if (apiKey && apiKey !== 'your_new_api_key_here' && apiKey !== 'your_api_key') {
+            response.apiKey = apiKey;
+            console.log('Providing Cloudinary configuration with API key');
+        } else {
+            console.log('Providing Cloudinary configuration without API key');
         }
 
-        if (!apiKey || apiKey === 'your_new_api_key_here' || apiKey === 'your_api_key') {
-            console.error('Cloudinary API key not properly configured in environment variables');
-            return res.status(500).json({ message: 'Cloudinary API key not properly configured' });
-        }
-
-        // For unsigned uploads, we need to provide both the cloud name and API key
-        // The API secret is never exposed to the client
-        // Log for debugging but don't include sensitive values
-        console.log('Providing Cloudinary configuration (API key hidden)');
-
-        res.json({
-            cloudName: cloudName,
-            apiKey: apiKey
-        });
+        res.json(response);
     } catch (err) {
         console.error('Error providing Cloudinary config:', err);
         res.status(500).json({ message: 'Error providing Cloudinary configuration' });
