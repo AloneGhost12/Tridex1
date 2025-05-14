@@ -622,30 +622,77 @@ document.addEventListener('DOMContentLoaded', function() {
 // Ban check logic (must be first in script)
 const username = localStorage.getItem('username') || localStorage.getItem('currentUser');
 
-// Function to check ban status after DOM is loaded
+// Function to check ban status
 function checkBanStatus() {
+    console.log('Checking ban status for user:', username);
+
     // Check if the user is banned using our ban system
-    if (window.banSystem && window.banSystem.isUserBanned(username)) {
-        console.log('User is banned, showing ban message');
-        // Use the ban system to handle the ban
-        window.banSystem.checkCurrentUserBan();
-        // Stop further script execution
-        throw new Error('User is banned');
+    if (window.banSystem) {
+        // Check if the user is banned or if there's a ban flag in sessionStorage
+        if (window.banSystem.isUserBanned(username) || sessionStorage.getItem('userBanned') === 'true') {
+            console.log('User is banned or ban flag found, showing ban message');
+
+            // Use the ban system to handle the ban
+            window.banSystem.checkCurrentUserBan();
+
+            // Stop further script execution
+            throw new Error('User is banned');
+        }
     }
 }
 
-// Check ban status immediately
-if (window.banSystem && window.banSystem.isUserBanned(username)) {
-    console.log('User is banned, showing ban message');
-    // Use the ban system to handle the ban
-    window.banSystem.checkCurrentUserBan();
-    // Stop further script execution
-    throw new Error('User is banned');
+// Check ban status immediately if the ban system is loaded
+if (window.banSystem) {
+    checkBanStatus();
+} else {
+    // If the ban system isn't loaded yet, wait for it
+    console.log('Ban system not loaded yet, waiting...');
+
+    // Create a MutationObserver to watch for the ban-system script to be loaded
+    const observer = new MutationObserver(function(mutations) {
+        if (window.banSystem) {
+            console.log('Ban system loaded, checking ban status');
+            checkBanStatus();
+            observer.disconnect();
+        }
+    });
+
+    // Start observing
+    observer.observe(document.documentElement, {
+        childList: true,
+        subtree: true
+    });
+
+    // Set a timeout to check again in case the observer doesn't catch it
+    setTimeout(function() {
+        if (window.banSystem) {
+            console.log('Ban system loaded (via timeout), checking ban status');
+            checkBanStatus();
+            observer.disconnect();
+        }
+    }, 1000);
 }
 
 // Also check after DOM is loaded to ensure the ban message is displayed
 document.addEventListener('DOMContentLoaded', function() {
-    checkBanStatus();
+    console.log('DOM loaded, checking ban status again');
+    if (window.banSystem) {
+        checkBanStatus();
+    } else {
+        // If the ban system isn't loaded yet, set up a small polling mechanism
+        const checkInterval = setInterval(function() {
+            if (window.banSystem) {
+                console.log('Ban system loaded (via interval), checking ban status');
+                checkBanStatus();
+                clearInterval(checkInterval);
+            }
+        }, 100);
+
+        // Clear the interval after 5 seconds to prevent infinite checking
+        setTimeout(function() {
+            clearInterval(checkInterval);
+        }, 5000);
+    }
 });
 
 // Fix: define verifiedUsers as an empty array to prevent JS errors

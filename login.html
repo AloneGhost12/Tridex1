@@ -22,9 +22,10 @@
     <div class="login-container">
         <h2>Login</h2>
         <!-- Ban message for banned users -->
-        <div id="login-ban-message" style="display:none; background:#ffebee; border:1px solid #f44336; padding:15px; margin-bottom:20px; border-radius:5px; text-align:center; z-index:999999;">
-            <p style="margin:0 0 10px 0; font-size:1.1em; color:#d32f2f; font-weight:bold;">This account has been banned</p>
-            <p style="margin:0; font-size:0.9em; color:#555;">For more information, please contact support.</p>
+        <div id="login-ban-message" style="display:none; background:#ffebee; border:2px solid #f44336; padding:15px; margin-bottom:20px; border-radius:5px; text-align:center; z-index:999999; box-shadow:0 4px 8px rgba(0,0,0,0.1);">
+            <div style="font-size:2em; color:#d32f2f; margin-bottom:10px;">⚠️</div>
+            <p style="margin:0 0 10px 0; font-size:1.2em; color:#d32f2f; font-weight:bold;">This account has been banned</p>
+            <p style="margin:0; font-size:1em; color:#555; line-height:1.4;">You no longer have access to this site. For more information, please contact support.</p>
         </div>
         <form id="login-form" action="index.html" method="get">
             <label for="username">Username</label>
@@ -111,9 +112,12 @@
 
     // Check for banned users on page load
     window.addEventListener('load', function() {
+        console.log('Login page loaded, checking for banned status');
+
         // Check if the user was redirected here due to a ban
         const banRedirect = new URLSearchParams(window.location.search).get('banned');
         if (banRedirect === 'true') {
+            console.log('User was redirected here due to a ban');
             document.getElementById('login-ban-message').style.display = 'block';
             // Scroll to the ban message
             document.getElementById('login-ban-message').scrollIntoView({ behavior: 'smooth' });
@@ -123,11 +127,25 @@
             if (loadingOverlay) {
                 loadingOverlay.style.display = 'none';
             }
+
+            // Set a flag in sessionStorage to remember the ban status
+            sessionStorage.setItem('showBanMessage', 'true');
+        }
+
+        // Check if there's a flag to show the ban message
+        if (sessionStorage.getItem('showBanMessage') === 'true') {
+            console.log('Ban message flag found in sessionStorage');
+            document.getElementById('login-ban-message').style.display = 'block';
+            document.getElementById('login-ban-message').scrollIntoView({ behavior: 'smooth' });
+
+            // Clear the flag after showing the message
+            sessionStorage.removeItem('showBanMessage');
         }
 
         // Check if the current user is banned
         const username = localStorage.getItem('username') || localStorage.getItem('currentUser');
         if (username && window.banSystem && window.banSystem.isUserBanned(username)) {
+            console.log(`User ${username} is banned, showing ban message`);
             document.getElementById('login-ban-message').style.display = 'block';
             // Scroll to the ban message
             document.getElementById('login-ban-message').scrollIntoView({ behavior: 'smooth' });
@@ -170,14 +188,37 @@
         // Check if user is banned using our ban system
         if (window.banSystem && window.banSystem.isUserBanned(userInput)) {
             console.log(`Login attempt by banned user: ${userInput}`);
+
+            // Show the ban message prominently
             document.getElementById('login-ban-message').style.display = 'block';
             document.getElementById('login-ban-message').scrollIntoView({ behavior: 'smooth' });
+
+            // Make the ban message more noticeable
+            const banMessage = document.getElementById('login-ban-message');
+            banMessage.style.animation = 'pulse 1s ease-in-out';
+
+            // Add a pulse animation if it doesn't exist
+            if (!document.getElementById('ban-pulse-animation')) {
+                const style = document.createElement('style');
+                style.id = 'ban-pulse-animation';
+                style.textContent = `
+                    @keyframes pulse {
+                        0% { transform: scale(1); }
+                        50% { transform: scale(1.05); }
+                        100% { transform: scale(1); }
+                    }
+                `;
+                document.head.appendChild(style);
+            }
 
             // Clear any existing login data
             localStorage.removeItem('token');
             localStorage.removeItem('isLoggedIn');
             localStorage.removeItem('username');
             localStorage.removeItem('currentUser');
+
+            // Set a flag in sessionStorage to remember the ban status
+            sessionStorage.setItem('showBanMessage', 'true');
 
             hideLoading();
             return;
