@@ -13,13 +13,35 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middleware
+// Define allowed origins
+const allowedOrigins = [
+    'https://aloneghost12.github.io',
+    'http://localhost:3000',
+    'http://127.0.0.1:5500'
+];
+
+// CORS configuration
 app.use(cors({
-    origin: '*', // Allow all origins for development
+    origin: function(origin, callback) {
+        // Allow requests with no origin (like mobile apps, curl, etc.)
+        if (!origin) return callback(null, true);
+
+        // Check if the origin is allowed
+        if (allowedOrigins.indexOf(origin) !== -1) {
+            callback(null, true);
+        } else {
+            // For development, allow all origins
+            callback(null, true);
+
+            // For production, you might want to restrict:
+            // callback(new Error('Not allowed by CORS'));
+        }
+    },
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Username', 'X-Requested-With', 'Accept', 'Origin'],
     exposedHeaders: ['Content-Type', 'Authorization'],
-    credentials: true
+    // Don't use credentials with wildcard origin
+    credentials: false
 }));
 
 // Pre-flight requests
@@ -27,8 +49,15 @@ app.options('*', cors());
 
 // Add specific CORS headers for all responses as a fallback
 app.use((req, res, next) => {
-    // Allow requests from any origin
-    res.header('Access-Control-Allow-Origin', '*');
+    const origin = req.headers.origin;
+
+    // If the origin is in our allowed list, set it specifically
+    // Otherwise use * for development
+    if (origin && allowedOrigins.includes(origin)) {
+        res.header('Access-Control-Allow-Origin', origin);
+    } else {
+        res.header('Access-Control-Allow-Origin', '*');
+    }
 
     // Allow specific methods
     res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
@@ -36,8 +65,8 @@ app.use((req, res, next) => {
     // Allow specific headers
     res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, X-Username');
 
-    // Allow credentials
-    res.header('Access-Control-Allow-Credentials', 'true');
+    // Don't use credentials with wildcard origin
+    // res.header('Access-Control-Allow-Credentials', 'true');
 
     // Handle preflight OPTIONS requests
     if (req.method === 'OPTIONS') {
