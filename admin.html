@@ -468,8 +468,8 @@
             }
             document.getElementById('product-image-file').value = '';
         }
-        // Handle image file upload and convert to base64
-        document.getElementById('product-image-file').addEventListener('change', function(e) {
+        // Handle image file upload and upload to Cloudinary
+        document.getElementById('product-image-file').addEventListener('change', async function(e) {
             const file = e.target.files[0];
             if (file) {
                 // Check file size (limit to 5MB)
@@ -482,22 +482,104 @@
                 // Show loading indicator
                 showLoading();
 
-                const reader = new FileReader();
-                reader.onload = function(event) {
-                    // Set the base64 string to the hidden input
-                    document.getElementById('product-image').value = event.target.result;
+                try {
+                    // Upload to Cloudinary
+                    const cloudinaryUrl = await uploadToCloudinary(file);
+
+                    // Set the Cloudinary URL to the hidden input
+                    document.getElementById('product-image').value = cloudinaryUrl;
+
                     // Show preview
-                    document.getElementById('product-image-preview').src = event.target.result;
+                    document.getElementById('product-image-preview').src = cloudinaryUrl;
                     document.getElementById('product-image-preview').style.display = '';
+
+                    console.log('Image uploaded to Cloudinary:', cloudinaryUrl);
+                } catch (error) {
+                    console.error('Cloudinary upload failed:', error);
+                    alert('Failed to upload image. Please try again.');
+                } finally {
                     hideLoading();
-                };
-                reader.onerror = function() {
-                    alert('Failed to read the image file. Please try again.');
-                    hideLoading();
-                };
-                reader.readAsDataURL(file);
+                }
             }
         });
+
+        // Function to upload image to Cloudinary
+        async function uploadToCloudinary(file) {
+            // Create a FormData object to send the file
+            const formData = new FormData();
+            formData.append('file', file);
+
+            // Try with unsigned upload first (easier for frontend)
+            formData.append('upload_preset', 'tridex_products'); // Using a custom unsigned upload preset
+
+            try {
+                // Upload to Cloudinary using your cloud name
+                const response = await fetch('https://api.cloudinary.com/v1_1/dtzhskby3/image/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                // If the upload fails with a 404 (preset not found), try with the default preset
+                if (response.status === 404) {
+                    console.log('Custom upload preset not found, trying with default preset');
+
+                    // Create a new FormData with the default preset
+                    const defaultFormData = new FormData();
+                    defaultFormData.append('file', file);
+                    defaultFormData.append('upload_preset', 'ml_default'); // Default unsigned upload preset
+
+                    const defaultResponse = await fetch('https://api.cloudinary.com/v1_1/dtzhskby3/image/upload', {
+                        method: 'POST',
+                        body: defaultFormData
+                    });
+
+                    if (!defaultResponse.ok) {
+                        throw new Error(`Cloudinary upload failed with default preset: ${defaultResponse.status} ${defaultResponse.statusText}`);
+                    }
+
+                    const defaultData = await defaultResponse.json();
+                    console.log('Cloudinary response with default preset:', defaultData);
+                    return defaultData.secure_url;
+                }
+
+                if (!response.ok) {
+                    throw new Error(`Cloudinary upload failed: ${response.status} ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                console.log('Cloudinary response:', data);
+                return data.secure_url; // Return the secure URL of the uploaded image
+            } catch (error) {
+                console.error('Error uploading to Cloudinary:', error);
+
+                // If all else fails, try with signed upload using the API key
+                try {
+                    console.log('Trying with signed upload as fallback');
+
+                    // Create a new FormData with API key
+                    const signedFormData = new FormData();
+                    signedFormData.append('file', file);
+                    signedFormData.append('api_key', '374414837229234');
+                    signedFormData.append('timestamp', Math.floor(Date.now() / 1000).toString());
+
+                    const signedResponse = await fetch('https://api.cloudinary.com/v1_1/dtzhskby3/image/upload', {
+                        method: 'POST',
+                        body: signedFormData
+                    });
+
+                    if (!signedResponse.ok) {
+                        throw new Error(`Signed Cloudinary upload failed: ${signedResponse.status} ${signedResponse.statusText}`);
+                    }
+
+                    const signedData = await signedResponse.json();
+                    console.log('Cloudinary response with signed upload:', signedData);
+                    return signedData.secure_url;
+                } catch (signedError) {
+                    console.error('Error with signed upload:', signedError);
+                    throw error; // Throw the original error
+                }
+            }
+        }
 
         // Add/Edit Product (DB version)
         document.getElementById('product-form').onsubmit = async function(e) {
@@ -525,6 +607,9 @@
                 return;
             }
 
+            // Log the image URL for debugging
+            console.log('Submitting product with image URL:', image);
+
             try {
                 if (id) {
                     // Update
@@ -538,6 +623,10 @@
                         throw new Error(`Server returned ${response.status}: ${response.statusText}`);
                     }
 
+                    // Log the response for debugging
+                    const responseData = await response.json();
+                    console.log('Product update response:', responseData);
+
                     alert('Product updated successfully!');
                 } else {
                     // Add
@@ -550,6 +639,10 @@
                     if (!response.ok) {
                         throw new Error(`Server returned ${response.status}: ${response.statusText}`);
                     }
+
+                    // Log the response for debugging
+                    const responseData = await response.json();
+                    console.log('Product add response:', responseData);
 
                     alert('Product added successfully!');
                 }
@@ -724,9 +817,61 @@
             }
         });
 
+        // Function to check Cloudinary connection
+        async function checkCloudinaryConnection() {
+            try {
+                // Create a small test image (1x1 pixel transparent PNG)
+                const base64Image = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
+
+                // Convert base64 to blob
+                const response = await fetch(base64Image);
+                const blob = await response.blob();
+                const file = new File([blob], 'test.png', { type: 'image/png' });
+
+                // Try to upload to Cloudinary
+                const url = await uploadToCloudinary(file);
+                console.log('Cloudinary connection test successful:', url);
+
+                // Add a small notification to the admin panel
+                const notification = document.createElement('div');
+                notification.style.cssText = 'position:fixed; bottom:20px; right:20px; background:#28a745; color:#fff; padding:10px 15px; border-radius:5px; box-shadow:0 2px 10px rgba(0,0,0,0.2); z-index:1000;';
+                notification.textContent = 'Cloudinary connected successfully!';
+                document.body.appendChild(notification);
+
+                // Remove the notification after 5 seconds
+                setTimeout(() => {
+                    notification.style.opacity = '0';
+                    notification.style.transition = 'opacity 0.5s ease';
+                    setTimeout(() => notification.remove(), 500);
+                }, 5000);
+
+                return true;
+            } catch (error) {
+                console.error('Cloudinary connection test failed:', error);
+
+                // Add a small error notification to the admin panel
+                const notification = document.createElement('div');
+                notification.style.cssText = 'position:fixed; bottom:20px; right:20px; background:#dc3545; color:#fff; padding:10px 15px; border-radius:5px; box-shadow:0 2px 10px rgba(0,0,0,0.2); z-index:1000;';
+                notification.textContent = 'Cloudinary connection failed. Check console for details.';
+                document.body.appendChild(notification);
+
+                // Remove the notification after 8 seconds
+                setTimeout(() => {
+                    notification.style.opacity = '0';
+                    notification.style.transition = 'opacity 0.5s ease';
+                    setTimeout(() => notification.remove(), 500);
+                }, 8000);
+
+                return false;
+            }
+        }
+
         // On load
         fetchUsers();
         fetchProducts();
+
+        // Check Cloudinary connection after a short delay
+        setTimeout(checkCloudinaryConnection, 2000);
     </script>
 </body>
 </html>
