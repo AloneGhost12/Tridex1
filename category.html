@@ -29,6 +29,27 @@
                 right: 15px;
                 z-index: 1001;
             }
+
+            /* Ensure proper alignment of notification badges */
+            #mail-count, #cart-count {
+                position: absolute !important;
+                top: -8px !important;
+                right: -10px !important;
+                background: #dc3545 !important;
+                color: #fff !important;
+                border-radius: 50% !important;
+                font-size: 0.7em !important;
+                padding: 2px 6px !important;
+                min-width: 18px !important;
+                text-align: center !important;
+                z-index: 1001 !important;
+            }
+
+            /* Ensure proper positioning of nav icons */
+            .nav-icon {
+                position: relative !important;
+                display: inline-block !important;
+            }
         }
         @media (max-width: 600px) {
             header > div {
@@ -214,15 +235,15 @@
                     <li class="nav"><a href="about.html">About</a></li>
                     <li class="nav"><a href="#">More</a></li>
                     <li><a href="#" class="nav-icon" id="userIcon">👤</a></li>
-                    <li>
-                        <a href="#" class="nav-icon" id="mailIcon" title="Mailbox">
+                    <li style="position: relative;">
+                        <a href="#" class="nav-icon" id="mailIcon" title="Mailbox" style="position: relative;">
                             &#9993;
-                            <span id="mail-count">0</span>
+                            <span id="mail-count" style="position: absolute; top: -8px; right: -10px; background: #dc3545; color: #fff; border-radius: 50%; font-size: 0.7em; padding: 2px 6px; min-width: 18px; text-align: center;">0</span>
                         </a>
                     </li>
-                    <li>
-                        <a href="cart.html" class="nav-icon" id="cartIcon" title="Cart">
-                            🛒<span id="cart-count">0</span>
+                    <li style="position: relative;">
+                        <a href="cart.html" class="nav-icon" id="cartIcon" title="Cart" style="position: relative;">
+                            🛒<span id="cart-count" style="position: absolute; top: -8px; right: -10px; background: #dc3545; color: #fff; border-radius: 50%; font-size: 0.7em; padding: 2px 6px; min-width: 18px; text-align: center;">0</span>
                         </a>
                     </li>
                 </ul>
@@ -357,19 +378,47 @@
                     // Ensure notification badges are visible
                     const mailCount = document.getElementById('mail-count');
                     const cartCount = document.getElementById('cart-count');
+                    const mailIcon = document.getElementById('mailIcon');
+                    const cartIcon = document.getElementById('cartIcon');
 
+                    // Make sure the parent elements have proper positioning
+                    if (mailIcon) {
+                        mailIcon.style.position = 'relative';
+                        mailIcon.style.display = 'inline-block';
+                    }
+
+                    if (cartIcon) {
+                        cartIcon.style.position = 'relative';
+                        cartIcon.style.display = 'inline-block';
+                    }
+
+                    // Position the notification badges
                     if (mailCount) {
                         mailCount.style.position = 'absolute';
-                        mailCount.style.right = '18px';
-                        mailCount.style.top = '12px';
+                        mailCount.style.right = '-10px';
+                        mailCount.style.top = '-8px';
                         mailCount.style.zIndex = '1001';
+                        mailCount.style.background = '#dc3545';
+                        mailCount.style.color = '#fff';
+                        mailCount.style.borderRadius = '50%';
+                        mailCount.style.fontSize = '0.7em';
+                        mailCount.style.padding = '2px 6px';
+                        mailCount.style.minWidth = '18px';
+                        mailCount.style.textAlign = 'center';
                     }
 
                     if (cartCount) {
                         cartCount.style.position = 'absolute';
-                        cartCount.style.right = '18px';
-                        cartCount.style.top = '12px';
+                        cartCount.style.right = '-10px';
+                        cartCount.style.top = '-8px';
                         cartCount.style.zIndex = '1001';
+                        cartCount.style.background = '#dc3545';
+                        cartCount.style.color = '#fff';
+                        cartCount.style.borderRadius = '50%';
+                        cartCount.style.fontSize = '0.7em';
+                        cartCount.style.padding = '2px 6px';
+                        cartCount.style.minWidth = '18px';
+                        cartCount.style.textAlign = 'center';
                     }
                 } else {
                     nav.style.display = 'none';
@@ -490,7 +539,11 @@
         }
 
         // Initialize the page
-        document.addEventListener('DOMContentLoaded', initCategoryPage);
+        document.addEventListener('DOMContentLoaded', function() {
+            initCategoryPage();
+            updateCartCount(); // Update cart count on page load
+            updateMailCount(); // Update mail count on page load
+        });
 
         // Search form
         document.getElementById('search-form').onsubmit = function(e) {
@@ -499,9 +552,129 @@
             window.location.href = `index.html?search=${encodeURIComponent(filter)}`;
         };
 
+        // Cart count update function
+        function updateCartCount() {
+            const isLoggedIn = localStorage.getItem('isLoggedIn');
+            // Check for token as well (for backward compatibility)
+            const hasToken = localStorage.getItem('token');
+            // Use username from either source
+            const username = localStorage.getItem('currentUser') || localStorage.getItem('username');
+
+            // If we have a token but no isLoggedIn flag, set it
+            if (hasToken && !isLoggedIn) {
+                localStorage.setItem('isLoggedIn', 'true');
+            }
+
+            // If we have a username but no currentUser, set it
+            if (localStorage.getItem('username') && !localStorage.getItem('currentUser')) {
+                localStorage.setItem('currentUser', localStorage.getItem('username'));
+            }
+
+            // Recheck login status after potential updates
+            const isActuallyLoggedIn = localStorage.getItem('isLoggedIn') || hasToken;
+
+            if (!isActuallyLoggedIn || !username) {
+                document.getElementById('cart-count').style.display = 'none';
+                return;
+            }
+
+            // Ensure cart is isolated per user
+            const cartUser = localStorage.getItem('cartUser');
+            if (cartUser !== username) {
+                const userCart = localStorage.getItem('cart_' + username);
+                if (userCart) {
+                    localStorage.setItem('cart', userCart);
+                } else {
+                    localStorage.removeItem('cart');
+                }
+                localStorage.setItem('cartUser', username);
+            }
+
+            let cart = [];
+            try { cart = JSON.parse(localStorage.getItem('cart')) || []; } catch (e) { cart = []; }
+            const count = cart.length;
+            const cartCount = document.getElementById('cart-count');
+
+            if (count > 0) {
+                cartCount.textContent = count;
+                cartCount.style.display = '';
+            } else {
+                cartCount.style.display = 'none';
+            }
+        }
+
+        // Mail count update function
+        function updateMailCount() {
+            // Check login status with both methods
+            const isLoggedIn = localStorage.getItem('isLoggedIn');
+            const hasToken = localStorage.getItem('token');
+            const isActuallyLoggedIn = isLoggedIn || hasToken;
+
+            // Use username from either source
+            const username = localStorage.getItem('username') || localStorage.getItem('currentUser');
+
+            // If we have a token but no isLoggedIn flag, set it
+            if (hasToken && !isLoggedIn) {
+                localStorage.setItem('isLoggedIn', 'true');
+            }
+
+            if (!isActuallyLoggedIn || !username) {
+                document.getElementById('mail-count').style.display = 'none';
+                return;
+            }
+
+            const mailCount = document.getElementById('mail-count');
+
+            // Try to get unread count from local storage
+            let messages = [];
+            let unreadCount = 0;
+
+            try {
+                messages = JSON.parse(localStorage.getItem('adminMessages')) || [];
+            } catch (e) {
+                messages = [];
+            }
+
+            // Calculate unread count from local storage
+            const lastSeenKey = username ? `mailLastSeen_${username}` : 'mailLastSeen_guest';
+            const lastSeen = Number(localStorage.getItem(lastSeenKey) || 0);
+            unreadCount = Math.max(messages.length - lastSeen, 0);
+
+            // Update the badge
+            if (unreadCount > 0) {
+                mailCount.textContent = unreadCount;
+                mailCount.style.display = '';
+            } else {
+                mailCount.style.display = 'none';
+            }
+        }
+
+        // Listen for cart changes from other tabs/windows
+        window.addEventListener('storage', function(e) {
+            if (e.key === 'cart') updateCartCount();
+            if (e.key === 'adminMessages') updateMailCount();
+        });
+
         // Cart icon click
         document.getElementById('cartIcon').onclick = withLoading(function(e) {
             e.preventDefault();
+            const isLoggedIn = localStorage.getItem('isLoggedIn');
+            const hasToken = localStorage.getItem('token');
+
+            // If we have a token but no isLoggedIn flag, set it
+            if (hasToken && !isLoggedIn) {
+                localStorage.setItem('isLoggedIn', 'true');
+            }
+
+            // Check login status after potential update
+            const isActuallyLoggedIn = localStorage.getItem('isLoggedIn') || hasToken;
+
+            if (!isActuallyLoggedIn) {
+                alert('You must login to view your cart.');
+                window.location.href = 'login.html';
+                return;
+            }
+
             window.location.href = 'cart.html';
         });
 
