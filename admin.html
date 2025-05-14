@@ -585,10 +585,19 @@
                 // Create a FormData object to send the file
                 const formData = new FormData();
                 formData.append('file', file);
-                formData.append('upload_preset', 'ml_default'); // Using the default unsigned upload preset
+
+                // Use a specific folder to make it easier to find uploads
+                formData.append('folder', 'product_images');
+
+                // Use the default unsigned upload preset
+                formData.append('upload_preset', 'ml_default');
 
                 // Add timestamp to avoid caching issues
                 formData.append('timestamp', Date.now().toString());
+
+                // Add a unique public_id to avoid conflicts
+                const uniqueId = 'product_' + Date.now();
+                formData.append('public_id', uniqueId);
 
                 // Show upload progress in console
                 console.log('Starting Cloudinary upload...');
@@ -1021,6 +1030,13 @@
         // Function to check Cloudinary connection and verify uploads
         async function checkCloudinaryConnection() {
             try {
+                // Update status
+                const statusSpan = document.getElementById('cloudinary-status');
+                if (statusSpan) {
+                    statusSpan.textContent = 'Testing connection...';
+                    statusSpan.style.color = '#007bff';
+                }
+
                 // Create a small test image (1x1 pixel transparent PNG)
                 const base64Image = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
 
@@ -1031,74 +1047,115 @@
 
                 // Try to upload to Cloudinary
                 console.log('Testing Cloudinary connection with a small test image...');
-                const imageUrl = await uploadToCloudinary(file);
 
-                // Check if it's a Cloudinary URL
-                if (imageUrl.includes('cloudinary.com')) {
-                    console.log('✅ Cloudinary connection test successful!');
-                    console.log('Test image URL:', imageUrl);
+                // Create a special test FormData
+                const formData = new FormData();
+                formData.append('file', file);
+                formData.append('upload_preset', 'ml_default');
+                formData.append('folder', 'test_uploads');
+                formData.append('public_id', 'connection_test_' + Date.now());
+                formData.append('timestamp', Date.now().toString());
 
-                    // Add a verification button to check existing products
-                    const verifyButton = document.createElement('button');
-                    verifyButton.textContent = 'Verify Product Images';
-                    verifyButton.className = 'btn btn-info btn-sm';
-                    verifyButton.style.margin = '10px 0';
-                    verifyButton.onclick = verifyProductImages;
+                // Try the upload directly
+                const uploadResponse = await fetch('https://api.cloudinary.com/v1_1/dtzhskby3/image/upload', {
+                    method: 'POST',
+                    body: formData
+                });
 
-                    // Add the button to the page
-                    const adminControls = document.querySelector('.admin-controls');
-                    if (adminControls && !document.getElementById('verify-images-btn')) {
-                        verifyButton.id = 'verify-images-btn';
-                        adminControls.appendChild(verifyButton);
+                if (!uploadResponse.ok) {
+                    const errorText = await uploadResponse.text();
+                    console.error('Cloudinary test upload failed:', errorText);
+
+                    // Try to create an upload preset
+                    console.log('Attempting to use signed upload instead...');
+
+                    // Use our regular upload function as fallback
+                    const imageUrl = await uploadToCloudinary(file);
+
+                    if (imageUrl.includes('cloudinary.com')) {
+                        // Success with fallback
+                        if (statusSpan) {
+                            statusSpan.textContent = 'Connected using fallback method';
+                            statusSpan.style.color = '#ffc107';
+                        }
+
+                        // Add a warning notification
+                        const notification = document.createElement('div');
+                        notification.style.cssText = 'position:fixed; bottom:20px; right:20px; background:#ffc107; color:#000; padding:10px 15px; border-radius:5px; box-shadow:0 2px 10px rgba(0,0,0,0.2); z-index:1000;';
+                        notification.innerHTML = `
+                            <strong>Cloudinary Connected (Fallback)</strong><br>
+                            Test image uploaded successfully using fallback method.<br>
+                            <small>Check the "product_images" folder in your Media Library.</small>
+                        `;
+                        document.body.appendChild(notification);
+
+                        // Remove the notification after 10 seconds
+                        setTimeout(() => {
+                            notification.style.opacity = '0';
+                            notification.style.transition = 'opacity 0.5s ease';
+                            setTimeout(() => notification.remove(), 500);
+                        }, 10000);
+
+                        return true;
+                    } else {
+                        throw new Error('Both direct and fallback upload methods failed');
                     }
-
-                    // Add a success notification
-                    const notification = document.createElement('div');
-                    notification.style.cssText = 'position:fixed; bottom:20px; right:20px; background:#28a745; color:#fff; padding:10px 15px; border-radius:5px; box-shadow:0 2px 10px rgba(0,0,0,0.2); z-index:1000;';
-                    notification.innerHTML = '<strong>Cloudinary Connected!</strong><br>Test image uploaded successfully.';
-                    document.body.appendChild(notification);
-
-                    // Remove the notification after 5 seconds
-                    setTimeout(() => {
-                        notification.style.opacity = '0';
-                        notification.style.transition = 'opacity 0.5s ease';
-                        setTimeout(() => notification.remove(), 500);
-                    }, 5000);
-
-                    return true;
-                } else {
-                    console.log('⚠️ Test image uploaded as base64, not to Cloudinary');
-
-                    // Add a warning notification
-                    const notification = document.createElement('div');
-                    notification.style.cssText = 'position:fixed; bottom:20px; right:20px; background:#ffc107; color:#000; padding:10px 15px; border-radius:5px; box-shadow:0 2px 10px rgba(0,0,0,0.2); z-index:1000;';
-                    notification.innerHTML = '<strong>Warning:</strong> Images are being stored as base64, not in Cloudinary.';
-                    document.body.appendChild(notification);
-
-                    // Remove the notification after 8 seconds
-                    setTimeout(() => {
-                        notification.style.opacity = '0';
-                        notification.style.transition = 'opacity 0.5s ease';
-                        setTimeout(() => notification.remove(), 500);
-                    }, 8000);
-
-                    return false;
                 }
-            } catch (error) {
-                console.error('Cloudinary connection test failed:', error);
 
-                // Add an error notification
+                // Parse the successful response
+                const data = await uploadResponse.json();
+                console.log('✅ Cloudinary connection test successful!', data);
+
+                // Update status
+                if (statusSpan) {
+                    statusSpan.textContent = 'Connected to Cloudinary';
+                    statusSpan.style.color = '#28a745';
+                }
+
+                // Add a success notification
                 const notification = document.createElement('div');
-                notification.style.cssText = 'position:fixed; bottom:20px; right:20px; background:#dc3545; color:#fff; padding:10px 15px; border-radius:5px; box-shadow:0 2px 10px rgba(0,0,0,0.2); z-index:1000;';
-                notification.innerHTML = '<strong>Cloudinary Connection Failed</strong><br>Check console for details.';
+                notification.style.cssText = 'position:fixed; bottom:20px; right:20px; background:#28a745; color:#fff; padding:10px 15px; border-radius:5px; box-shadow:0 2px 10px rgba(0,0,0,0.2); z-index:1000;';
+                notification.innerHTML = `
+                    <strong>Cloudinary Connected!</strong><br>
+                    Test image uploaded successfully.<br>
+                    <small>Check the "test_uploads" folder in your Media Library.</small>
+                `;
                 document.body.appendChild(notification);
 
-                // Remove the notification after 8 seconds
+                // Remove the notification after 10 seconds
                 setTimeout(() => {
                     notification.style.opacity = '0';
                     notification.style.transition = 'opacity 0.5s ease';
                     setTimeout(() => notification.remove(), 500);
-                }, 8000);
+                }, 10000);
+
+                return true;
+            } catch (error) {
+                console.error('Cloudinary connection test failed:', error);
+
+                // Update status
+                const statusSpan = document.getElementById('cloudinary-status');
+                if (statusSpan) {
+                    statusSpan.textContent = 'Connection failed';
+                    statusSpan.style.color = '#dc3545';
+                }
+
+                // Add an error notification
+                const notification = document.createElement('div');
+                notification.style.cssText = 'position:fixed; bottom:20px; right:20px; background:#dc3545; color:#fff; padding:10px 15px; border-radius:5px; box-shadow:0 2px 10px rgba(0,0,0,0.2); z-index:1000;';
+                notification.innerHTML = `
+                    <strong>Cloudinary Connection Failed</strong><br>
+                    Error: ${error.message}<br>
+                    <small>Check console for details.</small>
+                `;
+                document.body.appendChild(notification);
+
+                // Remove the notification after 10 seconds
+                setTimeout(() => {
+                    notification.style.opacity = '0';
+                    notification.style.transition = 'opacity 0.5s ease';
+                    setTimeout(() => notification.remove(), 500);
+                }, 10000);
 
                 return false;
             }
