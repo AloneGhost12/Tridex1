@@ -264,16 +264,7 @@
    <section class="product-grid" id="product-grid">
        <!-- Product cards will be rendered here by JS -->
    </section>
-   <button id="logout-btn" style="position:fixed; top:16px; right:16px; padding:8px 18px; background:#007bff; color:#fff; border:none; border-radius:5px; font-size:1rem; cursor:pointer; display:none;">
-        Logout
-    </button>
-    <div id="logout-popup" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.3); z-index:1000; align-items:center; justify-content:center;">
-        <div style="background:#fff; padding:32px 24px; border-radius:8px; box-shadow:0 2px 12px rgba(0,0,0,0.15); min-width:260px; text-align:center;">
-            <p style="margin-bottom:24px; font-size:1.1em;">Are you sure you want to logout?</p>
-            <button id="popup-logout-yes" style="margin-right:16px; padding:8px 18px; background:#007bff; color:#fff; border:none; border-radius:5px; font-size:1rem; cursor:pointer;">Yes</button>
-            <button id="popup-logout-no" style="padding:8px 18px; background:#eee; color:#333; border:none; border-radius:5px; font-size:1rem; cursor:pointer;">No</button>
-        </div>
-    </div>
+
     <!-- Ban popup for banned users -->
     <div id="ban-message" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.8); z-index:999999; align-items:center; justify-content:center;">
         <div style="background:#fff; padding:32px 24px; border-radius:8px; box-shadow:0 2px 12px rgba(0,0,0,0.15); min-width:320px; max-width:90%; text-align:center;">
@@ -526,8 +517,6 @@ if (isLoggedIn && username) {
     document.getElementById('username-display').innerHTML =
         `Welcome, <span style="text-transform:uppercase; letter-spacing:0.5px; font-weight:500;">${username}</span> ${verifiedUsers.includes(username) ? '<span title="Verified" style="color:#1da1f2; font-size:1.1em;">&#10004;&#65039;</span>' : ''}`;
 }
-// Hide or show logout button
-document.getElementById('logout-btn').style.display = isLoggedIn ? 'block' : 'none';
 // Hide or show login/signup in dropdown and handle profile icon click
 document.addEventListener('DOMContentLoaded', function() {
     const userIcon = document.getElementById('userIcon');
@@ -555,19 +544,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Redirect to login if not logged in
 if (!isLoggedIn) {
-    document.getElementById('logout-btn').style.display = 'none';
+    // User is not logged in
 }
-// Logout button with popup confirmation
-document.getElementById('logout-btn').onclick = function() {
-    document.getElementById('logout-popup').style.display = 'flex';
-};
-document.getElementById('popup-logout-no').onclick = function() {
-    document.getElementById('logout-popup').style.display = 'none';
-};
-document.getElementById('popup-logout-yes').onclick = function() {
-    localStorage.removeItem('isLoggedIn');
-    window.location.href = 'login.html';
-};
 
 // Render products function with detailed error logging
         function renderProducts(products) {
@@ -770,17 +748,7 @@ document.getElementById('popup-logout-yes').onclick = function() {
             document.getElementById('mailbox-modal').style.display = 'none';
         });
 
-        // Logout popup
-        document.getElementById('logout-btn').onclick = withLoading(function() {
-            document.getElementById('logout-popup').style.display = 'flex';
-        });
-        document.getElementById('popup-logout-no').onclick = withLoading(function() {
-            document.getElementById('logout-popup').style.display = 'none';
-        });
-        document.getElementById('popup-logout-yes').onclick = withLoading(function() {
-            localStorage.removeItem('isLoggedIn');
-            window.location.href = 'login.html';
-        });
+
 
         // Mail notification count logic
     async function updateMailCount() {

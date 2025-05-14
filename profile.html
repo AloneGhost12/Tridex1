@@ -264,10 +264,11 @@
         <div id="profile-info">
             <!-- Profile details will be rendered here -->
         </div>
-        <div style="display:flex; gap:12px; margin-bottom:18px; justify-content:center;">
+        <div style="display:flex; gap:12px; margin-bottom:18px; justify-content:center; flex-wrap:wrap;">
             <button id="edit-profile-btn" style="background:#28a745;">Edit Profile</button>
             <button id="change-password-btn" style="background:#ffc107;">Change Password</button>
             <button id="toggle-theme-btn" style="background:#222;">Dark Mode</button>
+            <button id="logout-profile-btn" class="modern-button" style="background:linear-gradient(135deg, #dc3545, #c82333) !important; margin-top:10px; width:100%;">Logout</button>
         </div>
         <form id="profile-form" style="display:none;">
             <label for="profile-name">Name</label>
@@ -300,6 +301,19 @@
         <div id="profile-msg" style="display:none; color:white; background-color:#28a745; margin-top:15px; text-align:center; padding:10px; border-radius:5px; font-weight:bold; box-shadow:0 3px 8px rgba(0,0,0,0.2); font-size:16px;">Profile updated!</div>
         <div id="password-msg" style="display:none; color:white; background-color:#28a745; margin-top:15px; text-align:center; padding:10px; border-radius:5px; font-weight:bold; box-shadow:0 3px 8px rgba(0,0,0,0.2); font-size:16px;">Password updated!</div>
         <div id="password-error" style="display:none; color:white; background-color:#dc3545; margin-top:15px; text-align:center; padding:10px; border-radius:5px; font-weight:bold; box-shadow:0 3px 8px rgba(0,0,0,0.2); font-size:16px;">Old password incorrect!</div>
+    </div>
+
+    <!-- Logout confirmation popup with animations -->
+    <div id="logout-popup" class="modal-overlay" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.8); z-index:999999; align-items:center; justify-content:center; opacity:0; transition:opacity 0.3s ease;">
+        <div class="modal-content" style="background:#fff; padding:32px 24px; border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,0.3); min-width:320px; max-width:90%; text-align:center; transform:scale(0.9); transition:transform 0.3s ease;">
+            <div style="margin-bottom:15px; font-size:3.5em; color:#dc3545;">🚪</div>
+            <h2 style="margin-bottom:15px; color:#333; font-size:1.6em; font-weight:700;">Logout Confirmation</h2>
+            <p style="margin-bottom:24px; font-size:1.1em; color:#555; line-height:1.6;">Are you sure you want to logout from your account?</p>
+            <div style="display:flex; gap:15px; justify-content:center; flex-wrap:wrap;">
+                <button id="logout-yes-btn" class="modern-button" style="background:linear-gradient(135deg, #dc3545, #c82333) !important; padding:12px 30px !important; border-radius:30px !important; font-size:1.1rem !important; box-shadow:0 4px 15px rgba(220, 53, 69, 0.3) !important;">Yes, Logout</button>
+                <button id="logout-no-btn" class="modern-button" style="background:linear-gradient(135deg, #6c757d, #5a6268) !important; padding:12px 30px !important; border-radius:30px !important; font-size:1.1rem !important; box-shadow:0 4px 15px rgba(108, 117, 125, 0.3) !important;">Cancel</button>
+            </div>
+        </div>
     </div>
 
     <!-- Ban popup for banned users with improved styling and animations -->
@@ -346,22 +360,8 @@
 
         // Add click handler for the ban message OK button with ripple effect
         document.getElementById('ban-ok-btn').addEventListener('click', function(e) {
-            // Create ripple effect
-            const button = this;
-            const ripple = document.createElement('span');
-            ripple.classList.add('ripple');
-
-            // Get position of click relative to button
-            const rect = button.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
-
-            // Set ripple position
-            ripple.style.left = x + 'px';
-            ripple.style.top = y + 'px';
-
-            // Add ripple to button
-            button.appendChild(ripple);
+            // Create ripple effect using our reusable function
+            createRippleEffect(e, this);
 
             // Hide ban message with animation
             hideBanMessage();
@@ -889,9 +889,8 @@
             }
         };
 
-        document.getElementById('back-btn').onclick = function(e) {
-            // Create ripple effect
-            const button = this;
+        // Function to create ripple effect on buttons
+        function createRippleEffect(e, button) {
             const ripple = document.createElement('span');
             ripple.classList.add('ripple');
 
@@ -911,6 +910,75 @@
             setTimeout(() => {
                 ripple.remove();
             }, 600);
+        }
+
+        // Function to show logout confirmation popup
+        function showLogoutPopup() {
+            const logoutPopup = document.getElementById('logout-popup');
+            const modalContent = logoutPopup.querySelector('.modal-content');
+
+            // Display the container
+            logoutPopup.style.display = 'flex';
+
+            // Trigger animations after a small delay
+            setTimeout(() => {
+                logoutPopup.style.opacity = '1';
+                modalContent.style.transform = 'scale(1)';
+            }, 10);
+        }
+
+        // Function to hide logout confirmation popup
+        function hideLogoutPopup() {
+            const logoutPopup = document.getElementById('logout-popup');
+            const modalContent = logoutPopup.querySelector('.modal-content');
+
+            // Trigger animations
+            logoutPopup.style.opacity = '0';
+            modalContent.style.transform = 'scale(0.9)';
+
+            // Hide the container after animation completes
+            setTimeout(() => {
+                logoutPopup.style.display = 'none';
+            }, 300);
+        }
+
+        // Handle logout button click
+        document.getElementById('logout-profile-btn').onclick = function(e) {
+            createRippleEffect(e, this);
+            showLogoutPopup();
+        };
+
+        // Handle logout confirmation
+        document.getElementById('logout-yes-btn').onclick = function(e) {
+            createRippleEffect(e, this);
+
+            // Hide logout popup with animation
+            hideLogoutPopup();
+
+            // Show loading overlay
+            showLoading();
+
+            // Clear all login data and redirect after animation completes
+            setTimeout(() => {
+                localStorage.removeItem('token');
+                localStorage.removeItem('isLoggedIn');
+                localStorage.removeItem('username');
+                localStorage.removeItem('currentUser');
+
+                // Redirect to login page
+                window.location.href = 'login.html';
+            }, 300);
+        };
+
+        // Handle logout cancellation
+        document.getElementById('logout-no-btn').onclick = function(e) {
+            createRippleEffect(e, this);
+            hideLogoutPopup();
+        };
+
+        // Back button click handler
+        document.getElementById('back-btn').onclick = function(e) {
+            createRippleEffect(e, this);
 
             // Redirect after a short delay for animation
             setTimeout(() => {
