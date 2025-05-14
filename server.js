@@ -15,20 +15,35 @@ const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(cors({
-    origin: ['https://aloneghost12.github.io', 'http://localhost:3000', 'http://127.0.0.1:5500', '*'],
+    origin: '*', // Allow all origins for development
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Username', 'X-Requested-With', 'Accept', 'Origin'],
     exposedHeaders: ['Content-Type', 'Authorization'],
     credentials: true
 }));
+
+// Pre-flight requests
 app.options('*', cors());
 
 // Add specific CORS headers for all responses as a fallback
 app.use((req, res, next) => {
+    // Allow requests from any origin
     res.header('Access-Control-Allow-Origin', '*');
+
+    // Allow specific methods
     res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+
+    // Allow specific headers
     res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, X-Username');
+
+    // Allow credentials
     res.header('Access-Control-Allow-Credentials', 'true');
+
+    // Handle preflight OPTIONS requests
+    if (req.method === 'OPTIONS') {
+        return res.status(200).end();
+    }
+
     next();
 });
 app.use(express.json());
