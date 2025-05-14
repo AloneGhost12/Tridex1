@@ -37,6 +37,10 @@
                     👁️
                 </span>
             </div>
+            <div style="display:flex; align-items:center; margin-top:10px; margin-bottom:10px;">
+                <input type="checkbox" id="policy-acceptance" name="policy-acceptance" required style="width:auto; margin-right:10px;">
+                <label for="policy-acceptance" style="margin:0; font-size:0.9rem;">I accept the Terms of Service and Privacy Policy</label>
+            </div>
             <button type="submit">Login</button>
         </form>
         <div id="login-error" style="color:red; margin-top:10px; display:none;">
@@ -74,24 +78,7 @@
                 clearTimeout(timeoutId);
                 timeoutId = null;
 
-                // Show a user-friendly message about CORS
-                const corsMessage = document.createElement('div');
-                corsMessage.style.padding = '10px';
-                corsMessage.style.marginTop = '10px';
-                corsMessage.style.backgroundColor = '#fff3cd';
-                corsMessage.style.color = '#856404';
-                corsMessage.style.borderRadius = '4px';
-                corsMessage.style.fontSize = '0.9em';
-                corsMessage.innerHTML = `
-                    <p style="margin:0 0 8px 0;"><strong>Note:</strong> The server is running, but CORS restrictions are preventing direct API access.</p>
-                    <p style="margin:0;">This is a common security feature. The application will use local storage as a fallback.</p>
-                `;
-
-                // Add the message after the login form
-                const loginContainer = document.querySelector('.login-container');
-                if (loginContainer) {
-                    loginContainer.appendChild(corsMessage);
-                }
+                // CORS message removed
 
                 return true; // Server is running, even with CORS issues
             } catch (pingError) {

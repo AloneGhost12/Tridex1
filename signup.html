@@ -150,12 +150,17 @@
             <input type="text" id="new-username" name="username" required>
             <label for="new-password">Password</label>
             <input type="password" id="new-password" name="password" required>
+            <div style="font-size:0.8rem; color:#666; margin-top:-5px; margin-bottom:5px;">Password must be at least 6 characters long</div>
             <label for="confirm-password">Confirm Password</label>
             <input type="password" id="confirm-password" name="confirm-password" required>
             <label for="email">Email</label>
             <input type="email" id="signup-email" name="email" required>
             <label for="phone">Phone Number</label>
             <input type="tel" id="signup-phone" name="phone" required pattern="[0-9]{10,15}">
+            <div style="display:flex; align-items:center; margin-top:10px; margin-bottom:10px;">
+                <input type="checkbox" id="policy-acceptance" name="policy-acceptance" required style="width:auto; margin-right:10px;">
+                <label for="policy-acceptance" style="margin:0; font-size:0.9rem;">I accept the Terms of Service and Privacy Policy</label>
+            </div>
             <button type="submit">Create Account</button>
         </form>
         <div id="signup-success" style="color:green; margin-top:10px; display:none;">Account created! <a href="login.html">Go to Login</a></div>
