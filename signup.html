@@ -68,6 +68,63 @@
             0% { transform: rotate(0deg);}
             100% { transform: rotate(360deg);}
         }
+
+        /* Responsive styles for mobile */
+        @media (max-width: 768px) {
+            .signup-container {
+                max-width: 90%;
+                margin: 20px auto;
+                padding: 20px 15px;
+            }
+
+            .signup-container h2 {
+                font-size: 1.5rem;
+                margin-bottom: 15px;
+            }
+
+            .signup-container input,
+            .signup-container select {
+                padding: 8px;
+                font-size: 0.95rem;
+            }
+
+            .signup-container button {
+                padding: 8px;
+                font-size: 0.95rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .signup-container {
+                max-width: 95%;
+                margin: 15px auto;
+                padding: 15px 10px;
+            }
+
+            .signup-container h2 {
+                font-size: 1.3rem;
+                margin-bottom: 12px;
+            }
+
+            .signup-container label {
+                margin-top: 10px;
+                margin-bottom: 4px;
+                font-size: 0.9rem;
+            }
+
+            .signup-container input,
+            .signup-container select {
+                padding: 7px;
+                font-size: 0.9rem;
+                margin-bottom: 6px;
+            }
+
+            .signup-container button {
+                padding: 8px;
+                font-size: 0.9rem;
+                margin-top: 10px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -107,6 +164,9 @@
     <script>
         document.getElementById('signup-form').onsubmit = async function(e) {
             e.preventDefault();
+            showLoading();
+
+            // Get form values
             const username = document.getElementById('new-username').value.trim();
             const password = document.getElementById('new-password').value;
             const confirmPassword = document.getElementById('confirm-password').value;
@@ -115,18 +175,64 @@
             const age = document.getElementById('age').value.trim();
             const name = document.getElementById('name').value.trim();
             const gender = document.getElementById('gender').value;
-            if (!username || !password) return false;
-            if (password !== confirmPassword) {
-                alert('Passwords do not match!');
+
+            // Basic validation
+            if (!username || !password || !email || !phone || !age || !name || !gender) {
+                alert('Please fill in all fields');
+                hideLoading();
                 return false;
             }
+
+            // Password validation
+            if (password.length < 6) {
+                alert('Password must be at least 6 characters');
+                hideLoading();
+                return false;
+            }
+
+            // Confirm password
+            if (password !== confirmPassword) {
+                alert('Passwords do not match!');
+                hideLoading();
+                return false;
+            }
+
+            // Email validation
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                alert('Please enter a valid email address');
+                hideLoading();
+                return false;
+            }
+
+            // Phone validation
+            const phoneRegex = /^[0-9]{10,15}$/;
+            if (!phoneRegex.test(phone)) {
+                alert('Please enter a valid phone number (10-15 digits)');
+                hideLoading();
+                return false;
+            }
+
             // Send user data to backend
             try {
-                const res = await fetch('http://localhost:3000/signup', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ name, age, gender, username, email, phone, password })
-                });
+                // Try the production URL first
+                let res = null;
+                try {
+                    res = await fetch('https://tridex1.onrender.com/signup', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ name, age, gender, username, email, phone, password })
+                    });
+                } catch (err) {
+                    console.log('Error with production URL, trying localhost');
+                    // If production URL fails, try localhost
+                    res = await fetch('http://localhost:3000/signup', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ name, age, gender, username, email, phone, password })
+                    });
+                }
+
                 const data = await res.json();
                 if (res.ok) {
                     document.getElementById('signup-success').style.display = 'block';
@@ -136,7 +242,42 @@
                     alert(data.message || 'Signup failed.');
                 }
             } catch (err) {
-                alert('Network error. Please try again.');
+                console.error('Signup error:', err);
+
+                // Fallback to localStorage for development/testing
+                try {
+                    let users = [];
+                    try {
+                        users = JSON.parse(localStorage.getItem('users')) || [];
+                    } catch (e) {
+                        users = [];
+                    }
+
+                    // Check if user already exists
+                    const userExists = users.some(u =>
+                        u.username === username ||
+                        (u.email && u.email.toLowerCase() === email)
+                    );
+
+                    if (userExists) {
+                        alert('User with this username or email already exists');
+                        hideLoading();
+                        return;
+                    }
+
+                    // Add new user to localStorage
+                    const newUser = { name, age, gender, username, email, phone, password };
+                    users.push(newUser);
+                    localStorage.setItem('users', JSON.stringify(users));
+
+                    document.getElementById('signup-success').style.display = 'block';
+                    alert('Sign up successful! (Local storage mode) Please login.');
+                    window.location.href = 'login.html';
+                } catch (localErr) {
+                    alert('Network error and local storage failed. Please try again.');
+                }
+            } finally {
+                hideLoading();
             }
         };
 
