@@ -176,6 +176,19 @@
             window.location.href = 'index.html';
         }
 
+        // Function to get Cloudinary configuration from server
+        async function getCloudinaryConfig() {
+            try {
+                const response = await fetch('https://tridex1.onrender.com/cloudinary-config');
+                const data = await response.json();
+                return data.cloudName;
+            } catch (error) {
+                console.error('Error fetching Cloudinary config:', error);
+                // Fallback to a placeholder - this will fail but won't expose credentials
+                return 'your_cloud_name';
+            }
+        }
+
         // Make sure isLoggedIn flag is set (needed for cart and mailbox access)
         if (localStorage.getItem('token') && !localStorage.getItem('isLoggedIn')) {
             localStorage.setItem('isLoggedIn', 'true');
@@ -652,7 +665,10 @@
                     const controller = new AbortController();
                     const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
 
-                    const response = await fetch('https://api.cloudinary.com/v1_1/dtzhskby3/image/upload', {
+                    // Get Cloudinary cloud name from server environment
+                    const cloudName = await getCloudinaryConfig();
+
+                    const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
                         method: 'POST',
                         body: formData,
                         signal: controller.signal

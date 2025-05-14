@@ -2,9 +2,13 @@ const express = require('express');
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
 const cors = require('cors');
+const dotenv = require('dotenv');
 const User = require('./models/User'); // Make sure the path is correct
 const Product = require('./models/Product');
 const Announcement = require('./models/Announcement');
+
+// Load environment variables
+dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -40,8 +44,8 @@ const mongoOptions = {
     family: 4 // Use IPv4, skip trying IPv6
 };
 
-// Try to connect to MongoDB
-mongoose.connect('mongodb+srv://admin:admin123@cluster0.g3sy76o.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0', mongoOptions)
+// Try to connect to MongoDB using environment variables
+mongoose.connect(process.env.MONGODB_URI || 'mongodb+srv://admin:admin123@cluster0.g3sy76o.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0', mongoOptions)
     .then(() => {
         console.log('Connected to MongoDB Atlas successfully');
     })
@@ -291,6 +295,21 @@ app.delete('/products/:id', async (req, res) => {
     }
 });
 
+
+// ========== CLOUDINARY CONFIG ==========
+
+// Endpoint to safely provide Cloudinary configuration
+app.get('/cloudinary-config', (req, res) => {
+    try {
+        // Only return the cloud name, not the API key or secret
+        res.json({
+            cloudName: process.env.CLOUDINARY_CLOUD_NAME || 'your_cloud_name'
+        });
+    } catch (err) {
+        console.error('Error providing Cloudinary config:', err);
+        res.status(500).json({ message: 'Error providing Cloudinary configuration' });
+    }
+});
 
 // ========== ANNOUNCEMENT ROUTES ==========
 
