@@ -13,12 +13,21 @@
             header > div {
                 flex-direction: column;
                 align-items: flex-start !important;
+                position: relative; /* Ensure proper positioning context */
             }
             nav ul {
                 gap: 10px !important;
             }
             .search-bar {
                 max-width: 98vw !important;
+            }
+            /* Ensure hamburger menu is visible */
+            #hamburger-menu {
+                display: block;
+                position: absolute;
+                top: 15px;
+                right: 15px;
+                z-index: 1001;
             }
         }
         @media (max-width: 600px) {
@@ -157,6 +166,20 @@
             .category-header p {
                 font-size: 0.95rem;
             }
+            /* Ensure hamburger menu is visible */
+            #hamburger-menu {
+                display: block !important;
+                position: absolute;
+                top: 15px;
+                right: 15px;
+                z-index: 1001;
+            }
+            /* Adjust header for mobile */
+            header > div {
+                padding: 0 15px;
+                position: relative;
+                min-height: 60px;
+            }
         }
     </style>
 </head>
@@ -171,7 +194,7 @@
             100% { transform: rotate(360deg);}
         }
     </style>
-    <header style="background-color: #333; color: white; padding: 15px 0; position:relative;">
+    <header style="background-color: #333; color: white; padding: 15px 0; position:sticky; top:0; z-index:1000;">
         <div style="display:flex; align-items:center; justify-content:space-between; padding:0 15px;">
             <div style="display:flex; align-items:center;">
                 <h1>Tridex</h1>
@@ -179,7 +202,7 @@
             </div>
 
             <!-- Hamburger icon for mobile -->
-            <button id="hamburger-menu" style="background:none; border:none; cursor:pointer; display:none; padding:10px; z-index:1000;">
+            <button id="hamburger-menu" style="background:none; border:none; cursor:pointer; display:none; padding:10px; z-index:1000; position:absolute; top:15px; right:15px;">
                 <div style="width:30px; height:3px; background-color:white; margin:6px 0; transition:0.4s;"></div>
                 <div style="width:30px; height:3px; background-color:white; margin:6px 0; transition:0.4s;"></div>
                 <div style="width:30px; height:3px; background-color:white; margin:6px 0; transition:0.4s;"></div>
@@ -286,27 +309,85 @@
             const hamburger = document.getElementById('hamburger-menu');
             const nav = document.getElementById('nav');
 
+            // Function to check window size and adjust menu visibility
+            function checkWindowSize() {
+                if (window.innerWidth <= 768) {
+                    // Mobile view
+                    hamburger.style.display = 'block';
+                    nav.style.display = 'none';
+                } else {
+                    // Desktop view
+                    hamburger.style.display = 'none';
+                    nav.style.display = 'flex';
+                }
+            }
+
+            // Initial check
+            checkWindowSize();
+
+            // Check on window resize
+            window.addEventListener('resize', checkWindowSize);
+
             // Toggle navigation when hamburger is clicked
             hamburger.addEventListener('click', function() {
-                nav.classList.toggle('show');
+                if (nav.style.display === 'none' || nav.style.display === '') {
+                    nav.style.display = 'flex';
+                    nav.style.position = 'absolute';
+                    nav.style.top = '60px';
+                    nav.style.left = '0';
+                    nav.style.width = '100%';
+                    nav.style.backgroundColor = '#333';
+                    nav.style.flexDirection = 'column';
+                    nav.style.zIndex = '1000';
 
-                // Animate hamburger icon
-                const spans = hamburger.querySelectorAll('span');
-                spans.forEach(span => span.classList.toggle('active'));
+                    // Make the nav items stack vertically
+                    document.getElementById('nav').style.flexDirection = 'column';
+                    document.getElementById('nav').style.width = '100%';
+
+                    // Add some styling to nav items
+                    const navItems = document.querySelectorAll('#nav li');
+                    navItems.forEach(item => {
+                        item.style.width = '100%';
+                        item.style.textAlign = 'left';
+                        item.style.padding = '10px 0';
+                        item.style.borderBottom = '1px solid #444';
+                        item.style.position = 'relative'; // Ensure proper positioning for notification badges
+                    });
+
+                    // Ensure notification badges are visible
+                    const mailCount = document.getElementById('mail-count');
+                    const cartCount = document.getElementById('cart-count');
+
+                    if (mailCount) {
+                        mailCount.style.position = 'absolute';
+                        mailCount.style.right = '18px';
+                        mailCount.style.top = '12px';
+                        mailCount.style.zIndex = '1001';
+                    }
+
+                    if (cartCount) {
+                        cartCount.style.position = 'absolute';
+                        cartCount.style.right = '18px';
+                        cartCount.style.top = '12px';
+                        cartCount.style.zIndex = '1001';
+                    }
+                } else {
+                    nav.style.display = 'none';
+                }
             });
 
             // Close navigation when clicking outside
             document.addEventListener('click', function(event) {
-                if (!hamburger.contains(event.target) && !nav.contains(event.target) && nav.classList.contains('show')) {
-                    nav.classList.remove('show');
-
-                    // Reset hamburger icon
-                    const spans = hamburger.querySelectorAll('span');
-                    spans.forEach(span => span.classList.remove('active'));
+                if (window.innerWidth <= 768 &&
+                    nav.style.display === 'flex' &&
+                    !nav.contains(event.target) &&
+                    event.target !== hamburger &&
+                    !hamburger.contains(event.target)) {
+                    nav.style.display = 'none';
                 }
             });
 
-            // Close navigation when window is resized
+            // Close navigation when window is resized to desktop
             window.addEventListener('resize', function() {
                 if (window.innerWidth > 992 && nav.classList.contains('show')) {
                     nav.classList.remove('show');
