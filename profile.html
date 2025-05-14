@@ -153,14 +153,14 @@
 
     <!-- Header with navigation -->
     <header style="background-color: #333; color: white; padding: 15px 0; position:relative;">
-        <div style="display:flex; align-items:center; justify-content:space-between; padding:0 15px;">
+        <div style="display:flex; align-items:center; justify-content:space-between; padding:0 15px; max-width:1200px; margin:0 auto;">
             <div style="display:flex; align-items:center;">
-                <h1>Tridex</h1>
-                <span id="username-display"></span>
+                <h1 style="margin:0; padding:0;">Tridex</h1>
+                <span id="username-display" style="margin-left:10px; font-size:0.9rem;"></span>
             </div>
 
             <!-- Hamburger icon for mobile -->
-            <button id="hamburger-menu" style="background:none; border:none; cursor:pointer; display:none; padding:10px; z-index:1000;">
+            <button id="hamburger-menu" style="background:none; border:none; cursor:pointer; display:none; padding:10px; z-index:1000; position:absolute; right:15px; top:15px;">
                 <div style="width:30px; height:3px; background-color:white; margin:6px 0; transition:0.4s;"></div>
                 <div style="width:30px; height:3px; background-color:white; margin:6px 0; transition:0.4s;"></div>
                 <div style="width:30px; height:3px; background-color:white; margin:6px 0; transition:0.4s;"></div>
@@ -168,19 +168,19 @@
 
             <nav id="main-nav" style="display:flex;">
                 <ul id="nav" style="display:flex; list-style:none; margin:0; padding:0; align-items:center;">
-                    <li class="nav"><a href="index.html">Home</a></li>
-                    <li class="nav"><a href="about.html">About</a></li>
-                    <li class="nav"><a href="#">More</a></li>
-                    <li><a href="#" class="nav-icon" id="userIcon">👤</a></li>
-                    <li>
-                        <a href="#" class="nav-icon" id="mailIcon" title="Mailbox">
+                    <li class="nav" style="margin:0 5px;"><a href="index.html" style="color:white; display:block; padding:10px;">Home</a></li>
+                    <li class="nav" style="margin:0 5px;"><a href="about.html" style="color:white; display:block; padding:10px;">About</a></li>
+                    <li class="nav" style="margin:0 5px;"><a href="#" style="color:white; display:block; padding:10px;">More</a></li>
+                    <li style="margin:0 8px;"><a href="#" class="nav-icon" id="userIcon" style="color:white; font-size:1.3em;">👤</a></li>
+                    <li style="margin:0 8px; position:relative;">
+                        <a href="#" class="nav-icon" id="mailIcon" title="Mailbox" style="color:white; font-size:1.3em;">
                             &#9993;
-                            <span id="mail-count">0</span>
+                            <span id="mail-count" style="position:absolute; top:-8px; right:-10px; background:#dc3545; color:#fff; border-radius:50%; font-size:0.7em; padding:2px 6px; min-width:18px; text-align:center;">0</span>
                         </a>
                     </li>
-                    <li>
-                        <a href="cart.html" class="nav-icon" id="cartIcon" title="Cart">
-                            🛒<span id="cart-count">0</span>
+                    <li style="margin:0 8px; position:relative;">
+                        <a href="cart.html" class="nav-icon" id="cartIcon" title="Cart" style="color:white; font-size:1.3em;">
+                            🛒<span id="cart-count" style="position:absolute; top:-8px; right:-10px; background:#dc3545; color:#fff; border-radius:50%; font-size:0.7em; padding:2px 6px; min-width:18px; text-align:center;">0</span>
                         </a>
                     </li>
                 </ul>
@@ -299,6 +299,26 @@
                 // Desktop view
                 hamburger.style.display = 'none';
                 nav.style.display = 'flex';
+
+                // Reset any mobile styling when switching to desktop
+                nav.style.position = '';
+                nav.style.top = '';
+                nav.style.left = '';
+                nav.style.width = '';
+                nav.style.flexDirection = '';
+
+                document.getElementById('nav').style.flexDirection = 'row';
+                document.getElementById('nav').style.width = '';
+
+                // Reset nav items styling
+                const navItems = document.querySelectorAll('#nav li');
+                navItems.forEach(item => {
+                    item.style.width = '';
+                    item.style.textAlign = '';
+                    item.style.padding = '';
+                    item.style.borderBottom = '';
+                    item.style.margin = item.classList.contains('nav') ? '0 5px' : '0 8px';
+                });
             }
         }
 
@@ -319,10 +339,12 @@
                 nav.style.backgroundColor = '#333';
                 nav.style.flexDirection = 'column';
                 nav.style.zIndex = '1000';
+                nav.style.boxShadow = '0 4px 8px rgba(0,0,0,0.2)';
 
                 // Make the nav items stack vertically
                 document.getElementById('nav').style.flexDirection = 'column';
                 document.getElementById('nav').style.width = '100%';
+                document.getElementById('nav').style.padding = '10px 0';
 
                 // Add some styling to nav items
                 const navItems = document.querySelectorAll('#nav li');
@@ -330,8 +352,14 @@
                     item.style.width = '100%';
                     item.style.textAlign = 'center';
                     item.style.padding = '10px 0';
+                    item.style.margin = '0';
                     item.style.borderBottom = '1px solid #444';
                 });
+
+                // Style the last item to not have a border
+                if (navItems.length > 0) {
+                    navItems[navItems.length - 1].style.borderBottom = 'none';
+                }
             } else {
                 nav.style.display = 'none';
             }
@@ -430,6 +458,12 @@
         // Display user data in the profile
         function displayUserData() {
             if (user) {
+                // Update username in header
+                const usernameDisplay = document.getElementById('username-display');
+                if (usernameDisplay) {
+                    usernameDisplay.textContent = user.username;
+                }
+
                 // Display greeting
                 const greetings = ["Welcome", "Hi", "Hello", "Greetings", "Hey"];
                 const greet = greetings[Math.floor(Math.random() * greetings.length)];
@@ -742,17 +776,7 @@
             applyTheme();
         };
 
-        // Profile details rendering
-        const profileInfo = document.getElementById('profile-info');
-        let html = '';
-        if (user) {
-            html += `<h2>${user.username || ''}</h2>`;
-            html += `<p><strong>Email:</strong> ${user.email || ''}</p>`;
-            html += `<p><strong>Phone:</strong> ${user.phone || ''}</p>`;
-            html += `<p><strong>Age:</strong> ${user.age || ''}</p>`;
-            html += `<p><strong>Gender:</strong> ${user.gender || ''}</p>`;
-        }
-        profileInfo.innerHTML = html;
+        // We don't need this duplicate profile rendering as it's already handled in displayUserData()
     </script>
 </body>
 </html>
