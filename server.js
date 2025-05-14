@@ -148,9 +148,9 @@ app.post('/signup', async (req, res) => {
         // Save the new user
         const savedUser = await newUser.save();
 
-        // Create a welcome message for the user
+        // Create a welcome message for the user using their name for personalization
         const welcomeMessage = new Announcement({
-            title: `Welcome to Tridex, ${username}!`,
+            title: `Welcome to Tridex, ${name}!`,
             message: `Thank you for creating an account with us. We're excited to have you join our community! Feel free to explore our products and services. If you have any questions, please don't hesitate to contact us.`,
             forUser: username, // This field will be used to identify user-specific messages
             isWelcomeMessage: true // Flag to identify this as a welcome message

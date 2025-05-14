@@ -471,15 +471,34 @@
                 const navItems = document.querySelectorAll('#nav li');
                 navItems.forEach(item => {
                     item.style.width = '100%';
-                    item.style.textAlign = 'center';
+                    item.style.textAlign = 'left';
                     item.style.padding = '10px 0';
                     item.style.margin = '0';
                     item.style.borderBottom = '1px solid #444';
+                    item.style.position = 'relative'; // Ensure proper positioning for notification badges
                 });
 
                 // Style the last item to not have a border
                 if (navItems.length > 0) {
                     navItems[navItems.length - 1].style.borderBottom = 'none';
+                }
+
+                // Ensure notification badges are visible
+                const mailCount = document.getElementById('mail-count');
+                const cartCount = document.getElementById('cart-count');
+
+                if (mailCount) {
+                    mailCount.style.position = 'absolute';
+                    mailCount.style.right = '18px';
+                    mailCount.style.top = '12px';
+                    mailCount.style.zIndex = '1001';
+                }
+
+                if (cartCount) {
+                    cartCount.style.position = 'absolute';
+                    cartCount.style.right = '18px';
+                    cartCount.style.top = '12px';
+                    cartCount.style.zIndex = '1001';
                 }
             } else {
                 nav.style.display = 'none';
@@ -579,16 +598,18 @@
         // Display user data in the profile
         function displayUserData() {
             if (user) {
-                // Update username in header
+                // Update username in header - use name for personalized display
                 const usernameDisplay = document.getElementById('username-display');
                 if (usernameDisplay) {
-                    usernameDisplay.textContent = user.username;
+                    // Display name in the header for personalization
+                    usernameDisplay.textContent = user.name || user.username;
                 }
 
-                // Display greeting
+                // Display greeting using name for personalization
                 const greetings = ["Welcome", "Hi", "Hello", "Greetings", "Hey"];
                 const greet = greetings[Math.floor(Math.random() * greetings.length)];
                 const greetingDiv = document.getElementById('profile-greeting');
+                // Always use name for greeting if available, fallback to username
                 greetingDiv.textContent = `${greet}, ${user.name || user.username}!`;
                 setTimeout(() => {
                     greetingDiv.style.opacity = "1";
@@ -614,7 +635,15 @@
                         </svg>
                     </span>` : '';
 
-                html += `<h2 style="display:flex; align-items:center; text-transform:uppercase; letter-spacing:0.5px;">${user.username || ''}${verificationBadge}</h2>`;
+                // Display username with verification badge
+                html += `
+                    <div style="margin-bottom:15px;">
+                        <h2 style="display:flex; align-items:center; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:5px;">
+                            <span style="color:#555; font-size:0.8em; font-weight:normal; margin-right:5px;">Username:</span>
+                            ${user.username || ''}${verificationBadge}
+                        </h2>
+                    </div>
+                `;
 
                 // Show verification status message if verified
                 if (user.verified) {
@@ -630,7 +659,8 @@
                     `;
                 }
 
-                html += `<p><strong>Name:</strong> ${user.name || ''}</p>`;
+                // Display name prominently
+                html += `<p style="font-size:1.2em; margin-bottom:15px;"><strong>Name:</strong> ${user.name || ''}</p>`;
                 html += `<p><strong>Email:</strong> ${user.email || ''}</p>`;
                 html += `<p><strong>Phone:</strong> ${user.phone || ''}</p>`;
                 html += `<p><strong>Age:</strong> ${user.age || ''}</p>`;
