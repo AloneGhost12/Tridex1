@@ -108,6 +108,72 @@
             }
         }
 
+        /* Modern button styling */
+        .modern-button {
+            background: linear-gradient(135deg, #007bff, #0056b3) !important;
+            color: white !important;
+            border: none !important;
+            border-radius: 30px !important;
+            padding: 12px 24px !important;
+            font-size: 1rem !important;
+            font-weight: 600 !important;
+            cursor: pointer !important;
+            transition: all 0.3s ease !important;
+            box-shadow: 0 4px 10px rgba(0, 123, 255, 0.3) !important;
+            position: relative !important;
+            overflow: hidden !important;
+            margin-top: 20px !important;
+            text-transform: uppercase !important;
+            letter-spacing: 1px !important;
+        }
+
+        .modern-button:hover {
+            background: linear-gradient(135deg, #0056b3, #003d80) !important;
+            box-shadow: 0 6px 15px rgba(0, 123, 255, 0.4) !important;
+            transform: translateY(-2px) !important;
+        }
+
+        .modern-button:active {
+            transform: translateY(1px) !important;
+            box-shadow: 0 2px 5px rgba(0, 123, 255, 0.4) !important;
+        }
+
+        /* Button ripple effect */
+        .modern-button .ripple {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 50%;
+            transform: scale(0);
+            animation: ripple 0.6s linear;
+            pointer-events: none;
+        }
+
+        @keyframes ripple {
+            to {
+                transform: scale(4);
+                opacity: 0;
+            }
+        }
+
+        /* Message animations */
+        @keyframes slideIn {
+            0% { transform: translateY(-20px); opacity: 0; }
+            100% { transform: translateY(0); opacity: 1; }
+        }
+
+        @keyframes slideOut {
+            0% { transform: translateY(0); opacity: 1; }
+            100% { transform: translateY(-20px); opacity: 0; }
+        }
+
+        #profile-msg, #password-msg, #password-error {
+            animation: slideIn 0.3s ease forwards;
+        }
+
+        .slide-out {
+            animation: slideOut 0.3s ease forwards !important;
+        }
+
         @media (max-width: 576px) {
             .profile-container {
                 max-width: 95%;
@@ -230,34 +296,86 @@
             <input type="password" id="profile-new-password" required>
             <button type="submit">Update Password</button>
         </form>
-        <button id="back-btn">Back</button>
+        <button id="back-btn" class="modern-button">Back to Home</button>
         <div id="profile-msg" style="display:none; color:white; background-color:#28a745; margin-top:15px; text-align:center; padding:10px; border-radius:5px; font-weight:bold; box-shadow:0 3px 8px rgba(0,0,0,0.2); font-size:16px;">Profile updated!</div>
         <div id="password-msg" style="display:none; color:white; background-color:#28a745; margin-top:15px; text-align:center; padding:10px; border-radius:5px; font-weight:bold; box-shadow:0 3px 8px rgba(0,0,0,0.2); font-size:16px;">Password updated!</div>
         <div id="password-error" style="display:none; color:white; background-color:#dc3545; margin-top:15px; text-align:center; padding:10px; border-radius:5px; font-weight:bold; box-shadow:0 3px 8px rgba(0,0,0,0.2); font-size:16px;">Old password incorrect!</div>
     </div>
 
-    <!-- Ban popup for banned users -->
-    <div id="ban-message" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.8); z-index:999999; align-items:center; justify-content:center;">
-        <div style="background:#fff; padding:32px 24px; border-radius:8px; box-shadow:0 2px 12px rgba(0,0,0,0.15); min-width:320px; max-width:90%; text-align:center;">
-            <div style="margin-bottom:10px; font-size:3em; color:#d32f2f;">⚠️</div>
-            <h2 style="margin-bottom:10px; color:#d32f2f; font-size:1.5em;">Account Banned</h2>
-            <p style="margin-bottom:24px; font-size:1.1em; color:#555; line-height:1.5;">Your account has been banned by the administrator. You no longer have access to this site.</p>
-            <p style="margin-bottom:24px; font-size:0.9em; color:#777;">For more information, please contact support.</p>
-            <button id="ban-ok-btn" style="padding:10px 24px; background:#dc3545; color:#fff; border:none; border-radius:5px; font-size:1rem; cursor:pointer; font-weight:bold; transition:all 0.2s ease;">OK</button>
+    <!-- Ban popup for banned users with improved styling and animations -->
+    <div id="ban-message" class="modal-overlay" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.8); z-index:999999; align-items:center; justify-content:center; opacity:0; transition:opacity 0.3s ease;">
+        <div class="modal-content" style="background:#fff; padding:32px 24px; border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,0.3); min-width:320px; max-width:90%; text-align:center; transform:scale(0.9); transition:transform 0.3s ease;">
+            <div style="margin-bottom:15px; font-size:3.5em; color:#d32f2f;">⚠️</div>
+            <h2 style="margin-bottom:15px; color:#d32f2f; font-size:1.6em; font-weight:700;">Account Banned</h2>
+            <p style="margin-bottom:24px; font-size:1.1em; color:#555; line-height:1.6;">Your account has been banned by the administrator. You no longer have access to this site.</p>
+            <p style="margin-bottom:30px; font-size:0.9em; color:#777;">For more information, please contact support.</p>
+            <button id="ban-ok-btn" class="modern-button" style="background:linear-gradient(135deg, #dc3545, #c82333) !important; padding:12px 30px !important; border-radius:30px !important; font-size:1.1rem !important; box-shadow:0 4px 15px rgba(220, 53, 69, 0.3) !important;">OK</button>
         </div>
     </div>
 
     <script>
-        // Add click handler for the ban message OK button
-        document.getElementById('ban-ok-btn').addEventListener('click', function() {
-            // Clear all login data
-            localStorage.removeItem('token');
-            localStorage.removeItem('isLoggedIn');
-            localStorage.removeItem('username');
-            localStorage.removeItem('currentUser');
+        // Function to show ban message with animation
+        function showBanMessage() {
+            const banMessage = document.getElementById('ban-message');
+            const modalContent = banMessage.querySelector('.modal-content');
 
-            // Redirect to login page with banned parameter
-            window.location.href = 'login.html?banned=true';
+            // Display the container
+            banMessage.style.display = 'flex';
+
+            // Trigger animations after a small delay
+            setTimeout(() => {
+                banMessage.style.opacity = '1';
+                modalContent.style.transform = 'scale(1)';
+            }, 10);
+        }
+
+        // Function to hide ban message with animation
+        function hideBanMessage() {
+            const banMessage = document.getElementById('ban-message');
+            const modalContent = banMessage.querySelector('.modal-content');
+
+            // Trigger animations
+            banMessage.style.opacity = '0';
+            modalContent.style.transform = 'scale(0.9)';
+
+            // Hide the container after animation completes
+            setTimeout(() => {
+                banMessage.style.display = 'none';
+            }, 300);
+        }
+
+        // Add click handler for the ban message OK button with ripple effect
+        document.getElementById('ban-ok-btn').addEventListener('click', function(e) {
+            // Create ripple effect
+            const button = this;
+            const ripple = document.createElement('span');
+            ripple.classList.add('ripple');
+
+            // Get position of click relative to button
+            const rect = button.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            // Set ripple position
+            ripple.style.left = x + 'px';
+            ripple.style.top = y + 'px';
+
+            // Add ripple to button
+            button.appendChild(ripple);
+
+            // Hide ban message with animation
+            hideBanMessage();
+
+            // Clear all login data and redirect after animation completes
+            setTimeout(() => {
+                localStorage.removeItem('token');
+                localStorage.removeItem('isLoggedIn');
+                localStorage.removeItem('username');
+                localStorage.removeItem('currentUser');
+
+                // Redirect to login page with banned parameter
+                window.location.href = 'login.html?banned=true';
+            }, 300);
         });
     </script>
 
@@ -273,13 +391,16 @@
             window.location.href = 'login.html';
         }
 
-        // Ban check logic using our ban system
+        // Ban check logic using our ban system with improved animation
         if (window.banSystem && window.banSystem.checkCurrentUserBan()) {
             // Hide loading overlay if it's visible
             const loadingOverlay = document.getElementById('loading-overlay');
             if (loadingOverlay) {
                 loadingOverlay.style.display = 'none';
             }
+
+            // Show ban message with animation
+            showBanMessage();
 
             // Stop further script execution - the ban system will handle everything
             throw new Error('User is banned');
@@ -569,13 +690,22 @@
                     // Update display
                     displayUserData();
 
-                    // Show success message
-                    document.getElementById('profile-msg').textContent = 'Profile updated successfully!';
-                    document.getElementById('profile-msg').style.display = 'block';
+                    // Show success message with animation
+                    const msgElement = document.getElementById('profile-msg');
+                    msgElement.textContent = 'Profile updated successfully!';
+                    msgElement.style.display = 'block';
+                    msgElement.classList.remove('slide-out');
+
                     // Scroll to message
-                    document.getElementById('profile-msg').scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    msgElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+                    // Hide with animation after delay
                     setTimeout(() => {
-                        document.getElementById('profile-msg').style.display = 'none';
+                        msgElement.classList.add('slide-out');
+                        setTimeout(() => {
+                            msgElement.style.display = 'none';
+                            msgElement.classList.remove('slide-out');
+                        }, 300);
                     }, 3000);
                 } else {
                     // Server returned an error
@@ -610,11 +740,22 @@
                 // Update display
                 displayUserData();
 
-                // Show success message with warning
-                document.getElementById('profile-msg').textContent = 'Profile updated locally. Server update failed.';
-                document.getElementById('profile-msg').style.display = 'block';
+                // Show success message with warning and animation
+                const msgElement = document.getElementById('profile-msg');
+                msgElement.textContent = 'Profile updated locally. Server update failed.';
+                msgElement.style.display = 'block';
+                msgElement.classList.remove('slide-out');
+
+                // Scroll to message
+                msgElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+                // Hide with animation after delay
                 setTimeout(() => {
-                    document.getElementById('profile-msg').style.display = 'none';
+                    msgElement.classList.add('slide-out');
+                    setTimeout(() => {
+                        msgElement.style.display = 'none';
+                        msgElement.classList.remove('slide-out');
+                    }, 300);
                 }, 3000);
             } finally {
                 hideLoading();
@@ -669,24 +810,42 @@
 
                 if (response.ok) {
                     // Password update was successful
-                    document.getElementById('password-msg').textContent = 'Password updated successfully!';
-                    document.getElementById('password-msg').style.display = 'block';
+                    const msgElement = document.getElementById('password-msg');
+                    msgElement.textContent = 'Password updated successfully!';
+                    msgElement.style.display = 'block';
+                    msgElement.classList.remove('slide-out');
+
                     // Scroll to message
-                    document.getElementById('password-msg').scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    msgElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+                    // Hide with animation after delay
                     setTimeout(() => {
-                        document.getElementById('password-msg').style.display = 'none';
-                        document.getElementById('password-form').reset();
-                        document.getElementById('password-form').style.display = 'none';
+                        msgElement.classList.add('slide-out');
+                        setTimeout(() => {
+                            msgElement.style.display = 'none';
+                            msgElement.classList.remove('slide-out');
+                            document.getElementById('password-form').reset();
+                            document.getElementById('password-form').style.display = 'none';
+                        }, 300);
                     }, 3000);
                 } else {
                     // Server returned an error
                     const errorData = await response.json();
-                    document.getElementById('password-error').textContent = errorData.message || 'Old password is incorrect';
-                    document.getElementById('password-error').style.display = 'block';
+                    const errorElement = document.getElementById('password-error');
+                    errorElement.textContent = errorData.message || 'Old password is incorrect';
+                    errorElement.style.display = 'block';
+                    errorElement.classList.remove('slide-out');
+
                     // Scroll to error message
-                    document.getElementById('password-error').scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    errorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+                    // Hide with animation after delay
                     setTimeout(() => {
-                        document.getElementById('password-error').style.display = 'none';
+                        errorElement.classList.add('slide-out');
+                        setTimeout(() => {
+                            errorElement.style.display = 'none';
+                            errorElement.classList.remove('slide-out');
+                        }, 300);
                     }, 4000);
                 }
             } catch (error) {
@@ -730,8 +889,33 @@
             }
         };
 
-        document.getElementById('back-btn').onclick = function() {
-            window.location.href = 'index.html';
+        document.getElementById('back-btn').onclick = function(e) {
+            // Create ripple effect
+            const button = this;
+            const ripple = document.createElement('span');
+            ripple.classList.add('ripple');
+
+            // Get position of click relative to button
+            const rect = button.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            // Set ripple position
+            ripple.style.left = x + 'px';
+            ripple.style.top = y + 'px';
+
+            // Add ripple to button
+            button.appendChild(ripple);
+
+            // Remove ripple after animation completes
+            setTimeout(() => {
+                ripple.remove();
+            }, 600);
+
+            // Redirect after a short delay for animation
+            setTimeout(() => {
+                window.location.href = 'index.html';
+            }, 300);
         };
 
         const themeBtn = document.getElementById('toggle-theme-btn');
