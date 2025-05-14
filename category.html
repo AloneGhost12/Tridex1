@@ -328,7 +328,7 @@
         async function initCategoryPage() {
             try {
                 showLoading();
-                
+
                 const categoryId = getCategoryId();
                 if (!categoryId) {
                     window.location.href = 'index.html';
@@ -336,22 +336,27 @@
                 }
 
                 // Fetch category details
-                const categoryRes = await fetch(`https://tridex1.onrender.com/categories/${categoryId}`);
+                // Use local server for testing, but keep production URL as fallback
+                const baseUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+                    ? 'http://localhost:3000'
+                    : 'https://tridex1.onrender.com';
+
+                const categoryRes = await fetch(`${baseUrl}/categories/${categoryId}`);
                 if (!categoryRes.ok) {
                     throw new Error('Category not found');
                 }
-                
+
                 const category = await categoryRes.json();
-                
+
                 // Update page title and description
                 document.getElementById('category-title').textContent = category.name;
                 document.getElementById('category-description').textContent = category.description || '';
                 document.title = `${category.name} - Tridex`;
 
                 // Fetch products for this category
-                const productsRes = await fetch(`https://tridex1.onrender.com/categories/${categoryId}/products`);
+                const productsRes = await fetch(`${baseUrl}/categories/${categoryId}/products`);
                 const products = await productsRes.json();
-                
+
                 // Render products
                 renderProducts(products);
             } catch (error) {
