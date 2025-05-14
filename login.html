@@ -44,54 +44,9 @@
         </div>
         <a href="#" id="forgot-password-link" style="display:block; margin-top:10px; text-align:right; color:#007bff; text-decoration:underline; cursor:pointer;">Forgot Password?</a>
         <a href="signup.html"><button class="signup-btn" type="button">Sign Up</button></a>
-        <div id="signup-form" style="display:none; margin-top:20px;">
-            <h2>Sign Up</h2>
-            <form id="signup-inner-form" action="#" method="post">
-                <label for="new-name">Full Name</label>
-                <input type="text" id="new-name" name="new-name" required placeholder="Your full name">
-
-                <label for="new-age">Age</label>
-                <input type="number" id="new-age" name="new-age" required min="13" max="120" placeholder="Your age">
-
-                <label for="new-gender">Gender</label>
-                <select id="new-gender" name="new-gender" required style="padding:10px 14px; margin-bottom:12px; border:1.5px solid #bdbdbd; border-radius:8px; font-size:1rem; background:#f9f9f9;">
-                    <option value="">Select gender</option>
-                    <option value="Male">Male</option>
-                    <option value="Female">Female</option>
-                    <option value="Other">Other</option>
-                    <option value="Prefer not to say">Prefer not to say</option>
-                </select>
-
-                <label for="new-username">Username</label>
-                <input type="text" id="new-username" name="new-username" required placeholder="Choose a username">
-
-                <label for="new-email">Email</label>
-                <input type="email" id="new-email" name="new-email" required placeholder="Your email address">
-
-                <label for="new-phone">Phone</label>
-                <input type="tel" id="new-phone" name="new-phone" required placeholder="Your phone number">
-
-                <label for="new-password">Password</label>
-                <div style="display:flex; align-items:center; position:relative;">
-                    <input type="password" id="new-password" required style="padding-right:32px; flex:1;" placeholder="Choose a password">
-                    <span id="toggle-signup-password"
-                        style="position:absolute; right:12px; top:50%; transform:translateY(-50%); cursor:pointer; user-select:none; font-size:1.1em; color:#888;">
-                        👁️
-                    </span>
-                </div>
-                <button type="submit">Create Account</button>
-            </form>
-            <div id="signup-success" style="color:green; margin-top:10px; display:none;">Account created! Please login.</div>
-        </div>
     </div>
     <script>
-    // Show signup form when signup button is clicked
-    document.querySelector('.signup-btn').addEventListener('click', function(e) {
-        e.preventDefault();
-        document.getElementById('signup-form').style.display = 'block';
-        // Scroll to the signup form
-        document.getElementById('signup-form').scrollIntoView({ behavior: 'smooth' });
-    });
+    // No need to prevent default on signup button - it should navigate to signup.html
 
     // Check if the server is running
     async function checkServerStatus() {
@@ -380,17 +335,7 @@
         }
     });
 
-    // Toggle password visibility for signup
-    document.getElementById('toggle-signup-password').addEventListener('click', function() {
-        const pwd = document.getElementById('new-password');
-        if (pwd.type === 'password') {
-            pwd.type = 'text';
-            this.textContent = '🙈';
-        } else {
-            pwd.type = 'password';
-            this.textContent = '👁️';
-        }
-    });
+    // Signup functionality moved to signup.html
 
     // Forgot password link
     document.getElementById('forgot-password-link').onclick = function(e) {
@@ -398,122 +343,7 @@
         window.location.href = 'forgotpassword.html';
     };
 
-    // Sign up logic for the embedded form
-    document.getElementById('signup-inner-form').onsubmit = async function(e) {
-        e.preventDefault();
-
-        // Show loading indicator
-        showLoading();
-
-        const name = document.getElementById('new-name').value.trim();
-        const age = document.getElementById('new-age').value.trim();
-        const gender = document.getElementById('new-gender').value;
-        const username = document.getElementById('new-username').value.trim();
-        const email = document.getElementById('new-email').value.trim();
-        const phone = document.getElementById('new-phone').value.trim();
-        const password = document.getElementById('new-password').value;
-
-        // Basic validation
-        if (!name || !age || !gender || !username || !email || !phone || !password) {
-            alert('Please fill in all required fields');
-            hideLoading();
-            return;
-        }
-
-        // Email validation
-        if (!email.includes('@') || !email.includes('.')) {
-            alert('Please enter a valid email address');
-            hideLoading();
-            return;
-        }
-
-        try {
-            // Add timeout to prevent hanging requests
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
-
-            try {
-                const response = await fetch('https://tridex1.onrender.com/signup', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        name,
-                        age: parseInt(age),
-                        gender,
-                        username,
-                        email,
-                        phone,
-                        password
-                    }),
-                    credentials: 'include', // Include credentials like cookies
-                    signal: controller.signal
-                });
-
-                // Clear the timeout if the request completes
-                clearTimeout(timeoutId);
-
-                console.log('Signup response status:', response.status);
-
-                // For debugging - log the raw response text
-                const responseText = await response.text();
-                console.log('Raw signup response:', responseText);
-
-                // Try to parse the JSON response
-                let result;
-                try {
-                    result = JSON.parse(responseText);
-                    console.log('Parsed signup response:', result);
-                } catch (parseError) {
-                    console.error('Error parsing signup response:', parseError);
-                    throw new Error('Invalid response from server');
-                }
-
-                if (response.ok) {
-                    document.getElementById('signup-success').textContent = 'Account created! Please login.';
-                    document.getElementById('signup-success').style.display = 'block';
-                    setTimeout(() => {
-                        document.getElementById('signup-form').style.display = 'none';
-                        document.getElementById('signup-success').style.display = 'none';
-                    }, 2000);
-                } else {
-                    document.getElementById('login-error').textContent = result.message || 'Signup failed. Please try again.';
-                    document.getElementById('login-error').style.display = 'block';
-                }
-            } catch (fetchError) {
-                // Handle fetch errors (network issues, timeouts, etc.)
-                console.error('Fetch error during signup:', fetchError);
-                if (fetchError.name === 'AbortError') {
-                    throw new Error('Signup request timed out. Please check your internet connection and try again.');
-                }
-                throw fetchError;
-            }
-        } catch (err) {
-            console.error('Signup error:', err);
-
-            // Display a user-friendly error message based on the error type
-            let errorMessage = 'An unexpected error occurred during signup. Please try again later.';
-
-            if (err.name === 'TypeError' && err.message.includes('Failed to fetch')) {
-                errorMessage = 'Unable to connect to the server. Please check your internet connection and try again.';
-            } else if (err.name === 'AbortError') {
-                errorMessage = 'The request timed out. Please try again later.';
-            } else if (err.message && err.message.includes('CORS')) {
-                errorMessage = 'Cross-Origin Request Blocked: The server needs CORS configuration. Please contact the administrator.';
-            } else if (err.message && err.message.includes('NetworkError')) {
-                errorMessage = 'Network Error: This might be due to CORS restrictions. Please contact the administrator.';
-            } else if (err.message) {
-                errorMessage = err.message;
-            }
-
-            document.getElementById('login-error').textContent = errorMessage;
-            document.getElementById('login-error').style.display = 'block';
-        } finally {
-            hideLoading();
-        }
-    };
+    // Signup functionality moved to signup.html
 
     function showLoading() {
         document.getElementById('loading-overlay').style.display = 'flex';

@@ -222,7 +222,7 @@
             users.forEach(user => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td class="username-link" style="color:#007bff; cursor:pointer; text-decoration:underline;">
+                    <td class="username-link" style="color:#007bff; cursor:pointer; text-decoration:underline; text-transform:uppercase; letter-spacing:0.5px; font-weight:500;">
                         ${user.username || ''} ${user.verified ? '<span title="Verified" style="color:#1da1f2; font-size:1.1em;vertical-align:middle;">&#10004;&#65039;</span>' : ''}
                     </td>
                     <td>${user.email || ''}</td>

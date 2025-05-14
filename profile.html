@@ -493,7 +493,7 @@
                         </svg>
                     </span>` : '';
 
-                html += `<h2 style="display:flex; align-items:center;">${user.username || ''}${verificationBadge}</h2>`;
+                html += `<h2 style="display:flex; align-items:center; text-transform:uppercase; letter-spacing:0.5px;">${user.username || ''}${verificationBadge}</h2>`;
 
                 // Show verification status message if verified
                 if (user.verified) {
