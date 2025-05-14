@@ -666,10 +666,12 @@ document.getElementById('popup-logout-yes').onclick = function() {
                 messagesDiv.innerHTML = '<p style="color:#888;">No messages.</p>';
             } else {
                 messagesDiv.innerHTML = messages.map(msg => {
-                    // Check if it's a welcome message that hasn't been read
-                    const isWelcomeMessage = msg.isWelcomeMessage && !msg.isRead;
-                    const welcomeClass = isWelcomeMessage ? 'welcome-message' : '';
-                    const welcomeStyle = isWelcomeMessage ? 'background-color:#f8f9fa; border-left:4px solid #28a745; padding-left:12px;' : '';
+                    // Check if it's a welcome message
+                    const isWelcomeMessage = msg.isWelcomeMessage;
+                    // Only show the special styling and "Mark as Read" button if it hasn't been read
+                    const isUnreadWelcome = isWelcomeMessage && !msg.isRead;
+                    const welcomeClass = isUnreadWelcome ? 'welcome-message' : '';
+                    const welcomeStyle = isUnreadWelcome ? 'background-color:#f8f9fa; border-left:4px solid #28a745; padding-left:12px;' : '';
 
                     return `
                         <div class="message-item ${welcomeClass}" data-id="${msg._id}" style="border-bottom:1px solid #eee; padding:12px 0; ${welcomeStyle}">
@@ -677,7 +679,7 @@ document.getElementById('popup-logout-yes').onclick = function() {
                             <div style="font-size:0.97em; margin-top:4px;">${msg.message || msg.body}</div>
                             <div style="font-size:0.85em; color:#888; margin-top:2px; display:flex; justify-content:space-between;">
                                 <span>${new Date(msg.createdAt).toLocaleString() || msg.date || ''}</span>
-                                ${isWelcomeMessage ?
+                                ${isUnreadWelcome ?
                                     `<button class="mark-read-btn" data-id="${msg._id}" style="background:#28a745; color:white; border:none; border-radius:4px; padding:2px 8px; cursor:pointer; font-size:0.9em;">Mark as Read</button>`
                                     : ''}
                             </div>
@@ -774,8 +776,12 @@ document.getElementById('popup-logout-yes').onclick = function() {
             if (response.ok) {
                 messages = await response.json();
 
-                // Count unread welcome messages
-                unreadCount = messages.filter(msg => msg.isWelcomeMessage && !msg.isRead).length;
+                // Count unread welcome messages that are specifically for this user
+                unreadCount = messages.filter(msg =>
+                    msg.isWelcomeMessage &&
+                    !msg.isRead &&
+                    msg.forUser === username
+                ).length;
 
                 // Store the messages in localStorage for offline access
                 localStorage.setItem('adminMessages', JSON.stringify(messages));

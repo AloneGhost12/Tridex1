@@ -658,13 +658,23 @@ app.get('/announcements', async (req, res) => {
     try {
         const { username } = req.query;
 
-        // If username is provided, get general announcements + user-specific ones
+        // If username is provided, get:
+        // 1. General announcements (forUser is null)
+        // 2. User-specific announcements (forUser matches username)
+        // 3. Welcome messages ONLY for this specific user
         let query = {};
         if (username) {
             query = {
                 $or: [
-                    { forUser: null }, // General announcements for everyone
-                    { forUser: username } // User-specific announcements
+                    // General announcements for everyone (not welcome messages)
+                    {
+                        forUser: null,
+                        isWelcomeMessage: { $ne: true } // Exclude welcome messages from general announcements
+                    },
+                    // User-specific announcements including welcome messages
+                    {
+                        forUser: username
+                    }
                 ]
             };
         }
