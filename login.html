@@ -50,11 +50,11 @@
 
     // Check if the server is running
     async function checkServerStatus() {
-        try {
-            // Add timeout to prevent hanging requests
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+        // Add timeout to prevent hanging requests
+        const controller = new AbortController();
+        let timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
 
+        try {
             // Use no-cors mode to check if server is reachable
             try {
                 console.log('Checking server with no-cors mode...');
@@ -72,6 +72,7 @@
 
                 // Clear the timeout
                 clearTimeout(timeoutId);
+                timeoutId = null;
 
                 // Show a user-friendly message about CORS
                 const corsMessage = document.createElement('div');
@@ -97,13 +98,18 @@
                 console.error('Server completely unreachable:', pingError);
                 // If we can't even reach with no-cors, the server is likely down
                 clearTimeout(timeoutId);
+                timeoutId = null;
                 return false;
             }
         } catch (err) {
             console.error('Server check failed:', err);
             return false;
         } finally {
-            if (timeoutId) clearTimeout(timeoutId);
+            // Make sure to clear the timeout if it still exists
+            if (timeoutId) {
+                clearTimeout(timeoutId);
+                timeoutId = null;
+            }
         }
     }
 
@@ -189,7 +195,7 @@
                 const controller = new AbortController();
                 const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
 
-                // Try with credentials included
+                // Don't use credentials mode with wildcard CORS
                 const res = await fetch(apiUrl, {
                     method: 'POST',
                     headers: {
@@ -197,7 +203,7 @@
                         'Accept': 'application/json'
                     },
                     body: JSON.stringify({ username: userInput, password }),
-                    credentials: 'include', // Include credentials like cookies
+                    // Don't use credentials: 'include' with wildcard CORS
                     signal: controller.signal
                 });
 
