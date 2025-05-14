@@ -754,8 +754,9 @@ app.get('/cloudinary-config', (req, res) => {
             cloudName: cloudName
         };
 
-        // Only include the API key if it seems valid
-        if (apiKey && apiKey !== 'your_new_api_key_here' && apiKey !== 'your_api_key') {
+        // Always include the API key if it exists
+        // We'll let Cloudinary validate it instead of doing it ourselves
+        if (apiKey) {
             response.apiKey = apiKey;
             console.log('Providing Cloudinary configuration with API key');
         } else {

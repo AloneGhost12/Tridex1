@@ -228,8 +228,10 @@
                     throw new Error('Cloudinary cloud name not properly configured on the server');
                 }
 
+                // We'll proceed even if the API key is missing
+                // The upload will fall back to base64 if Cloudinary rejects it
                 if (!data.apiKey) {
-                    throw new Error('Cloudinary API key not provided by the server');
+                    console.warn('Cloudinary API key not provided by the server - uploads may fail');
                 }
 
                 console.log('Successfully retrieved Cloudinary configuration');
