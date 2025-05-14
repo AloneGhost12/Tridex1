@@ -5,6 +5,11 @@ const ProductSchema = new mongoose.Schema({
     image: { type: String }, // base64 or URL
     desc: { type: String },
     price: { type: Number, required: true },
+    category: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Category',
+        default: null
+    },
     createdAt: { type: Date, default: Date.now }
 });
 
