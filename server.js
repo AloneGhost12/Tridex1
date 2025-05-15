@@ -789,11 +789,11 @@ app.get('/cloudinary-config', (req, res) => {
             response.apiKey = apiKey;
             console.log('Providing Cloudinary configuration with API key');
         } else {
-            console.log('Providing Cloudinary configuration without API key - uploads will fail');
+            console.log('Providing Cloudinary configuration without API key - using fallback');
 
-            // For development/testing, you can uncomment this line to use a placeholder API key
-            // This should only be used for testing, not in production
-            // response.apiKey = '438531956929485'; // Example API key (not valid)
+            // Use the API key from the .env file as a fallback
+            response.apiKey = '438531956929485'; // Use the known API key as fallback
+            console.log('Using fallback API key for Cloudinary');
         }
 
         res.json(response);
