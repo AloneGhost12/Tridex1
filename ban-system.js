@@ -2,12 +2,12 @@
  * Ban System for Tridex
  * This file contains all the functionality related to the user ban system.
  *
- * Version 2.2 - Added real-time ban status checking and improved unban handling
+ * Version 2.3 - Enhanced real-time ban status checking with broadcast channel and improved unban handling
  */
 
 // Initialize the ban system immediately
 (function() {
-    console.log('Ban System 2.2 initializing...');
+    console.log('Ban System 2.3 initializing...');
 
     // Create a global variable to track initialization
     window.banSystemInitialized = false;
@@ -33,7 +33,8 @@
                 checkServerBanStatus: checkServerBanStatus,
                 getBannedUsers: getBannedUsers,
                 debugBanSystem: debugBanSystem,
-                version: '2.2'
+                version: '2.3',
+                forceCheckBanStatus: forceCheckBanStatus
             };
 
             // Mark as initialized
@@ -54,7 +55,7 @@
                     // Then check with the server
                     checkServerBanStatus(username);
 
-                    // Set up periodic checks with the server (every 30 seconds)
+                    // Set up periodic checks with the server (every 5 seconds)
                     if (banCheckIntervalId) {
                         clearInterval(banCheckIntervalId);
                     }
@@ -68,7 +69,59 @@
                             clearInterval(banCheckIntervalId);
                             banCheckIntervalId = null;
                         }
-                    }, 30000); // Check every 30 seconds
+                    }, 5000); // Check every 5 seconds for more responsive unban detection
+
+                    // Set up a broadcast channel to listen for ban/unban events
+                    try {
+                        if (typeof BroadcastChannel !== 'undefined') {
+                            // Create a broadcast channel for ban system events
+                            const banChannel = new BroadcastChannel('tridex_ban_system');
+
+                            // Listen for ban/unban events
+                            banChannel.onmessage = function(event) {
+                                console.log('Ban System: Received broadcast message:', event.data);
+
+                                if (event.data && event.data.type === 'unban' && event.data.username) {
+                                    const currentUser = localStorage.getItem('username') || localStorage.getItem('currentUser');
+
+                                    // If this is the unbanned user, clear ban flags and reload
+                                    if (currentUser === event.data.username) {
+                                        console.log(`Ban System: Received unban broadcast for current user ${currentUser}`);
+
+                                        // Clear ban flags
+                                        sessionStorage.removeItem('userBanned');
+                                        sessionStorage.removeItem('showBanMessage');
+
+                                        // Remove the user from the banned list
+                                        const bannedUsers = JSON.parse(localStorage.getItem('bannedUsers') || '[]');
+                                        const updatedList = bannedUsers.filter(user => user !== currentUser);
+                                        localStorage.setItem('bannedUsers', JSON.stringify(updatedList));
+                                        sessionStorage.setItem('bannedUsers', JSON.stringify(updatedList));
+
+                                        // Remove any existing ban message
+                                        const banMessage = document.getElementById('ban-message');
+                                        if (banMessage) {
+                                            console.log('Ban System: Removing ban message due to broadcast unban');
+                                            banMessage.remove();
+                                        }
+
+                                        // Allow scrolling again
+                                        document.body.style.overflow = '';
+                                        document.documentElement.style.overflow = '';
+
+                                        // Reload the page to reflect the unbanned status
+                                        console.log('Ban System: Reloading page due to broadcast unban');
+                                        window.location.reload();
+                                    }
+                                }
+                            };
+
+                            // Store the channel in the window object for later use
+                            window.tridexBanChannel = banChannel;
+                        }
+                    } catch (error) {
+                        console.error('Ban System: Error setting up broadcast channel:', error);
+                    }
                 }
             }, 100);
 
@@ -202,30 +255,52 @@ function unbanUser(username) {
 
         console.log(`Ban System: Unban operation ${success ? 'successful' : 'failed'} for ${username}`);
 
-        // If the unbanned user is the current user, clear ban flags
-        const currentUser = localStorage.getItem('username') || localStorage.getItem('currentUser');
-        if (success && username === currentUser) {
-            console.log(`Ban System: Current user ${username} was unbanned, clearing ban flags...`);
-
-            // Clear ban flags in sessionStorage
-            sessionStorage.removeItem('userBanned');
-            sessionStorage.removeItem('showBanMessage');
-
-            // Remove any existing ban message
-            const banMessage = document.getElementById('ban-message');
-            if (banMessage) {
-                console.log('Ban System: Removing ban message');
-                banMessage.remove();
+        if (success) {
+            // Broadcast the unban event to all tabs/windows
+            try {
+                if (typeof BroadcastChannel !== 'undefined' && window.tridexBanChannel) {
+                    console.log(`Ban System: Broadcasting unban event for ${username}`);
+                    window.tridexBanChannel.postMessage({
+                        type: 'unban',
+                        username: username,
+                        timestamp: Date.now()
+                    });
+                }
+            } catch (error) {
+                console.error('Ban System: Error broadcasting unban event:', error);
             }
 
-            // Allow scrolling again
-            document.body.style.overflow = '';
-            document.documentElement.style.overflow = '';
+            // If the unbanned user is the current user, clear ban flags
+            const currentUser = localStorage.getItem('username') || localStorage.getItem('currentUser');
+            if (username === currentUser) {
+                console.log(`Ban System: Current user ${username} was unbanned, clearing ban flags...`);
 
-            // Remove the touchmove event listener if it exists
-            if (document.body.getAttribute('data-ban-touchmove-handler') === 'true') {
-                document.removeEventListener('touchmove', function(e) { e.preventDefault(); }, { passive: false });
-                document.body.removeAttribute('data-ban-touchmove-handler');
+                // Clear ban flags in sessionStorage
+                sessionStorage.removeItem('userBanned');
+                sessionStorage.removeItem('showBanMessage');
+
+                // Remove any existing ban message
+                const banMessage = document.getElementById('ban-message');
+                if (banMessage) {
+                    console.log('Ban System: Removing ban message');
+                    banMessage.remove();
+                }
+
+                // Allow scrolling again
+                document.body.style.overflow = '';
+                document.documentElement.style.overflow = '';
+
+                // Remove the touchmove event listener if it exists
+                if (document.body.getAttribute('data-ban-touchmove-handler') === 'true') {
+                    document.removeEventListener('touchmove', function(e) { e.preventDefault(); }, { passive: false });
+                    document.body.removeAttribute('data-ban-touchmove-handler');
+                }
+
+                // Force a page reload to ensure all ban-related UI elements are cleared
+                console.log('Ban System: Reloading page to reflect unbanned status');
+                setTimeout(function() {
+                    window.location.reload();
+                }, 500);
             }
         }
 
@@ -539,17 +614,63 @@ async function checkServerBanStatus(username) {
             // If server says user is not banned but banned locally, update local storage
             if (isUserBanned(username)) {
                 console.log(`Ban System: Updating local ban status for ${username} to unbanned`);
-                unbanUser(username);
 
-                // Clear ban flags in sessionStorage
-                if (sessionStorage.getItem('userBanned') === 'true') {
-                    console.log(`Ban System: Clearing ban flags for ${username}`);
+                // Get the current list of banned users
+                const bannedUsers = JSON.parse(localStorage.getItem('bannedUsers') || '[]');
+
+                // Remove the user from the banned list
+                const updatedList = bannedUsers.filter(user => user !== username);
+
+                // Save the updated list
+                localStorage.setItem('bannedUsers', JSON.stringify(updatedList));
+                sessionStorage.setItem('bannedUsers', JSON.stringify(updatedList));
+
+                // Broadcast the unban event to all tabs/windows
+                try {
+                    if (typeof BroadcastChannel !== 'undefined' && window.tridexBanChannel) {
+                        console.log(`Ban System: Broadcasting unban event for ${username} from server check`);
+                        window.tridexBanChannel.postMessage({
+                            type: 'unban',
+                            username: username,
+                            timestamp: Date.now(),
+                            source: 'server-check'
+                        });
+                    }
+                } catch (error) {
+                    console.error('Ban System: Error broadcasting unban event:', error);
+                }
+
+                // If this is the current user, clear ban flags and reload
+                const currentUser = localStorage.getItem('username') || localStorage.getItem('currentUser');
+                if (username === currentUser) {
+                    console.log(`Ban System: Current user ${username} was unbanned by server, clearing ban flags`);
+
+                    // Clear ban flags in sessionStorage
                     sessionStorage.removeItem('userBanned');
                     sessionStorage.removeItem('showBanMessage');
 
+                    // Remove any existing ban message
+                    const banMessage = document.getElementById('ban-message');
+                    if (banMessage) {
+                        console.log('Ban System: Removing ban message due to server unban');
+                        banMessage.remove();
+                    }
+
+                    // Allow scrolling again
+                    document.body.style.overflow = '';
+                    document.documentElement.style.overflow = '';
+
+                    // Remove the touchmove event listener if it exists
+                    if (document.body.getAttribute('data-ban-touchmove-handler') === 'true') {
+                        document.removeEventListener('touchmove', function(e) { e.preventDefault(); }, { passive: false });
+                        document.body.removeAttribute('data-ban-touchmove-handler');
+                    }
+
                     // Reload the page to reflect the unbanned status
                     console.log(`Ban System: Reloading page to reflect unbanned status for ${username}`);
-                    window.location.reload();
+                    setTimeout(function() {
+                        window.location.reload();
+                    }, 500);
                 }
             }
         }
@@ -575,6 +696,31 @@ function getBannedUsers() {
 }
 
 /**
+ * Force an immediate check of the ban status with the server
+ * @param {string} [username] - Optional username to check. If not provided, checks the current user.
+ * @returns {Promise<boolean>} - Promise resolving to true if the user is banned, false otherwise
+ */
+async function forceCheckBanStatus(username) {
+    try {
+        // If no username provided, use the current user
+        const userToCheck = username || localStorage.getItem('username') || localStorage.getItem('currentUser');
+
+        if (!userToCheck) {
+            console.log('Ban System: forceCheckBanStatus: No username provided or found');
+            return false;
+        }
+
+        console.log(`Ban System: Force checking ban status for ${userToCheck}`);
+
+        // Check with the server
+        return await checkServerBanStatus(userToCheck);
+    } catch (error) {
+        console.error('Ban System: Error force checking ban status', error);
+        return isUserBanned(username); // Fall back to local check
+    }
+}
+
+/**
  * Debug the ban system
  * @returns {Array} - The list of banned users
  */
@@ -586,10 +732,22 @@ function debugBanSystem() {
         // Check if the ban system is initialized
         console.log('Ban System: Initialized:', window.banSystemInitialized);
 
+        // Check if the ban system has a broadcast channel
+        console.log('Ban System: Broadcast channel available:', !!window.tridexBanChannel);
+
+        // Check if there are ban flags in sessionStorage
+        console.log('Ban System: userBanned flag in sessionStorage:', sessionStorage.getItem('userBanned'));
+        console.log('Ban System: showBanMessage flag in sessionStorage:', sessionStorage.getItem('showBanMessage'));
+
         // Check if the current user is banned
         const username = localStorage.getItem('username') || localStorage.getItem('currentUser');
         if (username) {
             console.log(`Ban System: Current user ${username} is banned:`, isUserBanned(username));
+
+            // Force a server check
+            forceCheckBanStatus(username).then(isBanned => {
+                console.log(`Ban System: Server says user ${username} ban status is: ${isBanned}`);
+            });
         }
 
         return bannedUsers;
