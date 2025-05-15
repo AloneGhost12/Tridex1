@@ -90,7 +90,8 @@
     <!-- User Details Section -->
     <div id="user-section">
         <div style="margin-bottom: 15px;">
-            <button id="debug-ban-system" style="padding: 8px 15px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer;">Debug Ban System</button>
+            <button id="debug-ban-system" style="padding: 8px 15px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer; margin-right: 10px;">Debug Ban System</button>
+            <button id="force-check-ban-status" style="padding: 8px 15px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer;">Force Check Ban Status</button>
             <span id="debug-output" style="margin-left: 10px; font-family: monospace;"></span>
         </div>
         <table id="user-table">
@@ -365,8 +366,8 @@
                                     'No banned users found';
 
                                 // Force a server ban status check to ensure real-time updates
-                                if (typeof window.banSystem.checkServerBanStatus === 'function') {
-                                    window.banSystem.checkServerBanStatus(user.username)
+                                if (typeof window.banSystem.forceCheckBanStatus === 'function') {
+                                    window.banSystem.forceCheckBanStatus(user.username)
                                         .then(isBanned => {
                                             console.log(`Server confirms ${user.username} ban status: ${isBanned}`);
                                         })
@@ -450,8 +451,8 @@
                                     'No banned users found';
 
                                 // Force a server ban status check to ensure real-time updates
-                                if (typeof window.banSystem.checkServerBanStatus === 'function') {
-                                    window.banSystem.checkServerBanStatus(user.username)
+                                if (typeof window.banSystem.forceCheckBanStatus === 'function') {
+                                    window.banSystem.forceCheckBanStatus(user.username)
                                         .then(isBanned => {
                                             console.log(`Server confirms ${user.username} ban status: ${isBanned}`);
                                         })
@@ -1323,6 +1324,41 @@
                     'No banned users found';
             } else {
                 document.getElementById('debug-output').textContent = 'Ban system not available';
+            }
+        });
+
+        // Force check ban status button
+        document.getElementById('force-check-ban-status').addEventListener('click', async function() {
+            if (window.banSystem && typeof window.banSystem.forceCheckBanStatus === 'function') {
+                document.getElementById('debug-output').textContent = 'Checking ban status for all users...';
+
+                try {
+                    // Get all users
+                    const usernames = users.map(user => user.username);
+
+                    // Check ban status for each user
+                    for (const username of usernames) {
+                        if (username) {
+                            const isBanned = await window.banSystem.forceCheckBanStatus(username);
+                            console.log(`Force checked ban status for ${username}: ${isBanned ? 'BANNED' : 'NOT BANNED'}`);
+                        }
+                    }
+
+                    // Update the debug output
+                    const bannedUsers = window.banSystem.getBannedUsers();
+                    document.getElementById('debug-output').textContent =
+                        bannedUsers.length > 0 ?
+                        `Banned users: ${bannedUsers.join(', ')}` :
+                        'No banned users found';
+
+                    // Refresh the user list to update the UI
+                    fetchUsers();
+                } catch (error) {
+                    console.error('Error force checking ban status:', error);
+                    document.getElementById('debug-output').textContent = `Error: ${error.message}`;
+                }
+            } else {
+                document.getElementById('debug-output').textContent = 'Ban system or forceCheckBanStatus not available';
             }
         });
 
