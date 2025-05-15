@@ -196,88 +196,75 @@ function showBanMessage() {
             loadingOverlay.style.display = 'none';
         }
 
-        // Create the ban message element if it doesn't exist
-        if (!document.getElementById('ban-message')) {
-            console.log('Ban System: Creating new ban message element');
+        // Remove any existing ban message to avoid duplicates
+        const existingBanMessage = document.getElementById('ban-message');
+        if (existingBanMessage) {
+            existingBanMessage.remove();
+        }
 
-            const banMessage = document.createElement('div');
-            banMessage.id = 'ban-message';
+        // Create the ban message element
+        console.log('Ban System: Creating new ban message element');
 
-            // Set styles to ensure it's visible and above everything
-            banMessage.style.display = 'flex';
-            banMessage.style.position = 'fixed';
-            banMessage.style.top = '0';
-            banMessage.style.left = '0';
-            banMessage.style.width = '100%';
-            banMessage.style.height = '100%';
-            banMessage.style.backgroundColor = 'rgba(0,0,0,0.8)';
-            banMessage.style.zIndex = '2147483647'; // Maximum z-index value
-            banMessage.style.alignItems = 'center';
-            banMessage.style.justifyContent = 'center';
-            banMessage.style.touchAction = 'none'; // Prevent scrolling on touch devices
+        const banMessage = document.createElement('div');
+        banMessage.id = 'ban-message';
 
-            const messageContent = document.createElement('div');
-            messageContent.style.backgroundColor = '#fff';
-            messageContent.style.padding = '32px 24px';
-            messageContent.style.borderRadius = '8px';
-            messageContent.style.boxShadow = '0 4px 16px rgba(0,0,0,0.2)';
-            messageContent.style.minWidth = '280px';
-            messageContent.style.maxWidth = '90%';
-            messageContent.style.textAlign = 'center';
-            messageContent.style.margin = '20px';
+        // Set styles to ensure it's visible and above everything
+        banMessage.style.display = 'flex';
+        banMessage.style.position = 'fixed';
+        banMessage.style.top = '0';
+        banMessage.style.left = '0';
+        banMessage.style.width = '100%';
+        banMessage.style.height = '100%';
+        banMessage.style.backgroundColor = 'rgba(0,0,0,0.8)';
+        banMessage.style.zIndex = '2147483647'; // Maximum z-index value
+        banMessage.style.alignItems = 'center';
+        banMessage.style.justifyContent = 'center';
+        banMessage.style.touchAction = 'none'; // Prevent scrolling on touch devices
 
-            messageContent.innerHTML = `
-                <div style="margin-bottom:15px; font-size:3em; color:#d32f2f;">⚠️</div>
-                <h2 style="margin-bottom:15px; color:#d32f2f; font-size:1.5em; font-weight:bold;">Account Banned</h2>
-                <p style="margin-bottom:24px; font-size:1.1em; color:#555; line-height:1.5;">Your account has been banned by the administrator. You no longer have access to this site.</p>
-                <p style="margin-bottom:24px; font-size:0.9em; color:#777;">For more information, please contact support.</p>
-                <button id="ban-ok-btn" style="padding:12px 28px; background:#dc3545; color:#fff; border:none; border-radius:5px; font-size:1.1rem; cursor:pointer; font-weight:bold; transition:all 0.2s ease; -webkit-tap-highlight-color:transparent;">OK</button>
-            `;
+        const messageContent = document.createElement('div');
+        messageContent.style.backgroundColor = '#fff';
+        messageContent.style.padding = '32px 24px';
+        messageContent.style.borderRadius = '8px';
+        messageContent.style.boxShadow = '0 4px 16px rgba(0,0,0,0.2)';
+        messageContent.style.minWidth = '280px';
+        messageContent.style.maxWidth = '90%';
+        messageContent.style.textAlign = 'center';
+        messageContent.style.margin = '20px';
 
-            banMessage.appendChild(messageContent);
+        messageContent.innerHTML = `
+            <div style="margin-bottom:15px; font-size:3em; color:#d32f2f;">⚠️</div>
+            <h2 style="margin-bottom:15px; color:#d32f2f; font-size:1.5em; font-weight:bold;">Account Banned</h2>
+            <p style="margin-bottom:24px; font-size:1.1em; color:#555; line-height:1.5;">Your account has been banned by the administrator. You no longer have access to this site.</p>
+            <p style="margin-bottom:24px; font-size:0.9em; color:#777;">For more information, please contact support.</p>
+            <button id="ban-ok-btn" style="padding:12px 28px; background:#dc3545; color:#fff; border:none; border-radius:5px; font-size:1.1rem; cursor:pointer; font-weight:bold; transition:all 0.2s ease; -webkit-tap-highlight-color:transparent;">OK</button>
+        `;
 
-            // Ensure the ban message is added to the body
-            const addBanMessageToDOM = function() {
-                console.log('Ban System: Adding ban message to DOM');
+        banMessage.appendChild(messageContent);
 
-                // Make sure the body exists
-                if (document.body) {
-                    document.body.appendChild(banMessage);
-                    setupBanButtonHandlers();
+        // Ensure the ban message is added to the body
+        const addBanMessageToDOM = function() {
+            console.log('Ban System: Adding ban message to DOM');
 
-                    // Force reflow to ensure the message is displayed
-                    void banMessage.offsetWidth;
-                } else {
-                    console.error('Ban System: Document body not available');
+            // Make sure the body exists
+            if (document.body) {
+                document.body.appendChild(banMessage);
+                setupBanButtonHandlers();
 
-                    // Try again in 100ms
-                    setTimeout(addBanMessageToDOM, 100);
-                }
-            };
-
-            // Wait for the DOM to be fully loaded
-            if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', addBanMessageToDOM);
+                // Force reflow to ensure the message is displayed
+                void banMessage.offsetWidth;
             } else {
-                addBanMessageToDOM();
+                console.error('Ban System: Document body not available');
+
+                // Try again in 100ms
+                setTimeout(addBanMessageToDOM, 100);
             }
+        };
+
+        // Wait for the DOM to be fully loaded
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', addBanMessageToDOM);
         } else {
-            // If the ban message already exists, just show it
-            console.log('Ban System: Using existing ban message element');
-            const banMessage = document.getElementById('ban-message');
-
-            // Ensure the ban message is visible on mobile
-            banMessage.style.display = 'flex';
-            banMessage.style.position = 'fixed';
-            banMessage.style.top = '0';
-            banMessage.style.left = '0';
-            banMessage.style.width = '100%';
-            banMessage.style.height = '100%';
-            banMessage.style.zIndex = '2147483647'; // Maximum z-index value
-            banMessage.style.touchAction = 'none'; // Prevent scrolling on touch devices
-
-            // Make sure the button handlers are set up
-            setupBanButtonHandlers();
+            addBanMessageToDOM();
         }
 
         // Prevent scrolling
@@ -338,10 +325,18 @@ function setupBanButtonHandlers() {
                 document.body.style.overflow = '';
                 document.documentElement.style.overflow = '';
 
-                // Set a flag in sessionStorage to show the ban message on the login page
+                // Set flags in sessionStorage to show the ban message on the login page
                 sessionStorage.setItem('showBanMessage', 'true');
+                sessionStorage.setItem('userBanned', 'true');
+
+                // Remove the ban message element
+                const banMessage = document.getElementById('ban-message');
+                if (banMessage) {
+                    banMessage.remove();
+                }
 
                 // Redirect to login page with banned parameter
+                console.log('Ban System: Redirecting to login page with banned parameter');
                 window.location.href = 'login.html?banned=true';
             };
 
@@ -393,6 +388,10 @@ function checkCurrentUserBan() {
             localStorage.removeItem('username');
             localStorage.removeItem('currentUser');
 
+            // Set ban flags in sessionStorage
+            sessionStorage.setItem('userBanned', 'true');
+            sessionStorage.setItem('showBanMessage', 'true');
+
             // Function to show ban message
             const showBanMessageAndStopExecution = function() {
                 // Show the ban message
@@ -412,6 +411,12 @@ function checkCurrentUserBan() {
             // Check if there's a ban flag in sessionStorage
             if (sessionStorage.getItem('userBanned') === 'true') {
                 console.log('Ban System: Ban flag found in sessionStorage. User was previously banned.');
+
+                // Clear all login data
+                localStorage.removeItem('token');
+                localStorage.removeItem('isLoggedIn');
+                localStorage.removeItem('username');
+                localStorage.removeItem('currentUser');
 
                 // Show the ban message
                 if (document.readyState === 'loading') {

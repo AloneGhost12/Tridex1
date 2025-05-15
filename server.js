@@ -214,6 +214,16 @@ app.post('/login', async (req, res) => {
             return res.status(401).json({ message: 'Invalid username or password' });
         }
 
+        // Check if the user is banned
+        if (user.banned) {
+            console.log('User is banned:', user.username);
+            return res.status(403).json({
+                message: 'Your account has been banned by the administrator',
+                isBanned: true,
+                username: user.username
+            });
+        }
+
         console.log('User found, comparing password...');
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
@@ -228,6 +238,7 @@ app.post('/login', async (req, res) => {
             isAdmin: user.isAdmin || false,
             username: user.username,
             verified: user.verified || false,
+            isBanned: false,
             token: 'fake-jwt-token-' + Date.now()
         });
 
