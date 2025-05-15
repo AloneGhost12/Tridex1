@@ -342,6 +342,9 @@
         </div>
     </div>
     <script>
+        // Define cart as a global variable so it's accessible to all functions
+        let cart = [];
+
         function renderCart() {
             // Ensure cart is isolated per user
             const username = localStorage.getItem('username') || localStorage.getItem('currentUser');
@@ -355,8 +358,10 @@
                 }
                 localStorage.setItem('cartUser', username);
             }
-            let cart = [];
+
+            // Update the global cart variable
             try { cart = JSON.parse(localStorage.getItem('cart')) || []; } catch (e) { cart = []; }
+
             const cartItemsDiv = document.getElementById('cart-items');
             const cartTotalDiv = document.getElementById('cart-total');
             const cartActionsDiv = document.getElementById('cart-actions');
