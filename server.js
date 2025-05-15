@@ -3,11 +3,13 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
 const cors = require('cors');
 const dotenv = require('dotenv');
+const fileUpload = require('express-fileupload');
 const User = require('./models/User'); // Make sure the path is correct
 const Product = require('./models/Product');
 const Category = require('./models/Category');
 const Announcement = require('./models/Announcement');
 const ChatInteraction = require('./models/ChatInteraction');
+const ContactMessage = require('./models/ContactMessage');
 
 // Load environment variables
 dotenv.config();
@@ -78,6 +80,17 @@ app.use((req, res, next) => {
     next();
 });
 app.use(express.json());
+
+// File upload middleware
+app.use(fileUpload({
+    limits: { fileSize: 5 * 1024 * 1024 }, // 5MB max file size
+    abortOnLimit: true,
+    createParentPath: true,
+    useTempFiles: true,
+    tempFileDir: '/tmp/',
+    safeFileNames: true,
+    preserveExtension: true
+}));
 
 // MongoDB Connection
 console.log('Attempting to connect to MongoDB...');
@@ -1040,6 +1053,297 @@ app.get('/chatbot/recommendations', async (req, res) => {
     } catch (err) {
         console.error('Error getting product recommendations:', err);
         res.status(500).json({ message: 'Error getting product recommendations' });
+    }
+});
+
+// ========== CONTACT FORM ROUTES ==========
+
+// Submit a contact form
+app.post('/contact', async (req, res) => {
+    try {
+        // Extract form data
+        const {
+            fullName,
+            email,
+            phone,
+            subject,
+            message,
+            username,
+            acceptedPolicy
+        } = req.body;
+
+        // Validate required fields
+        if (!fullName || !email || !subject || !message || acceptedPolicy !== 'true') {
+            return res.status(400).json({ message: 'Missing required fields' });
+        }
+
+        // Validate email format
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            return res.status(400).json({ message: 'Invalid email format' });
+        }
+
+        // Validate message length
+        if (message.length < 10) {
+            return res.status(400).json({ message: 'Message must be at least 10 characters long' });
+        }
+
+        // Validate subject is one of the allowed values
+        const allowedSubjects = ['Product Inquiry', 'Order Issue', 'Technical Support', 'Account Help', 'Feedback', 'Other'];
+        if (!allowedSubjects.includes(subject)) {
+            return res.status(400).json({ message: 'Invalid subject' });
+        }
+
+        // Find user ID if username is provided
+        let userId = null;
+        if (username) {
+            const user = await User.findOne({ username });
+            if (user) {
+                userId = user._id;
+            }
+        }
+
+        // Create new contact message
+        const contactMessage = new ContactMessage({
+            fullName,
+            email,
+            phone: phone || null,
+            subject,
+            message,
+            userId,
+            username,
+            acceptedPolicy: true
+        });
+
+        // Handle file attachment if present
+        if (req.files && req.files.attachment) {
+            const file = req.files.attachment;
+            contactMessage.attachment = {
+                filename: file.name,
+                contentType: file.mimetype,
+                data: file.data
+            };
+        }
+
+        // Save to database
+        await contactMessage.save();
+
+        // Send confirmation email to user
+        // This would typically use a service like Nodemailer
+        // For now, we'll just log it
+        console.log(`Confirmation email would be sent to ${email}`);
+
+        // Create an announcement for the user if they're logged in
+        if (username) {
+            const confirmationMessage = new Announcement({
+                title: 'Contact Form Submission Received',
+                message: `Thank you for contacting us about "${subject}". Our team will review your message and get back to you soon.`,
+                forUser: username
+            });
+
+            await confirmationMessage.save();
+        }
+
+        res.status(201).json({
+            message: 'Contact form submitted successfully',
+            contactId: contactMessage._id
+        });
+    } catch (err) {
+        console.error('Error submitting contact form:', err);
+        res.status(500).json({ message: 'Error submitting contact form' });
+    }
+});
+
+// Get all contact messages (admin only)
+app.get('/contact/messages', async (req, res) => {
+    try {
+        // Add authentication check here in production
+        // For now, we'll allow access for demo purposes
+
+        // Get query parameters for filtering
+        const { status, search, page = 1, limit = 20, sort = 'createdAt', order = 'desc' } = req.query;
+
+        // Build query
+        const query = {};
+        if (status) query.status = status;
+
+        // Add search functionality
+        if (search) {
+            query.$or = [
+                { fullName: { $regex: search, $options: 'i' } },
+                { email: { $regex: search, $options: 'i' } },
+                { message: { $regex: search, $options: 'i' } },
+                { username: { $regex: search, $options: 'i' } }
+            ];
+        }
+
+        // Calculate pagination
+        const skip = (parseInt(page) - 1) * parseInt(limit);
+
+        // Determine sort order
+        const sortOrder = order === 'asc' ? 1 : -1;
+        const sortOptions = {};
+        sortOptions[sort] = sortOrder;
+
+        // Get messages with pagination and sorting
+        const messages = await ContactMessage.find(query)
+            .sort(sortOptions)
+            .skip(skip)
+            .limit(parseInt(limit));
+
+        // Get total count for pagination
+        const total = await ContactMessage.countDocuments(query);
+
+        res.json({
+            messages,
+            pagination: {
+                total,
+                page: parseInt(page),
+                pages: Math.ceil(total / parseInt(limit))
+            }
+        });
+    } catch (err) {
+        console.error('Error fetching contact messages:', err);
+        res.status(500).json({ message: 'Error fetching contact messages' });
+    }
+});
+
+// Get a single contact message by ID (admin only)
+app.get('/contact/messages/:id', async (req, res) => {
+    try {
+        // Add authentication check here in production
+
+        const message = await ContactMessage.findById(req.params.id);
+
+        if (!message) {
+            return res.status(404).json({ message: 'Contact message not found' });
+        }
+
+        res.json(message);
+    } catch (err) {
+        console.error('Error fetching contact message:', err);
+        res.status(500).json({ message: 'Error fetching contact message' });
+    }
+});
+
+// Update contact message status (admin only)
+app.put('/contact/messages/:id/status', async (req, res) => {
+    try {
+        // Add authentication check here in production
+
+        const { status } = req.body;
+
+        // Validate status
+        const allowedStatuses = ['New', 'In Progress', 'Resolved', 'Closed'];
+        if (!allowedStatuses.includes(status)) {
+            return res.status(400).json({ message: 'Invalid status' });
+        }
+
+        // Update the message
+        const message = await ContactMessage.findByIdAndUpdate(
+            req.params.id,
+            { status, updatedAt: Date.now() },
+            { new: true }
+        );
+
+        if (!message) {
+            return res.status(404).json({ message: 'Contact message not found' });
+        }
+
+        res.json({
+            message: 'Status updated successfully',
+            contactMessage: message
+        });
+    } catch (err) {
+        console.error('Error updating contact message status:', err);
+        res.status(500).json({ message: 'Error updating contact message status' });
+    }
+});
+
+// Add admin response to a contact message
+app.post('/contact/messages/:id/respond', async (req, res) => {
+    try {
+        // Add authentication check here in production
+
+        const { text, respondedBy } = req.body;
+
+        // Validate response
+        if (!text || !respondedBy) {
+            return res.status(400).json({ message: 'Response text and responder name are required' });
+        }
+
+        // Update the message with response
+        const message = await ContactMessage.findByIdAndUpdate(
+            req.params.id,
+            {
+                adminResponse: {
+                    text,
+                    respondedBy,
+                    respondedAt: Date.now()
+                },
+                status: 'Resolved',
+                updatedAt: Date.now()
+            },
+            { new: true }
+        );
+
+        if (!message) {
+            return res.status(404).json({ message: 'Contact message not found' });
+        }
+
+        // If the user has an account, send them an announcement
+        if (message.username) {
+            const responseNotification = new Announcement({
+                title: 'Response to Your Inquiry',
+                message: `We've responded to your inquiry about "${message.subject}". Please check your email for our response.`,
+                forUser: message.username
+            });
+
+            await responseNotification.save();
+        }
+
+        // In a real application, you would send an email to the user here
+        console.log(`Response email would be sent to ${message.email}`);
+
+        res.json({
+            message: 'Response added successfully',
+            contactMessage: message
+        });
+    } catch (err) {
+        console.error('Error adding response to contact message:', err);
+        res.status(500).json({ message: 'Error adding response to contact message' });
+    }
+});
+
+// Download attachment from a contact message
+app.get('/contact/messages/:id/attachment', async (req, res) => {
+    try {
+        // Add authentication check here in production
+
+        // Find the message
+        const message = await ContactMessage.findById(req.params.id);
+
+        if (!message) {
+            return res.status(404).json({ message: 'Contact message not found' });
+        }
+
+        // Check if message has an attachment
+        if (!message.attachment || !message.attachment.data) {
+            return res.status(404).json({ message: 'No attachment found for this message' });
+        }
+
+        // Set response headers
+        res.set({
+            'Content-Type': message.attachment.contentType,
+            'Content-Disposition': `attachment; filename="${message.attachment.filename}"`,
+            'Content-Length': message.attachment.data.length
+        });
+
+        // Send the attachment data
+        res.send(message.attachment.data);
+    } catch (err) {
+        console.error('Error downloading attachment:', err);
+        res.status(500).json({ message: 'Error downloading attachment' });
     }
 });
 

@@ -85,6 +85,7 @@
         <button class="admin-nav-btn" id="show-products-btn">Product Management</button>
         <button class="admin-nav-btn" id="show-categories-btn">Categories</button>
         <button class="admin-nav-btn" id="show-mail-btn" title="Send Announcement">&#9993; Mail</button>
+        <button class="admin-nav-btn" id="show-contact-btn" title="Contact Messages">📞 Contact Messages</button>
     </div>
 
     <!-- User Details Section -->
@@ -184,6 +185,63 @@
                 <!-- Category rows will be rendered here -->
             </tbody>
         </table>
+    </div>
+
+    <!-- Contact Messages Section -->
+    <div id="contact-section" style="display:none;">
+        <div style="margin-bottom:15px; display:flex; justify-content:space-between; align-items:center;">
+            <div>
+                <select id="contact-status-filter" style="padding:8px; border-radius:4px; border:1px solid #ccc;">
+                    <option value="">All Statuses</option>
+                    <option value="New">New</option>
+                    <option value="In Progress">In Progress</option>
+                    <option value="Resolved">Resolved</option>
+                    <option value="Closed">Closed</option>
+                </select>
+                <input type="text" id="contact-search" placeholder="Search messages..." style="padding:8px; border-radius:4px; border:1px solid #ccc; margin-left:10px; width:250px;">
+                <button id="contact-search-btn" style="padding:8px 15px; background:#007bff; color:white; border:none; border-radius:4px; cursor:pointer; margin-left:10px;">Search</button>
+            </div>
+            <div>
+                <span id="contact-pagination-info" style="margin-right:15px;">Showing 1-20 of 0</span>
+                <button id="contact-prev-page" style="padding:5px 10px; background:#6c757d; color:white; border:none; border-radius:4px; cursor:pointer;">Previous</button>
+                <button id="contact-next-page" style="padding:5px 10px; background:#6c757d; color:white; border:none; border-radius:4px; cursor:pointer; margin-left:5px;">Next</button>
+            </div>
+        </div>
+        <table id="contact-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Subject</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Contact message rows will be rendered here -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Contact Message Detail Modal -->
+    <div id="contact-detail-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.3); z-index:3000; align-items:center; justify-content:center;">
+        <div style="background:#fff; padding:32px 24px; border-radius:8px; box-shadow:0 2px 12px rgba(0,0,0,0.15); min-width:600px; max-width:90vw; max-height:90vh; overflow-y:auto;">
+            <h2 style="margin-top:0;">Contact Message Details</h2>
+            <div id="contact-detail-content">
+                <!-- Contact message details will be rendered here -->
+            </div>
+            <hr style="margin:18px 0;">
+            <h3>Respond to Message</h3>
+            <form id="contact-response-form">
+                <input type="hidden" id="contact-id">
+                <textarea id="contact-response" style="width:100%; height:100px; padding:8px; border-radius:4px; border:1px solid #ccc;" placeholder="Type your response here..."></textarea>
+                <div style="margin-top:15px;">
+                    <button type="submit" style="padding:8px 18px; background:#28a745; color:#fff; border:none; border-radius:5px; font-size:1rem; cursor:pointer;">Send Response</button>
+                    <button type="button" id="close-contact-detail" style="padding:8px 18px; background:#888; color:#fff; border:none; border-radius:5px; font-size:1rem; cursor:pointer; margin-left:10px;">Close</button>
+                </div>
+            </form>
+        </div>
     </div>
 
     <!-- Mailbox Modal for Admin -->
@@ -1516,6 +1574,450 @@
         document.getElementById('close-admin-mail').onclick = function() {
             document.getElementById('admin-mail-modal').style.display = 'none';
         };
+
+        // ========== CONTACT MESSAGES FUNCTIONALITY ==========
+
+        let contactMessages = [];
+        let contactPage = 1;
+        let contactLimit = 20;
+        let contactTotal = 0;
+        let contactPages = 1;
+        let contactStatus = '';
+        let contactSearch = '';
+
+        // Fetch contact messages from the server
+        async function fetchContactMessages() {
+            try {
+                // Show loading indicator
+                showLoading();
+
+                // Build query parameters
+                const params = new URLSearchParams();
+                params.append('page', contactPage);
+                params.append('limit', contactLimit);
+
+                if (contactStatus) {
+                    params.append('status', contactStatus);
+                }
+
+                if (contactSearch) {
+                    params.append('search', contactSearch);
+                }
+
+                // Fetch contact messages
+                const response = await fetch(`https://tridex1.onrender.com/contact/messages?${params.toString()}`);
+
+                if (!response.ok) {
+                    throw new Error(`Server returned ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+
+                // Update contact messages and pagination info
+                contactMessages = data.messages;
+                contactTotal = data.pagination.total;
+                contactPages = data.pagination.pages;
+
+                // Render contact messages
+                renderContactMessages();
+
+                // Update pagination info
+                updateContactPagination();
+            } catch (error) {
+                console.error('Error fetching contact messages:', error);
+                alert('Failed to load contact messages. Please try again later.');
+            } finally {
+                // Hide loading indicator
+                hideLoading();
+            }
+        }
+
+        // Render contact messages
+        function renderContactMessages() {
+            const tbody = document.querySelector('#contact-table tbody');
+            tbody.innerHTML = '';
+
+            if (contactMessages.length === 0) {
+                const tr = document.createElement('tr');
+                tr.innerHTML = '<td colspan="6" style="text-align:center;">No contact messages found</td>';
+                tbody.appendChild(tr);
+                return;
+            }
+
+            contactMessages.forEach(message => {
+                const tr = document.createElement('tr');
+
+                // Format date
+                const date = new Date(message.createdAt);
+                const formattedDate = `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
+
+                // Determine status color
+                let statusColor = '#777';
+                if (message.status === 'New') {
+                    statusColor = '#dc3545';
+                } else if (message.status === 'In Progress') {
+                    statusColor = '#007bff';
+                } else if (message.status === 'Resolved') {
+                    statusColor = '#28a745';
+                }
+
+                tr.innerHTML = `
+                    <td>${formattedDate}</td>
+                    <td>${message.fullName}</td>
+                    <td>${message.email}</td>
+                    <td>${message.subject}</td>
+                    <td><span style="color:${statusColor}; font-weight:bold;">${message.status}</span></td>
+                    <td>
+                        <button class="view-contact-btn" style="background:#007bff; color:white; border:none; border-radius:4px; padding:5px 14px; cursor:pointer; margin-right:6px;">View</button>
+                        <select class="status-select" style="padding:5px; border-radius:4px; border:1px solid #ccc;">
+                            <option value="New" ${message.status === 'New' ? 'selected' : ''}>New</option>
+                            <option value="In Progress" ${message.status === 'In Progress' ? 'selected' : ''}>In Progress</option>
+                            <option value="Resolved" ${message.status === 'Resolved' ? 'selected' : ''}>Resolved</option>
+                            <option value="Closed" ${message.status === 'Closed' ? 'selected' : ''}>Closed</option>
+                        </select>
+                    </td>
+                `;
+
+                // Add event listener to view button
+                tr.querySelector('.view-contact-btn').addEventListener('click', () => {
+                    showContactDetail(message);
+                });
+
+                // Add event listener to status select
+                tr.querySelector('.status-select').addEventListener('change', async (e) => {
+                    const newStatus = e.target.value;
+
+                    try {
+                        // Show loading indicator
+                        showLoading();
+
+                        // Update status on server
+                        const response = await fetch(`https://tridex1.onrender.com/contact/messages/${message._id}/status`, {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({ status: newStatus })
+                        });
+
+                        if (!response.ok) {
+                            throw new Error(`Server returned ${response.status}: ${response.statusText}`);
+                        }
+
+                        // Update status in UI
+                        message.status = newStatus;
+
+                        // Update status color
+                        let statusColor = '#777';
+                        if (newStatus === 'New') {
+                            statusColor = '#dc3545';
+                        } else if (newStatus === 'In Progress') {
+                            statusColor = '#007bff';
+                        } else if (newStatus === 'Resolved') {
+                            statusColor = '#28a745';
+                        }
+
+                        tr.querySelector('td:nth-child(5) span').style.color = statusColor;
+                        tr.querySelector('td:nth-child(5) span').textContent = newStatus;
+
+                        // Show success message
+                        alert(`Status updated to ${newStatus}`);
+                    } catch (error) {
+                        console.error('Error updating status:', error);
+                        alert('Failed to update status. Please try again later.');
+
+                        // Reset select to original value
+                        e.target.value = message.status;
+                    } finally {
+                        // Hide loading indicator
+                        hideLoading();
+                    }
+                });
+
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Update contact pagination info
+        function updateContactPagination() {
+            const start = (contactPage - 1) * contactLimit + 1;
+            const end = Math.min(contactPage * contactLimit, contactTotal);
+
+            document.getElementById('contact-pagination-info').textContent = `Showing ${start}-${end} of ${contactTotal}`;
+
+            // Enable/disable pagination buttons
+            document.getElementById('contact-prev-page').disabled = contactPage === 1;
+            document.getElementById('contact-next-page').disabled = contactPage === contactPages;
+
+            // Update button styles
+            document.getElementById('contact-prev-page').style.opacity = contactPage === 1 ? '0.5' : '1';
+            document.getElementById('contact-next-page').style.opacity = contactPage === contactPages ? '0.5' : '1';
+        }
+
+        // Show contact message details
+        function showContactDetail(message) {
+            // Set contact ID for response form
+            document.getElementById('contact-id').value = message._id;
+
+            // Format date
+            const date = new Date(message.createdAt);
+            const formattedDate = `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
+
+            // Format updated date if available
+            let updatedDate = '';
+            if (message.updatedAt && message.updatedAt !== message.createdAt) {
+                const updated = new Date(message.updatedAt);
+                updatedDate = `<p><strong>Last Updated:</strong> ${updated.toLocaleDateString()} ${updated.toLocaleTimeString()}</p>`;
+            }
+
+            // Format admin response if available
+            let adminResponse = '';
+            if (message.adminResponse && message.adminResponse.text) {
+                const responseDate = new Date(message.adminResponse.respondedAt);
+                adminResponse = `
+                    <div style="background:#f8f9fa; padding:15px; border-radius:5px; margin-top:20px; border-left:4px solid #28a745;">
+                        <h4 style="margin-top:0;">Response from ${message.adminResponse.respondedBy}</h4>
+                        <p>${message.adminResponse.text}</p>
+                        <p style="color:#666; font-size:0.9em; margin-bottom:0;">
+                            Sent on ${responseDate.toLocaleDateString()} ${responseDate.toLocaleTimeString()}
+                        </p>
+                    </div>
+                `;
+            }
+
+            // Format attachment if available
+            let attachment = '';
+            if (message.attachment && message.attachment.filename) {
+                attachment = `
+                    <p><strong>Attachment:</strong> ${message.attachment.filename}</p>
+                    <p><a href="#" onclick="downloadAttachment('${message._id}'); return false;" style="color:#007bff;">Download Attachment</a></p>
+                `;
+            }
+
+            // Populate contact detail content
+            document.getElementById('contact-detail-content').innerHTML = `
+                <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                    <div>
+                        <p><strong>From:</strong> ${message.fullName} ${message.username ? `(${message.username})` : ''}</p>
+                        <p><strong>Email:</strong> <a href="mailto:${message.email}" style="color:#007bff;">${message.email}</a></p>
+                        ${message.phone ? `<p><strong>Phone:</strong> ${message.phone}</p>` : ''}
+                        <p><strong>Subject:</strong> ${message.subject}</p>
+                        <p><strong>Date:</strong> ${formattedDate}</p>
+                        ${updatedDate}
+                        <p><strong>Status:</strong> <span style="font-weight:bold;">${message.status}</span></p>
+                    </div>
+                    <div>
+                        <select id="detail-status-select" style="padding:8px; border-radius:4px; border:1px solid #ccc;">
+                            <option value="New" ${message.status === 'New' ? 'selected' : ''}>New</option>
+                            <option value="In Progress" ${message.status === 'In Progress' ? 'selected' : ''}>In Progress</option>
+                            <option value="Resolved" ${message.status === 'Resolved' ? 'selected' : ''}>Resolved</option>
+                            <option value="Closed" ${message.status === 'Closed' ? 'selected' : ''}>Closed</option>
+                        </select>
+                        <button id="update-status-btn" style="padding:8px 15px; background:#007bff; color:white; border:none; border-radius:4px; cursor:pointer; margin-left:10px;">Update Status</button>
+                    </div>
+                </div>
+                <hr>
+                <h3>Message</h3>
+                <div style="background:#f8f9fa; padding:15px; border-radius:5px; white-space:pre-wrap;">${message.message}</div>
+                ${attachment}
+                ${adminResponse}
+            `;
+
+            // Add event listener to update status button
+            document.getElementById('update-status-btn').addEventListener('click', async () => {
+                const newStatus = document.getElementById('detail-status-select').value;
+
+                try {
+                    // Show loading indicator
+                    showLoading();
+
+                    // Update status on server
+                    const response = await fetch(`https://tridex1.onrender.com/contact/messages/${message._id}/status`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ status: newStatus })
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`Server returned ${response.status}: ${response.statusText}`);
+                    }
+
+                    // Update status in UI
+                    message.status = newStatus;
+
+                    // Show success message
+                    alert(`Status updated to ${newStatus}`);
+
+                    // Refresh contact messages
+                    fetchContactMessages();
+                } catch (error) {
+                    console.error('Error updating status:', error);
+                    alert('Failed to update status. Please try again later.');
+
+                    // Reset select to original value
+                    document.getElementById('detail-status-select').value = message.status;
+                } finally {
+                    // Hide loading indicator
+                    hideLoading();
+                }
+            });
+
+            // Show contact detail modal
+            document.getElementById('contact-detail-modal').style.display = 'flex';
+        }
+
+        // Download attachment
+        window.downloadAttachment = async function(messageId) {
+            try {
+                // Show loading indicator
+                showLoading();
+
+                // Fetch attachment from server
+                const response = await fetch(`https://tridex1.onrender.com/contact/messages/${messageId}/attachment`);
+
+                if (!response.ok) {
+                    throw new Error(`Server returned ${response.status}: ${response.statusText}`);
+                }
+
+                // Get attachment data
+                const blob = await response.blob();
+
+                // Get filename from Content-Disposition header
+                const contentDisposition = response.headers.get('Content-Disposition');
+                let filename = 'attachment';
+
+                if (contentDisposition) {
+                    const filenameMatch = contentDisposition.match(/filename="(.+)"/);
+                    if (filenameMatch) {
+                        filename = filenameMatch[1];
+                    }
+                }
+
+                // Create download link
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+
+                // Clean up
+                setTimeout(() => {
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                }, 100);
+            } catch (error) {
+                console.error('Error downloading attachment:', error);
+                alert('Failed to download attachment. Please try again later.');
+            } finally {
+                // Hide loading indicator
+                hideLoading();
+            }
+        };
+
+        // Handle contact response form submission
+        document.getElementById('contact-response-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const contactId = document.getElementById('contact-id').value;
+            const responseText = document.getElementById('contact-response').value.trim();
+
+            if (!responseText) {
+                alert('Please enter a response message');
+                return;
+            }
+
+            try {
+                // Show loading indicator
+                showLoading();
+
+                // Send response to server
+                const response = await fetch(`https://tridex1.onrender.com/contact/messages/${contactId}/respond`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        text: responseText,
+                        respondedBy: localStorage.getItem('username') || 'Admin'
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Server returned ${response.status}: ${response.statusText}`);
+                }
+
+                // Show success message
+                alert('Response sent successfully');
+
+                // Close modal
+                document.getElementById('contact-detail-modal').style.display = 'none';
+
+                // Clear form
+                document.getElementById('contact-response').value = '';
+
+                // Refresh contact messages
+                fetchContactMessages();
+            } catch (error) {
+                console.error('Error sending response:', error);
+                alert('Failed to send response. Please try again later.');
+            } finally {
+                // Hide loading indicator
+                hideLoading();
+            }
+        });
+
+        // Close contact detail modal
+        document.getElementById('close-contact-detail').addEventListener('click', function() {
+            document.getElementById('contact-detail-modal').style.display = 'none';
+        });
+
+        // Handle contact search
+        document.getElementById('contact-search-btn').addEventListener('click', function() {
+            contactSearch = document.getElementById('contact-search').value.trim();
+            contactPage = 1; // Reset to first page
+            fetchContactMessages();
+        });
+
+        // Handle contact status filter
+        document.getElementById('contact-status-filter').addEventListener('change', function() {
+            contactStatus = this.value;
+            contactPage = 1; // Reset to first page
+            fetchContactMessages();
+        });
+
+        // Handle contact pagination
+        document.getElementById('contact-prev-page').addEventListener('click', function() {
+            if (contactPage > 1) {
+                contactPage--;
+                fetchContactMessages();
+            }
+        });
+
+        document.getElementById('contact-next-page').addEventListener('click', function() {
+            if (contactPage < contactPages) {
+                contactPage++;
+                fetchContactMessages();
+            }
+        });
+
+        // Show contact section
+        document.getElementById('show-contact-btn').addEventListener('click', function() {
+            // Hide all sections
+            document.getElementById('user-section').style.display = 'none';
+            document.getElementById('product-section').style.display = 'none';
+            document.getElementById('category-section').style.display = 'none';
+            document.getElementById('contact-section').style.display = 'block';
+
+            // Update active button
+            document.querySelectorAll('.admin-nav-btn').forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
+
+            // Fetch contact messages
+            fetchContactMessages();
+        });
 
         // --- Navigation between sections ---
         document.getElementById('show-users-btn').onclick = function() {
