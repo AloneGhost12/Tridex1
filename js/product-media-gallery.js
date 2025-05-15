@@ -504,12 +504,10 @@ class ProductMediaGallery {
      */
     setMediaItems(items) {
         this.mediaItems = Array.isArray(items) ? [...items] : [];
-        this.renderMediaItems();
+        this.renderMediaPreviews();
 
-        // Call onMediaChange callback if it exists
-        if (this.options.onMediaChange) {
-            this.options.onMediaChange(this.mediaItems);
-        }
+        // Call onMediaChange callback
+        this.onMediaChange(this.mediaItems);
     }
 }
 
