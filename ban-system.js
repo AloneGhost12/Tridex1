@@ -2,15 +2,18 @@
  * Ban System for Tridex
  * This file contains all the functionality related to the user ban system.
  *
- * Version 2.1 - Improved ban message display and handling
+ * Version 2.2 - Added real-time ban status checking and improved unban handling
  */
 
 // Initialize the ban system immediately
 (function() {
-    console.log('Ban System 2.0 initializing...');
+    console.log('Ban System 2.2 initializing...');
 
     // Create a global variable to track initialization
     window.banSystemInitialized = false;
+
+    // Store the ban check interval ID
+    let banCheckIntervalId = null;
 
     // Initialize the ban system
     initBanSystem();
@@ -27,9 +30,10 @@
                 unbanUser: unbanUser,
                 showBanMessage: showBanMessage,
                 checkCurrentUserBan: checkCurrentUserBan,
+                checkServerBanStatus: checkServerBanStatus,
                 getBannedUsers: getBannedUsers,
                 debugBanSystem: debugBanSystem,
-                version: '2.0'
+                version: '2.2'
             };
 
             // Mark as initialized
@@ -40,9 +44,31 @@
             // Check if the current user is banned
             setTimeout(function() {
                 const username = localStorage.getItem('username') || localStorage.getItem('currentUser');
-                if (username && isUserBanned(username)) {
-                    console.log(`Ban System: User ${username} is banned, handling ban...`);
-                    checkCurrentUserBan();
+                if (username) {
+                    // First check local storage
+                    if (isUserBanned(username)) {
+                        console.log(`Ban System: User ${username} is banned locally, handling ban...`);
+                        checkCurrentUserBan();
+                    }
+
+                    // Then check with the server
+                    checkServerBanStatus(username);
+
+                    // Set up periodic checks with the server (every 30 seconds)
+                    if (banCheckIntervalId) {
+                        clearInterval(banCheckIntervalId);
+                    }
+
+                    banCheckIntervalId = setInterval(function() {
+                        const currentUser = localStorage.getItem('username') || localStorage.getItem('currentUser');
+                        if (currentUser) {
+                            checkServerBanStatus(currentUser);
+                        } else {
+                            // If no user is logged in, clear the interval
+                            clearInterval(banCheckIntervalId);
+                            banCheckIntervalId = null;
+                        }
+                    }, 30000); // Check every 30 seconds
                 }
             }, 100);
 
@@ -175,6 +201,33 @@ function unbanUser(username) {
         const success = !verifyList.includes(username);
 
         console.log(`Ban System: Unban operation ${success ? 'successful' : 'failed'} for ${username}`);
+
+        // If the unbanned user is the current user, clear ban flags
+        const currentUser = localStorage.getItem('username') || localStorage.getItem('currentUser');
+        if (success && username === currentUser) {
+            console.log(`Ban System: Current user ${username} was unbanned, clearing ban flags...`);
+
+            // Clear ban flags in sessionStorage
+            sessionStorage.removeItem('userBanned');
+            sessionStorage.removeItem('showBanMessage');
+
+            // Remove any existing ban message
+            const banMessage = document.getElementById('ban-message');
+            if (banMessage) {
+                console.log('Ban System: Removing ban message');
+                banMessage.remove();
+            }
+
+            // Allow scrolling again
+            document.body.style.overflow = '';
+            document.documentElement.style.overflow = '';
+
+            // Remove the touchmove event listener if it exists
+            if (document.body.getAttribute('data-ban-touchmove-handler') === 'true') {
+                document.removeEventListener('touchmove', function(e) { e.preventDefault(); }, { passive: false });
+                document.body.removeAttribute('data-ban-touchmove-handler');
+            }
+        }
 
         return success;
     } catch (error) {
@@ -433,6 +486,78 @@ function checkCurrentUserBan() {
     } catch (error) {
         console.error('Ban System: Error checking if current user is banned', error);
         return false;
+    }
+}
+
+/**
+ * Check the server for a user's ban status
+ * @param {string} username - The username to check
+ * @returns {Promise<boolean>} - Promise resolving to true if the user is banned, false otherwise
+ */
+async function checkServerBanStatus(username) {
+    try {
+        if (!username) {
+            console.log('Ban System: checkServerBanStatus: No username provided');
+            return false;
+        }
+
+        console.log(`Ban System: Checking server ban status for ${username}`);
+
+        // Try production server first
+        let response;
+        try {
+            response = await fetch(`https://tridex1.onrender.com/users/check-ban/${username}`);
+        } catch (fetchError) {
+            console.warn('Could not reach production server, trying local server...');
+            // If production server fails, try local server
+            response = await fetch(`http://localhost:3000/users/check-ban/${username}`);
+        }
+
+        if (!response.ok) {
+            console.error(`Ban System: Server returned ${response.status} when checking ban status`);
+            return isUserBanned(username); // Fall back to local check
+        }
+
+        const data = await response.json();
+        console.log(`Ban System: Server says user ${username} ban status is: ${data.isBanned}`);
+
+        // Update local ban status based on server response
+        if (data.isBanned) {
+            // If server says user is banned but not banned locally, update local storage
+            if (!isUserBanned(username)) {
+                console.log(`Ban System: Updating local ban status for ${username} to banned`);
+                banUser(username);
+
+                // Show ban message if this is the current user
+                const currentUser = localStorage.getItem('username') || localStorage.getItem('currentUser');
+                if (username === currentUser) {
+                    console.log(`Ban System: Current user ${username} was banned by server, showing ban message`);
+                    checkCurrentUserBan();
+                }
+            }
+        } else {
+            // If server says user is not banned but banned locally, update local storage
+            if (isUserBanned(username)) {
+                console.log(`Ban System: Updating local ban status for ${username} to unbanned`);
+                unbanUser(username);
+
+                // Clear ban flags in sessionStorage
+                if (sessionStorage.getItem('userBanned') === 'true') {
+                    console.log(`Ban System: Clearing ban flags for ${username}`);
+                    sessionStorage.removeItem('userBanned');
+                    sessionStorage.removeItem('showBanMessage');
+
+                    // Reload the page to reflect the unbanned status
+                    console.log(`Ban System: Reloading page to reflect unbanned status for ${username}`);
+                    window.location.reload();
+                }
+            }
+        }
+
+        return data.isBanned;
+    } catch (error) {
+        console.error('Ban System: Error checking server ban status', error);
+        return isUserBanned(username); // Fall back to local check
     }
 }
 

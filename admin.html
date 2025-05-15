@@ -363,6 +363,17 @@
                                     bannedUsers.length > 0 ?
                                     `Banned users: ${bannedUsers.join(', ')}` :
                                     'No banned users found';
+
+                                // Force a server ban status check to ensure real-time updates
+                                if (typeof window.banSystem.checkServerBanStatus === 'function') {
+                                    window.banSystem.checkServerBanStatus(user.username)
+                                        .then(isBanned => {
+                                            console.log(`Server confirms ${user.username} ban status: ${isBanned}`);
+                                        })
+                                        .catch(error => {
+                                            console.error('Error checking server ban status:', error);
+                                        });
+                                }
                             }
 
                             // Update the UI to show the user is now banned
@@ -437,6 +448,17 @@
                                     bannedUsers.length > 0 ?
                                     `Banned users: ${bannedUsers.join(', ')}` :
                                     'No banned users found';
+
+                                // Force a server ban status check to ensure real-time updates
+                                if (typeof window.banSystem.checkServerBanStatus === 'function') {
+                                    window.banSystem.checkServerBanStatus(user.username)
+                                        .then(isBanned => {
+                                            console.log(`Server confirms ${user.username} ban status: ${isBanned}`);
+                                        })
+                                        .catch(error => {
+                                            console.error('Error checking server ban status:', error);
+                                        });
+                                }
                             }
 
                             // Update the UI to show the user is now unbanned

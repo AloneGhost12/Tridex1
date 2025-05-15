@@ -283,6 +283,32 @@ app.put('/users/:id/unban', async (req, res) => {
     }
 });
 
+// Endpoint to check if a user is banned
+app.get('/users/check-ban/:username', async (req, res) => {
+    try {
+        const username = req.params.username;
+        if (!username) {
+            return res.status(400).json({ message: 'Username is required' });
+        }
+
+        // Find user by username
+        const user = await User.findOne({ username });
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Return ban status
+        res.json({
+            username: user.username,
+            isBanned: user.banned || false
+        });
+    } catch (err) {
+        console.error('Error checking ban status:', err);
+        res.status(500).json({ message: 'Error checking ban status' });
+    }
+});
+
 app.put('/users/:id/verify', async (req, res) => {
     try {
         await User.findByIdAndUpdate(req.params.id, { verified: true });
