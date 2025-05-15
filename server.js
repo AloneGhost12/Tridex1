@@ -7,6 +7,7 @@ const User = require('./models/User'); // Make sure the path is correct
 const Product = require('./models/Product');
 const Category = require('./models/Category');
 const Announcement = require('./models/Announcement');
+const ChatInteraction = require('./models/ChatInteraction');
 
 // Load environment variables
 dotenv.config();
@@ -907,6 +908,138 @@ app.put('/announcements/:id/read', async (req, res) => {
     } catch (err) {
         console.error('Error marking announcement as read:', err);
         res.status(500).json({ message: 'Error marking announcement as read' });
+    }
+});
+
+// ========== CHATBOT ROUTES ==========
+
+// Store chat interaction
+app.post('/chatbot/interaction', async (req, res) => {
+    try {
+        const {
+            userId,
+            username,
+            message,
+            response,
+            sessionId,
+            messageType,
+            recommendedProducts,
+            escalatedToSupport
+        } = req.body;
+
+        // Create new chat interaction
+        const chatInteraction = new ChatInteraction({
+            userId,
+            username: username || 'anonymous',
+            message,
+            response,
+            sessionId,
+            messageType: messageType || 'text',
+            recommendedProducts: recommendedProducts || [],
+            escalatedToSupport: escalatedToSupport || false
+        });
+
+        // Save to database
+        await chatInteraction.save();
+
+        res.status(201).json({
+            message: 'Chat interaction saved',
+            interactionId: chatInteraction._id
+        });
+    } catch (err) {
+        console.error('Error saving chat interaction:', err);
+        res.status(500).json({ message: 'Error saving chat interaction' });
+    }
+});
+
+// Get chat history for a user
+app.get('/chatbot/history', async (req, res) => {
+    try {
+        const { username, sessionId, limit } = req.query;
+
+        // Build query
+        const query = {};
+        if (username) query.username = username;
+        if (sessionId) query.sessionId = sessionId;
+
+        // Get chat history
+        const history = await ChatInteraction.find(query)
+            .sort({ timestamp: -1 })
+            .limit(parseInt(limit) || 50);
+
+        res.json(history);
+    } catch (err) {
+        console.error('Error fetching chat history:', err);
+        res.status(500).json({ message: 'Error fetching chat history' });
+    }
+});
+
+// Submit feedback for a chat interaction
+app.post('/chatbot/feedback/:interactionId', async (req, res) => {
+    try {
+        const { interactionId } = req.params;
+        const { helpful, feedbackText } = req.body;
+
+        // Find and update the interaction
+        const interaction = await ChatInteraction.findByIdAndUpdate(
+            interactionId,
+            {
+                'userFeedback.helpful': helpful,
+                'userFeedback.feedbackText': feedbackText
+            },
+            { new: true }
+        );
+
+        if (!interaction) {
+            return res.status(404).json({ message: 'Chat interaction not found' });
+        }
+
+        res.json({
+            message: 'Feedback submitted successfully',
+            interaction
+        });
+    } catch (err) {
+        console.error('Error submitting feedback:', err);
+        res.status(500).json({ message: 'Error submitting feedback' });
+    }
+});
+
+// Get product recommendations based on query
+app.get('/chatbot/recommendations', async (req, res) => {
+    try {
+        const { query, limit, categoryId } = req.query;
+
+        // Build search filter
+        const filter = {};
+        if (categoryId) filter.category = categoryId;
+
+        // Get products
+        let products = await Product.find(filter).populate('category');
+
+        // If query is provided, filter products by relevance
+        if (query) {
+            const keywords = query.toLowerCase().split(/\s+/).filter(word => word.length > 3);
+
+            if (keywords.length > 0) {
+                products = products.filter(product => {
+                    const name = product.name.toLowerCase();
+                    const desc = product.desc ? product.desc.toLowerCase() : '';
+
+                    return keywords.some(keyword =>
+                        name.includes(keyword) || desc.includes(keyword)
+                    );
+                });
+            }
+        }
+
+        // Limit results
+        const limitNum = parseInt(limit) || 3;
+        products = products.slice(0, limitNum);
+
+        res.json(products);
+    } catch (err) {
+        console.error('Error getting product recommendations:', err);
+        res.status(500).json({ message: 'Error getting product recommendations' });
     }
 });
 
