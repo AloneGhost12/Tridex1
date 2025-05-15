@@ -19,6 +19,19 @@
             box-sizing: border-box;
         }
 
+        /* Critical styles for hamburger menu functionality */
+        @media (max-width: 900px) {
+            #nav.show {
+                display: flex !important;
+                position: absolute !important;
+                top: 60px !important;
+                left: 0 !important;
+                width: 100% !important;
+                background: #222 !important;
+                z-index: 1050 !important;
+            }
+        }
+
         /* Responsive Navbar */
         @media (max-width: 900px) {
             header > div {
@@ -42,7 +55,7 @@
                 width: 100%;
             }
             #nav {
-                display: none;
+                display: none !important; /* Force display:none by default */
                 flex-direction: column !important;
                 align-items: flex-start !important;
                 gap: 0 !important;
@@ -58,7 +71,7 @@
                 max-height: calc(100vh - 60px);
             }
             #nav.show {
-                display: flex !important;
+                display: flex !important; /* Force display:flex when .show class is present */
             }
             #nav li {
                 width: 100%;
@@ -726,24 +739,33 @@
 
             // Function to toggle the hamburger menu
             function toggleHamburgerMenu(show) {
-                if (!hamburger || !nav) return;
+                if (!hamburger || !nav) {
+                    console.error('Hamburger menu or navigation not found');
+                    return;
+                }
 
                 const divs = hamburger.querySelectorAll('div');
+                console.log('Toggle hamburger menu', { show, navClassList: nav.classList, hasShowClass: nav.classList.contains('show') });
 
                 if (show === undefined) {
                     // Toggle mode
                     nav.classList.toggle('show');
+                    console.log('After toggle:', { hasShowClass: nav.classList.contains('show') });
 
                     if (nav.classList.contains('show')) {
                         // X shape when menu is open
                         divs[0].style.transform = 'rotate(-45deg) translate(-5px, 6px)';
                         divs[1].style.opacity = '0';
                         divs[2].style.transform = 'rotate(45deg) translate(-5px, -6px)';
+                        // Force display style
+                        nav.style.display = 'flex';
                     } else {
                         // Reset to hamburger shape
                         divs[0].style.transform = 'none';
                         divs[1].style.opacity = '1';
                         divs[2].style.transform = 'none';
+                        // Reset display style
+                        nav.style.display = '';
                     }
                 } else if (show) {
                     // Show menu
@@ -751,21 +773,63 @@
                     divs[0].style.transform = 'rotate(-45deg) translate(-5px, 6px)';
                     divs[1].style.opacity = '0';
                     divs[2].style.transform = 'rotate(45deg) translate(-5px, -6px)';
+                    // Force display style
+                    nav.style.display = 'flex';
                 } else {
                     // Hide menu
                     nav.classList.remove('show');
                     divs[0].style.transform = 'none';
                     divs[1].style.opacity = '1';
                     divs[2].style.transform = 'none';
+                    // Reset display style
+                    nav.style.display = '';
                 }
             }
 
+            // Add click event listener to hamburger menu
             if (hamburger) {
-                hamburger.addEventListener('click', function(e) {
+                console.log('Adding click event listener to hamburger menu');
+
+                // Remove any existing click listeners to avoid duplicates
+                hamburger.removeEventListener('click', hamburgerClickHandler);
+
+                // Define the click handler function
+                function hamburgerClickHandler(e) {
+                    console.log('Hamburger clicked');
                     e.preventDefault();
                     e.stopPropagation(); // Prevent event from bubbling up
                     toggleHamburgerMenu();
-                });
+                }
+
+                // Add the click event listener
+                hamburger.addEventListener('click', hamburgerClickHandler);
+
+                // Add a direct click handler as a fallback
+                hamburger.onclick = function(e) {
+                    console.log('Hamburger onclick triggered');
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    // Direct DOM manipulation as a fallback
+                    const navElement = document.getElementById('nav');
+                    if (navElement) {
+                        if (navElement.style.display === 'flex') {
+                            navElement.style.display = 'none';
+                            // Reset hamburger icon
+                            const divs = hamburger.querySelectorAll('div');
+                            divs[0].style.transform = 'none';
+                            divs[1].style.opacity = '1';
+                            divs[2].style.transform = 'none';
+                        } else {
+                            navElement.style.display = 'flex';
+                            // X shape
+                            const divs = hamburger.querySelectorAll('div');
+                            divs[0].style.transform = 'rotate(-45deg) translate(-5px, 6px)';
+                            divs[1].style.opacity = '0';
+                            divs[2].style.transform = 'rotate(45deg) translate(-5px, -6px)';
+                        }
+                    }
+                };
             }
 
             // Close navigation when clicking outside
@@ -791,21 +855,78 @@
 
             // Show hamburger on mobile
             function adjustForMobile() {
+                console.log('Adjusting for mobile, window width:', window.innerWidth);
+
                 if (window.innerWidth <= 900) {
-                    if (hamburger) hamburger.style.display = 'flex';
+                    // Mobile view
+                    if (hamburger) {
+                        hamburger.style.display = 'flex';
+                        console.log('Showing hamburger menu button');
+                    }
+
+                    // Make sure the nav menu is initially hidden on mobile
+                    if (nav) {
+                        // Only hide if not explicitly shown
+                        if (!nav.classList.contains('show')) {
+                            nav.style.display = 'none';
+                        }
+                    }
                 } else {
-                    if (hamburger) hamburger.style.display = 'none';
-                    if (nav && nav.classList.contains('show')) {
-                        // Hide the menu when resizing to desktop
-                        toggleHamburgerMenu(false);
+                    // Desktop view
+                    if (hamburger) {
+                        hamburger.style.display = 'none';
+                        console.log('Hiding hamburger menu button');
+                    }
+
+                    if (nav) {
+                        // Reset nav display for desktop
+                        nav.style.display = 'flex';
+
+                        if (nav.classList.contains('show')) {
+                            // Hide the menu when resizing to desktop
+                            toggleHamburgerMenu(false);
+                        }
                     }
                 }
             }
 
             // Initial check and add resize listener
             // Small delay to ensure all elements are loaded
-            setTimeout(adjustForMobile, 100);
+            setTimeout(() => {
+                adjustForMobile();
+
+                // Force a check of the hamburger menu state
+                if (window.innerWidth <= 900) {
+                    console.log('Initial mobile setup');
+
+                    // Make sure hamburger is visible
+                    if (hamburger) {
+                        hamburger.style.display = 'flex';
+                    }
+
+                    // Make sure nav is hidden initially
+                    if (nav) {
+                        nav.style.display = 'none';
+                        nav.classList.remove('show');
+                    }
+
+                    // Log the state of elements
+                    console.log('Initial state:', {
+                        hamburgerDisplay: hamburger ? hamburger.style.display : 'element not found',
+                        navDisplay: nav ? nav.style.display : 'element not found',
+                        navClassList: nav ? nav.classList : 'element not found'
+                    });
+                }
+            }, 100);
+
+            // Handle window resize
             window.addEventListener('resize', adjustForMobile);
+
+            // Add a load event listener to ensure everything is set up correctly
+            window.addEventListener('load', function() {
+                console.log('Window loaded, rechecking hamburger menu');
+                adjustForMobile();
+            });
 
             // Check for ban status
             checkBanStatus();
