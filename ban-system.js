@@ -2,12 +2,12 @@
  * Ban System for Tridex
  * This file contains all the functionality related to the user ban system.
  *
- * Version 2.3 - Enhanced real-time ban status checking with broadcast channel and improved unban handling
+ * Version 2.4 - Fixed ban/unban functionality with improved server synchronization and admin panel integration
  */
 
 // Initialize the ban system immediately
 (function() {
-    console.log('Ban System 2.3 initializing...');
+    console.log('Ban System 2.4 initializing...');
 
     // Create a global variable to track initialization
     window.banSystemInitialized = false;
@@ -33,7 +33,7 @@
                 checkServerBanStatus: checkServerBanStatus,
                 getBannedUsers: getBannedUsers,
                 debugBanSystem: debugBanSystem,
-                version: '2.3',
+                version: '2.4',
                 forceCheckBanStatus: forceCheckBanStatus
             };
 
@@ -81,9 +81,10 @@
                             banChannel.onmessage = function(event) {
                                 console.log('Ban System: Received broadcast message:', event.data);
 
-                                if (event.data && event.data.type === 'unban' && event.data.username) {
-                                    const currentUser = localStorage.getItem('username') || localStorage.getItem('currentUser');
+                                const currentUser = localStorage.getItem('username') || localStorage.getItem('currentUser');
 
+                                // Handle unban events
+                                if (event.data && event.data.type === 'unban' && event.data.username) {
                                     // If this is the unbanned user, clear ban flags and reload
                                     if (currentUser === event.data.username) {
                                         console.log(`Ban System: Received unban broadcast for current user ${currentUser}`);
@@ -112,6 +113,30 @@
                                         // Reload the page to reflect the unbanned status
                                         console.log('Ban System: Reloading page due to broadcast unban');
                                         window.location.reload();
+                                    }
+                                }
+
+                                // Handle ban events
+                                if (event.data && event.data.type === 'ban' && event.data.username) {
+                                    // If this is the banned user, show ban message and reload
+                                    if (currentUser === event.data.username) {
+                                        console.log(`Ban System: Received ban broadcast for current user ${currentUser}`);
+
+                                        // Set ban flags
+                                        sessionStorage.setItem('userBanned', 'true');
+                                        sessionStorage.setItem('showBanMessage', 'true');
+
+                                        // Add the user to the banned list
+                                        const bannedUsers = JSON.parse(localStorage.getItem('bannedUsers') || '[]');
+                                        if (!bannedUsers.includes(currentUser)) {
+                                            bannedUsers.push(currentUser);
+                                            localStorage.setItem('bannedUsers', JSON.stringify(bannedUsers));
+                                            sessionStorage.setItem('bannedUsers', JSON.stringify(bannedUsers));
+                                        }
+
+                                        // Show the ban message
+                                        console.log('Ban System: Showing ban message due to broadcast ban');
+                                        showBanMessage();
                                     }
                                 }
                             };
