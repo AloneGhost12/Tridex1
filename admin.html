@@ -609,6 +609,17 @@
                                 localStorage.setItem('bannedUsers', JSON.stringify(updatedList));
                                 sessionStorage.setItem('bannedUsers', JSON.stringify(updatedList));
 
+                                // Clear all ban-related flags for this user
+                                if (localStorage.getItem('bannedUsername') === user.username) {
+                                    localStorage.removeItem('bannedUsername');
+                                }
+                                if (localStorage.getItem('username') === user.username ||
+                                    localStorage.getItem('currentUser') === user.username) {
+                                    localStorage.removeItem('loginPageBanMessageShown');
+                                    sessionStorage.removeItem('userBanned');
+                                    sessionStorage.removeItem('showBanMessage');
+                                }
+
                                 // Then call the unban function
                                 const result = window.banSystem.unbanUser(user.username);
                                 console.log(`User ${user.username} unban result: ${result ? 'success' : 'failed'}`);
@@ -694,6 +705,17 @@
                                 const updatedList = bannedUsers.filter(u => u !== user.username);
                                 localStorage.setItem('bannedUsers', JSON.stringify(updatedList));
                                 sessionStorage.setItem('bannedUsers', JSON.stringify(updatedList));
+
+                                // Clear all ban-related flags for this user
+                                if (localStorage.getItem('bannedUsername') === user.username) {
+                                    localStorage.removeItem('bannedUsername');
+                                }
+                                if (localStorage.getItem('username') === user.username ||
+                                    localStorage.getItem('currentUser') === user.username) {
+                                    localStorage.removeItem('loginPageBanMessageShown');
+                                    sessionStorage.removeItem('userBanned');
+                                    sessionStorage.removeItem('showBanMessage');
+                                }
 
                                 // Then call the unban function
                                 const result = window.banSystem.unbanUser(user.username);
