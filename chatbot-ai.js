@@ -418,13 +418,17 @@ TridexChatbot.prototype.getStandardResponse = function(query) {
     }
 
     // Contact related queries
-    if (query.includes('contact') || query.includes('email') || query.includes('phone') || query.includes('address')) {
+    if (query.includes('contact') || query.includes('email') || query.includes('phone') || query.includes('address') || query === 'contact us') {
         return `
             Contact information:<br>
             - Email: tridex1332@gmail.com<br>
             - Phone: 8589838547<br>
             - Hours: Monday-Friday, 9am-5pm IST<br><br>
-            You can also use our <a href="#" onclick="window.tridexChatbot.escalateToSupport(); return false;">contact form</a> for inquiries.
+            For detailed inquiries, you can use our <a href="contact.html" target="_blank">contact form</a> to send us a message.<br><br>
+            <div class="chatbot-action-buttons">
+                <a href="contact.html" target="_blank" class="chatbot-action-button">Go to Contact Page</a>
+                <button onclick="window.tridexChatbot.escalateToSupport()" class="chatbot-action-button">Chat with Support</button>
+            </div>
         `;
     }
 
