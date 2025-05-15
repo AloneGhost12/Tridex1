@@ -1005,9 +1005,11 @@
             document.getElementById('product-image-file').value = '';
         }
         // Handle image file upload and processing
-        document.getElementById('product-image-file').addEventListener('change', async function(e) {
-            const file = e.target.files[0];
-            if (file) {
+        const productImageFileInput = document.getElementById('product-image-file');
+        if (productImageFileInput) {
+            productImageFileInput.addEventListener('change', async function(e) {
+                const file = e.target.files[0];
+                if (file) {
                 // Check file size (limit to 10MB for Cloudinary's free tier)
                 if (file.size > 10 * 1024 * 1024) {
                     alert('Image size exceeds 10MB, which is Cloudinary\'s limit. Please choose a smaller image.');
@@ -1104,6 +1106,7 @@
                 }
             }
         });
+        }
 
         // Function to upload image to Cloudinary using unsigned upload preset
         async function uploadToCloudinary(file, folderName = 'product_images') {
