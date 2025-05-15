@@ -261,39 +261,68 @@
             <div>
                 <div class="checkout-section">
                     <h2>Shipping Information</h2>
-                    <div class="form-group">
-                        <label for="fullname">Full Name</label>
-                        <input type="text" id="fullname" required>
+
+                    <!-- Saved Addresses Section (will be shown if user has saved addresses) -->
+                    <div id="saved-addresses-section" style="display:none; margin-bottom:20px;">
+                        <h3 style="font-size:1.1em; margin-bottom:10px;">Your Saved Addresses</h3>
+                        <div id="saved-addresses-list" style="margin-bottom:15px;">
+                            <!-- Saved addresses will be rendered here -->
+                        </div>
+                        <div style="margin-bottom:15px;">
+                            <button id="use-new-address-btn" type="button" style="background:#6c757d; padding:8px 15px; border:none; border-radius:4px; color:white; cursor:pointer;">
+                                Enter a New Address
+                            </button>
+                        </div>
+                        <hr style="margin:20px 0; border:0; border-top:1px solid #eee;">
                     </div>
-                    <div class="form-group">
-                        <label for="email">Email</label>
-                        <input type="email" id="email" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="phone">Phone</label>
-                        <input type="tel" id="phone" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="address">Address</label>
-                        <input type="text" id="address" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="city">City</label>
-                        <input type="text" id="city" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="state">State</label>
-                        <input type="text" id="state" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="postalCode">Postal Code</label>
-                        <input type="text" id="postalCode" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="country">Country</label>
-                        <select id="country" required>
-                            <option value="India">India</option>
-                        </select>
+
+                    <!-- New Address Form -->
+                    <div id="new-address-form">
+                        <div class="form-group">
+                            <label for="fullname">Full Name</label>
+                            <input type="text" id="fullname" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="email">Email</label>
+                            <input type="email" id="email" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="phone">Phone</label>
+                            <input type="tel" id="phone" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="address">Address</label>
+                            <input type="text" id="address" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="city">City</label>
+                            <input type="text" id="city" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="state">State</label>
+                            <input type="text" id="state" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="postalCode">Postal Code</label>
+                            <input type="text" id="postalCode" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="country">Country</label>
+                            <select id="country" required>
+                                <option value="India">India</option>
+                            </select>
+                        </div>
+
+                        <!-- Save Address Checkbox -->
+                        <div class="form-group" style="margin-top:15px;">
+                            <div style="display:flex; align-items:center;">
+                                <input type="checkbox" id="save-address" checked style="margin-right:10px; width:auto;">
+                                <label for="save-address" style="margin-bottom:0;">Save this address to my profile for future orders</label>
+                            </div>
+                            <p style="margin-top:5px; font-size:0.85em; color:#666;">
+                                You can edit or manage your saved addresses anytime from your profile page.
+                            </p>
+                        </div>
                     </div>
                 </div>
 
@@ -472,12 +501,120 @@
                         document.getElementById('fullname').value = user.name || '';
                         document.getElementById('email').value = user.email || '';
                         document.getElementById('phone').value = user.phone || '';
+
+                        // Fetch saved addresses
+                        fetchSavedAddresses();
                     }
                 })
                 .catch(error => {
                     console.error('Error fetching user profile:', error);
                 });
             }
+        }
+
+        // Fetch saved addresses
+        function fetchSavedAddresses() {
+            const username = localStorage.getItem('username') || localStorage.getItem('currentUser');
+            const token = localStorage.getItem('token');
+
+            if (!username || !token) {
+                return;
+            }
+
+            fetch('https://tridex1.onrender.com/users/addresses', {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'X-Username': username
+                }
+            })
+            .then(response => response.json())
+            .then(addresses => {
+                if (addresses && addresses.length > 0) {
+                    // Show saved addresses section
+                    document.getElementById('saved-addresses-section').style.display = 'block';
+
+                    // Render saved addresses
+                    renderSavedAddresses(addresses);
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching saved addresses:', error);
+            });
+        }
+
+        // Render saved addresses
+        function renderSavedAddresses(addresses) {
+            const addressesList = document.getElementById('saved-addresses-list');
+            addressesList.innerHTML = '';
+
+            addresses.forEach((address, index) => {
+                const addressCard = document.createElement('div');
+                addressCard.className = 'saved-address-card';
+                addressCard.style.cssText = 'border:1px solid #ddd; border-radius:8px; padding:15px; margin-bottom:10px; cursor:pointer; position:relative;';
+
+                if (address.isDefault) {
+                    addressCard.style.borderColor = '#007bff';
+                    addressCard.style.backgroundColor = '#f0f7ff';
+                }
+
+                addressCard.innerHTML = `
+                    <div style="display:flex; align-items:flex-start;">
+                        <input type="radio" name="saved-address" id="address-${index}" style="margin-right:10px; margin-top:3px;" ${address.isDefault ? 'checked' : ''}>
+                        <div>
+                            <div style="font-weight:600;">${address.name}</div>
+                            <div>${address.address}</div>
+                            <div>${address.city}, ${address.state} ${address.postalCode}</div>
+                            <div>${address.country}</div>
+                            <div>Phone: ${address.phone}</div>
+                            ${address.isDefault ? '<div style="color:#007bff; font-size:0.85em; margin-top:5px;">Default Address</div>' : ''}
+                        </div>
+                    </div>
+                `;
+
+                // Add click event to select address
+                addressCard.addEventListener('click', () => {
+                    // Select this address radio button
+                    document.getElementById(`address-${index}`).checked = true;
+
+                    // Update all address cards
+                    document.querySelectorAll('.saved-address-card').forEach(card => {
+                        card.style.borderColor = '#ddd';
+                        card.style.backgroundColor = '#fff';
+                    });
+
+                    // Highlight selected card
+                    addressCard.style.borderColor = '#007bff';
+                    addressCard.style.backgroundColor = '#f0f7ff';
+
+                    // Hide new address form
+                    document.getElementById('new-address-form').style.display = 'none';
+                });
+
+                addressesList.appendChild(addressCard);
+            });
+
+            // Add event listener for "Enter a New Address" button
+            document.getElementById('use-new-address-btn').addEventListener('click', () => {
+                // Uncheck all saved address radio buttons
+                document.querySelectorAll('input[name="saved-address"]').forEach(radio => {
+                    radio.checked = false;
+                });
+
+                // Reset address card styles
+                document.querySelectorAll('.saved-address-card').forEach(card => {
+                    card.style.borderColor = '#ddd';
+                    card.style.backgroundColor = '#fff';
+
+                    // Restore default address styling
+                    if (card.querySelector('div[style*="Default Address"]')) {
+                        card.style.borderColor = '#007bff';
+                        card.style.backgroundColor = '#f0f7ff';
+                    }
+                });
+
+                // Show new address form
+                document.getElementById('new-address-form').style.display = 'block';
+            });
         }
 
         // Set up event listeners
@@ -507,52 +644,148 @@
 
         // Place order
         function placeOrder() {
-            // Validate form
-            if (!validateForm()) {
+            // Check if using a saved address or new address
+            const usingSavedAddress = document.querySelector('input[name="saved-address"]:checked');
+
+            // Validate form if using new address
+            if (!usingSavedAddress && !validateForm()) {
                 return;
             }
 
             // Show loading overlay
             showLoading();
 
-            // Get form data
-            const orderData = {
-                user: {
-                    username: localStorage.getItem('username') || localStorage.getItem('currentUser'),
-                    email: document.getElementById('email').value,
-                    phone: document.getElementById('phone').value
-                },
-                items: cart.map(item => ({
-                    productId: item._id,
-                    name: item.name,
-                    price: Number(item.price),
-                    quantity: 1,
-                    image: item.image
-                })),
-                shipping: {
+            // Get shipping information
+            let shippingInfo = {};
+
+            if (usingSavedAddress) {
+                // Get the selected address index
+                const addressIndex = usingSavedAddress.id.split('-')[1];
+
+                // Fetch the address data from the server
+                fetch('https://tridex1.onrender.com/users/addresses', {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                        'X-Username': localStorage.getItem('username') || localStorage.getItem('currentUser')
+                    }
+                })
+                .then(response => response.json())
+                .then(addresses => {
+                    if (addresses && addresses.length > parseInt(addressIndex)) {
+                        const selectedAddress = addresses[parseInt(addressIndex)];
+
+                        // Use the selected address
+                        shippingInfo = {
+                            name: selectedAddress.name,
+                            address: selectedAddress.address,
+                            city: selectedAddress.city,
+                            state: selectedAddress.state,
+                            postalCode: selectedAddress.postalCode,
+                            country: selectedAddress.country,
+                            phone: selectedAddress.phone
+                        };
+
+                        // Continue with order processing
+                        processOrder(shippingInfo);
+                    } else {
+                        // Fall back to form data if address not found
+                        useFormDataForShipping();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching saved address:', error);
+                    // Fall back to form data if there's an error
+                    useFormDataForShipping();
+                });
+            } else {
+                // Use form data for shipping
+                useFormDataForShipping();
+            }
+
+            // Function to use form data for shipping
+            function useFormDataForShipping() {
+                shippingInfo = {
                     name: document.getElementById('fullname').value,
                     address: document.getElementById('address').value,
                     city: document.getElementById('city').value,
                     state: document.getElementById('state').value,
                     postalCode: document.getElementById('postalCode').value,
-                    country: document.getElementById('country').value
-                },
-                payment: {
-                    method: selectedPaymentMethod,
-                    amount: total,
-                    currency: 'INR'
-                },
-                totalAmount: total,
-                shippingFee: shipping,
-                tax: tax
-            };
+                    country: document.getElementById('country').value,
+                    phone: document.getElementById('phone').value
+                };
 
-            // Process based on payment method
-            if (selectedPaymentMethod === 'razorpay') {
-                processRazorpayPayment(orderData);
-            } else if (selectedPaymentMethod === 'cod') {
-                processCashOnDelivery(orderData);
+                // Save address if checkbox is checked
+                const saveAddress = document.getElementById('save-address').checked;
+                if (saveAddress) {
+                    saveShippingAddress(shippingInfo);
+                }
+
+                // Continue with order processing
+                processOrder(shippingInfo);
             }
+
+            // Function to process the order with shipping info
+            function processOrder(shipping) {
+                // Get form data
+                const orderData = {
+                    user: {
+                        username: localStorage.getItem('username') || localStorage.getItem('currentUser'),
+                        email: document.getElementById('email').value,
+                        phone: document.getElementById('phone').value
+                    },
+                    items: cart.map(item => ({
+                        productId: item._id,
+                        name: item.name,
+                        price: Number(item.price),
+                        quantity: 1,
+                        image: item.image
+                    })),
+                    shipping: shipping,
+                    payment: {
+                        method: selectedPaymentMethod,
+                        amount: total,
+                        currency: 'INR'
+                    },
+                    totalAmount: total,
+                    shippingFee: shipping,
+                    tax: tax
+                };
+
+                // Process based on payment method
+                if (selectedPaymentMethod === 'razorpay') {
+                    processRazorpayPayment(orderData);
+                } else if (selectedPaymentMethod === 'cod') {
+                    processCashOnDelivery(orderData);
+                }
+            }
+        }
+
+        // Save shipping address to user profile
+        function saveShippingAddress(addressData) {
+            const username = localStorage.getItem('username') || localStorage.getItem('currentUser');
+            const token = localStorage.getItem('token');
+
+            if (!username || !token) {
+                return;
+            }
+
+            // Add default flag (first address will be default)
+            fetch('https://tridex1.onrender.com/users/addresses', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                    'X-Username': username
+                },
+                body: JSON.stringify(addressData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Address saved successfully:', data);
+            })
+            .catch(error => {
+                console.error('Error saving address:', error);
+            });
         }
 
         // Validate form
