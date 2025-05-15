@@ -27,6 +27,9 @@
             <p style="margin:0 0 10px 0; font-size:1.3em; color:#d32f2f; font-weight:bold;">Account Banned</p>
             <p style="margin:0 0 15px 0; font-size:1.1em; color:#555; line-height:1.5;">Your account has been banned by the administrator. You no longer have access to this site.</p>
             <p style="margin:0; font-size:0.9em; color:#777;">For more information, please contact support at <a href="mailto:tridex1332@gmail.com" style="color:#007bff;">tridex1332@gmail.com</a></p>
+            <div id="banned-username" style="margin-top:15px; font-size:0.9em; color:#555; font-style:italic; display:none;">
+                Username: <span id="banned-username-value" style="font-weight:bold;"></span>
+            </div>
         </div>
         <form id="login-form" action="index.html" method="get">
             <label for="username">Username</label>
@@ -39,10 +42,7 @@
                     👁️
                 </span>
             </div>
-            <div style="display:flex; align-items:center; margin-top:10px; margin-bottom:10px;">
-                <input type="checkbox" id="policy-acceptance" name="policy-acceptance" required style="width:auto; margin-right:10px;">
-                <label for="policy-acceptance" style="margin:0; font-size:0.9rem;">I accept the Terms of Service and Privacy Policy</label>
-            </div>
+
             <button type="submit">Login</button>
         </form>
         <div id="login-error" style="color:red; margin-top:10px; display:none;">
@@ -116,7 +116,7 @@
         console.log('Login page ban check initializing');
 
         // Function to show the ban message
-        function showBanMessage() {
+        function showBanMessage(username) {
             console.log('Showing ban message on login page');
 
             // Show the ban message
@@ -143,6 +143,17 @@
                     document.head.appendChild(style);
                 }
 
+                // Show the banned username if available
+                if (username) {
+                    const bannedUsernameElement = document.getElementById('banned-username');
+                    const bannedUsernameValue = document.getElementById('banned-username-value');
+
+                    if (bannedUsernameElement && bannedUsernameValue) {
+                        bannedUsernameValue.textContent = username;
+                        bannedUsernameElement.style.display = 'block';
+                    }
+                }
+
                 // Scroll to the ban message
                 banMessage.scrollIntoView({ behavior: 'smooth', block: 'center' });
             } else {
@@ -160,6 +171,12 @@
             localStorage.removeItem('isLoggedIn');
             localStorage.removeItem('username');
             localStorage.removeItem('currentUser');
+
+            // Store the ban status in localStorage to ensure it persists across page refreshes
+            localStorage.setItem('loginPageBanMessageShown', 'true');
+
+            // Keep the ban flags in sessionStorage to ensure they're available for other pages
+            sessionStorage.setItem('userBanned', 'true');
         }
 
         // Function to check if the user is banned
@@ -167,22 +184,34 @@
             try {
                 console.log('Checking ban status on login page');
 
+                // Get any banned username from URL or storage
+                let bannedUsername = new URLSearchParams(window.location.search).get('bannedUser');
+                if (!bannedUsername) {
+                    bannedUsername = localStorage.getItem('bannedUsername') || sessionStorage.getItem('bannedUsername');
+                } else {
+                    // Store the banned username for future reference
+                    localStorage.setItem('bannedUsername', bannedUsername);
+                }
+
+                // Check if the ban message was already shown on this page
+                if (localStorage.getItem('loginPageBanMessageShown') === 'true') {
+                    console.log('Ban message already shown on login page');
+                    showBanMessage(bannedUsername);
+                    return true;
+                }
+
                 // Check if the user was redirected here due to a ban
                 const banRedirect = new URLSearchParams(window.location.search).get('banned');
                 if (banRedirect === 'true') {
                     console.log('User was redirected here due to a ban parameter in URL');
-                    showBanMessage();
+                    showBanMessage(bannedUsername);
                     return true;
                 }
 
                 // Check if there's a flag to show the ban message
                 if (sessionStorage.getItem('showBanMessage') === 'true' || sessionStorage.getItem('userBanned') === 'true') {
                     console.log('Ban flag found in sessionStorage');
-                    showBanMessage();
-
-                    // Clear the flags after showing the message
-                    sessionStorage.removeItem('showBanMessage');
-                    sessionStorage.removeItem('userBanned');
+                    showBanMessage(bannedUsername);
                     return true;
                 }
 
@@ -190,7 +219,9 @@
                 const username = localStorage.getItem('username') || localStorage.getItem('currentUser');
                 if (username && window.banSystem && window.banSystem.isUserBanned(username)) {
                     console.log(`User ${username} is banned according to ban system`);
-                    showBanMessage();
+                    showBanMessage(username);
+                    // Store the banned username for future reference
+                    localStorage.setItem('bannedUsername', username);
                     return true;
                 }
 
@@ -200,13 +231,19 @@
                         const bannedUsers = JSON.parse(localStorage.getItem('bannedUsers') || '[]');
                         if (bannedUsers.includes(username)) {
                             console.log(`User ${username} found in banned users list`);
-                            showBanMessage();
+                            showBanMessage(username);
+                            // Store the banned username for future reference
+                            localStorage.setItem('bannedUsername', username);
                             return true;
                         }
                     } catch (error) {
                         console.error('Error parsing banned users list:', error);
                     }
                 }
+
+                // If we get here, the user is not banned, so clear any ban flags
+                localStorage.removeItem('loginPageBanMessageShown');
+                localStorage.removeItem('bannedUsername');
 
                 return false;
             } catch (error) {
@@ -237,7 +274,9 @@
 
         // Hide any previous error messages
         document.getElementById('login-error').style.display = 'none';
-        document.getElementById('login-ban-message').style.display = 'none';
+
+        // Don't hide the ban message if it's already shown
+        // document.getElementById('login-ban-message').style.display = 'none';
 
         // Show loading indicator
         showLoading();
@@ -267,18 +306,15 @@
                 void banMessage.offsetWidth; // Trigger reflow
                 banMessage.style.animation = 'pulse 1s ease-in-out';
 
-                // Add a pulse animation if it doesn't exist
-                if (!document.getElementById('ban-pulse-animation')) {
-                    const style = document.createElement('style');
-                    style.id = 'ban-pulse-animation';
-                    style.textContent = `
-                        @keyframes pulse {
-                            0% { transform: scale(1); }
-                            50% { transform: scale(1.02); }
-                            100% { transform: scale(1); }
-                        }
-                    `;
-                    document.head.appendChild(style);
+                // Show the banned username if available
+                if (username) {
+                    const bannedUsernameElement = document.getElementById('banned-username');
+                    const bannedUsernameValue = document.getElementById('banned-username-value');
+
+                    if (bannedUsernameElement && bannedUsernameValue) {
+                        bannedUsernameValue.textContent = username;
+                        bannedUsernameElement.style.display = 'block';
+                    }
                 }
 
                 // Scroll to the ban message
@@ -291,17 +327,34 @@
             localStorage.removeItem('username');
             localStorage.removeItem('currentUser');
 
-            // Set a flag in sessionStorage to remember the ban status
+            // Set flags to remember the ban status
             sessionStorage.setItem('userBanned', 'true');
+            localStorage.setItem('loginPageBanMessageShown', 'true');
+
+            // Store the banned username for future reference
+            localStorage.setItem('bannedUsername', username);
 
             // Hide loading overlay
             hideLoading();
+
+            // Disable the login form
+            document.getElementById('username').disabled = true;
+            document.getElementById('password').disabled = true;
+            document.querySelector('#login-form button[type="submit"]').disabled = true;
         }
 
-        // Check if user is banned using multiple methods
+        // Always check if user is banned before attempting to log in
+
+        // First check if the ban message is already shown
+        if (localStorage.getItem('loginPageBanMessageShown') === 'true') {
+            console.log('Ban message already shown on login page');
+            handleBannedUser(userInput);
+            return;
+        }
 
         // Method 1: Check using the ban system
         if (window.banSystem && window.banSystem.isUserBanned(userInput)) {
+            console.log(`User ${userInput} is banned according to ban system`);
             handleBannedUser(userInput);
             return;
         }
@@ -310,6 +363,8 @@
         try {
             const bannedUsers = JSON.parse(localStorage.getItem('bannedUsers') || '[]');
             if (bannedUsers.includes(userInput)) {
+                console.log(`User ${userInput} found in banned users list`);
+
                 // If the user is in the banned list but not detected by the ban system,
                 // make sure the ban system is updated
                 if (window.banSystem) {
@@ -322,6 +377,8 @@
         } catch (error) {
             console.error('Error checking banned users list:', error);
         }
+
+        // Method 3: Check with the server (will be done during login attempt)
 
         try {
             console.log('Attempting to login with:', { username: userInput });
