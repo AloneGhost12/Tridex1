@@ -10,6 +10,7 @@ const Category = require('./models/Category');
 const Announcement = require('./models/Announcement');
 const ChatInteraction = require('./models/ChatInteraction');
 const ContactMessage = require('./models/ContactMessage');
+const Order = require('./models/Order');
 const { generateProductSummary } = require('./utils/aiSummaryGenerator');
 
 // Load environment variables
@@ -1851,6 +1852,101 @@ app.get('/contact/messages/:id/attachment', async (req, res) => {
     } catch (err) {
         console.error('Error downloading attachment:', err);
         res.status(500).json({ message: 'Error downloading attachment' });
+    }
+});
+
+// ========== ORDER ROUTES ==========
+
+// Create a new order
+app.post('/orders/create', async (req, res) => {
+    try {
+        // Extract order data from request body
+        const orderData = req.body;
+
+        // Create new order
+        const newOrder = new Order(orderData);
+
+        // Save order to database
+        const savedOrder = await newOrder.save();
+
+        // Return order ID
+        res.status(201).json({
+            message: 'Order created successfully',
+            orderId: savedOrder._id
+        });
+    } catch (err) {
+        console.error('Error creating order:', err);
+        res.status(500).json({
+            error: 'Error creating order',
+            details: err.message
+        });
+    }
+});
+
+// Get order by ID
+app.get('/orders/:id', async (req, res) => {
+    try {
+        const order = await Order.findById(req.params.id);
+
+        if (!order) {
+            return res.status(404).json({ error: 'Order not found' });
+        }
+
+        res.json(order);
+    } catch (err) {
+        console.error('Error fetching order:', err);
+        res.status(500).json({ error: 'Error fetching order' });
+    }
+});
+
+// Update order payment status
+app.put('/orders/:id/payment', async (req, res) => {
+    try {
+        const { transactionId, status } = req.body;
+
+        // Find order
+        const order = await Order.findById(req.params.id);
+
+        if (!order) {
+            return res.status(404).json({ error: 'Order not found' });
+        }
+
+        // Update payment information
+        order.payment.transactionId = transactionId;
+        order.payment.status = status;
+        order.payment.paymentDate = new Date();
+
+        // If payment is completed, update order status
+        if (status === 'completed') {
+            order.status = 'processing';
+        }
+
+        // Save updated order
+        await order.save();
+
+        res.json({
+            message: 'Payment updated successfully',
+            order
+        });
+    } catch (err) {
+        console.error('Error updating payment:', err);
+        res.status(500).json({ error: 'Error updating payment' });
+    }
+});
+
+// Get user orders
+app.get('/orders/user/:username', async (req, res) => {
+    try {
+        const username = req.params.username;
+
+        // Find orders for user
+        const orders = await Order.find({ 'user.username': username })
+            .sort({ createdAt: -1 });
+
+        res.json(orders);
+    } catch (err) {
+        console.error('Error fetching user orders:', err);
+        res.status(500).json({ error: 'Error fetching user orders' });
     }
 });
 
