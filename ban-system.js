@@ -2,12 +2,12 @@
  * Ban System for Tridex
  * This file contains all the functionality related to the user ban system.
  *
- * Version 2.4 - Fixed ban/unban functionality with improved server synchronization and admin panel integration
+ * Version 2.5 - Enhanced ban message persistence and improved user experience for banned users
  */
 
 // Initialize the ban system immediately
 (function() {
-    console.log('Ban System 2.4 initializing...');
+    console.log('Ban System 2.5 initializing...');
 
     // Create a global variable to track initialization
     window.banSystemInitialized = false;
@@ -33,7 +33,7 @@
                 checkServerBanStatus: checkServerBanStatus,
                 getBannedUsers: getBannedUsers,
                 debugBanSystem: debugBanSystem,
-                version: '2.4',
+                version: '2.5',
                 forceCheckBanStatus: forceCheckBanStatus
             };
 
@@ -488,9 +488,12 @@ function setupBanButtonHandlers() {
                     banMessage.remove();
                 }
 
-                // Redirect to login page with banned parameter
+                // Get the current username
+                const username = localStorage.getItem('username') || localStorage.getItem('currentUser');
+
+                // Redirect to login page with banned parameter and username
                 console.log('Ban System: Redirecting to login page with banned parameter');
-                window.location.href = 'login.html?banned=true';
+                window.location.href = `login.html?banned=true&bannedUser=${encodeURIComponent(username || '')}`;
             };
 
             // Add hover effect to the button
