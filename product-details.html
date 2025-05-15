@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Product Details</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="css/product-media-gallery.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
     <style>
         /* Main container styles */
@@ -41,7 +42,8 @@
             position: relative;
         }
 
-        .product-image-section img {
+        /* Legacy image style (for backward compatibility) */
+        .product-image-section img.legacy-image {
             width: 100%;
             height: 400px;
             object-fit: contain;
@@ -571,7 +573,35 @@
             document.getElementById('product-details-container').innerHTML = `
                 <div class="product-details-wrapper">
                     <div class="product-image-section">
-                        <img src="${currentProduct.image}" alt="${currentProduct.name}">
+                        ${currentProduct.media && currentProduct.media.length > 0 ? `
+                        <!-- Product Gallery -->
+                        <div class="product-gallery">
+                            <div class="gallery-main-image" id="gallery-main-container">
+                                <!-- Main image or video will be displayed here -->
+                            </div>
+
+                            <div class="gallery-thumbnails" id="gallery-thumbnails">
+                                <!-- Thumbnails will be displayed here -->
+                            </div>
+
+                            ${currentProduct.media.length > 1 ? `
+                            <div class="gallery-nav prev" id="gallery-prev">
+                                <i class="fas fa-chevron-left"></i>
+                            </div>
+                            <div class="gallery-nav next" id="gallery-next">
+                                <i class="fas fa-chevron-right"></i>
+                            </div>
+                            ` : ''}
+
+                            <div class="swipe-indicator">
+                                <i class="fas fa-hand-point-up"></i> Swipe to view more
+                            </div>
+                        </div>
+                        ` : `
+                        <!-- Legacy Image (for backward compatibility) -->
+                        <img class="legacy-image" src="${currentProduct.image}" alt="${currentProduct.name}">
+                        `}
+
                         <div class="wishlist-icon ${isInWishlist ? 'active' : ''}" id="wishlist-toggle">
                             <i class="fas fa-heart"></i>
                         </div>
@@ -733,6 +763,151 @@
 
             // Submit review button
             document.getElementById('submit-review-btn').addEventListener('click', submitReview);
+
+            // Initialize product gallery if it exists
+            if (currentProduct.media && currentProduct.media.length > 0) {
+                initProductGallery();
+            }
+        }
+
+        // Initialize product gallery
+        function initProductGallery() {
+            // Sort media items by order and ensure primary item is first
+            const mediaItems = [...currentProduct.media].sort((a, b) => {
+                // Primary item always comes first
+                if (a.isPrimary && !b.isPrimary) return -1;
+                if (!a.isPrimary && b.isPrimary) return 1;
+                // Then sort by order
+                return a.order - b.order;
+            });
+
+            // If no media items, return
+            if (mediaItems.length === 0) return;
+
+            // Get gallery elements
+            const mainContainer = document.getElementById('gallery-main-container');
+            const thumbnailsContainer = document.getElementById('gallery-thumbnails');
+
+            // Clear containers
+            mainContainer.innerHTML = '';
+            thumbnailsContainer.innerHTML = '';
+
+            // Current media index
+            let currentIndex = 0;
+
+            // Function to display media item
+            function displayMediaItem(index) {
+                // Update current index
+                currentIndex = index;
+
+                // Get media item
+                const item = mediaItems[index];
+
+                // Update main container
+                if (item.type === 'image') {
+                    mainContainer.innerHTML = `<img src="${item.url}" alt="${item.altText || currentProduct.name}">`;
+                } else if (item.type === 'video') {
+                    mainContainer.innerHTML = `
+                        <div class="gallery-main-video">
+                            <video controls>
+                                <source src="${item.url}" type="video/mp4">
+                                Your browser does not support the video tag.
+                            </video>
+                        </div>
+                    `;
+                }
+
+                // Update active thumbnail
+                const thumbnails = thumbnailsContainer.querySelectorAll('.gallery-thumbnail');
+                thumbnails.forEach((thumb, i) => {
+                    if (i === index) {
+                        thumb.classList.add('active');
+                    } else {
+                        thumb.classList.remove('active');
+                    }
+                });
+            }
+
+            // Create thumbnails
+            mediaItems.forEach((item, index) => {
+                const thumbnail = document.createElement('div');
+                thumbnail.className = `gallery-thumbnail ${index === 0 ? 'active' : ''}`;
+
+                if (item.type === 'image') {
+                    thumbnail.innerHTML = `<img src="${item.url}" alt="${item.altText || currentProduct.name}">`;
+                } else if (item.type === 'video') {
+                    thumbnail.className += ' gallery-thumbnail-video';
+                    thumbnail.innerHTML = `<img src="${item.thumbnail || 'https://via.placeholder.com/80?text=Video'}" alt="Video">`;
+                }
+
+                // Add click event
+                thumbnail.addEventListener('click', () => {
+                    displayMediaItem(index);
+                });
+
+                thumbnailsContainer.appendChild(thumbnail);
+            });
+
+            // Display first media item
+            displayMediaItem(0);
+
+            // Add navigation events if there are multiple media items
+            if (mediaItems.length > 1) {
+                // Previous button
+                const prevBtn = document.getElementById('gallery-prev');
+                if (prevBtn) {
+                    prevBtn.addEventListener('click', () => {
+                        const newIndex = (currentIndex - 1 + mediaItems.length) % mediaItems.length;
+                        displayMediaItem(newIndex);
+                    });
+                }
+
+                // Next button
+                const nextBtn = document.getElementById('gallery-next');
+                if (nextBtn) {
+                    nextBtn.addEventListener('click', () => {
+                        const newIndex = (currentIndex + 1) % mediaItems.length;
+                        displayMediaItem(newIndex);
+                    });
+                }
+
+                // Add swipe support for mobile
+                let touchStartX = 0;
+                let touchEndX = 0;
+
+                mainContainer.addEventListener('touchstart', (e) => {
+                    touchStartX = e.changedTouches[0].screenX;
+                });
+
+                mainContainer.addEventListener('touchend', (e) => {
+                    touchEndX = e.changedTouches[0].screenX;
+                    handleSwipe();
+                });
+
+                function handleSwipe() {
+                    const swipeThreshold = 50;
+                    if (touchEndX < touchStartX - swipeThreshold) {
+                        // Swipe left (next)
+                        const newIndex = (currentIndex + 1) % mediaItems.length;
+                        displayMediaItem(newIndex);
+                    } else if (touchEndX > touchStartX + swipeThreshold) {
+                        // Swipe right (previous)
+                        const newIndex = (currentIndex - 1 + mediaItems.length) % mediaItems.length;
+                        displayMediaItem(newIndex);
+                    }
+                }
+
+                // Add keyboard navigation
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'ArrowLeft') {
+                        const newIndex = (currentIndex - 1 + mediaItems.length) % mediaItems.length;
+                        displayMediaItem(newIndex);
+                    } else if (e.key === 'ArrowRight') {
+                        const newIndex = (currentIndex + 1) % mediaItems.length;
+                        displayMediaItem(newIndex);
+                    }
+                });
+            }
         }
 
         // Toggle wishlist status

@@ -694,10 +694,28 @@ app.get('/products', async (req, res) => {
 
 app.post('/products', async (req, res) => {
     try {
-        const { name, image, desc, price, category } = req.body;
+        const { name, image, desc, price, category, media } = req.body;
 
-        // Create product object
-        const product = new Product({ name, image, desc, price, category });
+        // Create product object with basic fields
+        const productData = {
+            name,
+            desc,
+            price,
+            category
+        };
+
+        // Handle legacy image field
+        if (image) {
+            productData.image = image;
+        }
+
+        // Handle media array if provided
+        if (media && Array.isArray(media) && media.length > 0) {
+            productData.media = media;
+        }
+
+        // Create the product
+        const product = new Product(productData);
 
         // If category is provided, populate it to get category details for AI summary
         if (category) {
@@ -743,47 +761,86 @@ app.post('/products', async (req, res) => {
 
 app.put('/products/:id', async (req, res) => {
     try {
-        const { name, image, desc, price, category } = req.body;
+        const { name, image, desc, price, category, media } = req.body;
 
-        // Prepare update object
-        const updateData = { name, image, desc, price, category };
+        // Prepare update object with basic fields
+        const updateData = {};
+
+        // Only update fields that are provided
+        if (name !== undefined) updateData.name = name;
+        if (desc !== undefined) updateData.desc = desc;
+        if (price !== undefined) updateData.price = price;
+        if (category !== undefined) updateData.category = category;
+
+        // Handle legacy image field
+        if (image !== undefined) {
+            updateData.image = image;
+        }
+
+        // Handle media array if provided
+        if (media && Array.isArray(media)) {
+            updateData.media = media;
+        }
+
+        // Set the updatedAt timestamp
+        updateData.updatedAt = Date.now();
 
         // Generate new AI summary if product details have changed
-        if (category) {
-            try {
-                const categoryDetails = await Category.findById(category);
-                if (categoryDetails) {
-                    // Generate AI summary with category details
-                    const aiSummary = generateProductSummary({
-                        name,
-                        desc,
-                        price,
-                        category: categoryDetails
-                    });
+        if (name !== undefined || desc !== undefined || price !== undefined || category !== undefined) {
+            // Get current product data to ensure we have all fields for AI summary
+            const currentProduct = await Product.findById(req.params.id).populate('category');
 
-                    // Add AI summary to update data
-                    updateData.aiSummary = aiSummary;
+            if (!currentProduct) {
+                return res.status(404).json({ message: 'Product not found' });
+            }
+
+            // Prepare data for AI summary generation
+            const summaryData = {
+                name: name !== undefined ? name : currentProduct.name,
+                desc: desc !== undefined ? desc : currentProduct.desc,
+                price: price !== undefined ? price : currentProduct.price,
+                category: null
+            };
+
+            // Get category details if available
+            if (category) {
+                try {
+                    const categoryDetails = await Category.findById(category);
+                    if (categoryDetails) {
+                        summaryData.category = categoryDetails;
+                    }
+                } catch (error) {
+                    console.error('Error fetching category details:', error);
                 }
+            } else if (currentProduct.category) {
+                summaryData.category = currentProduct.category;
+            }
+
+            // Generate AI summary
+            try {
+                const aiSummary = generateProductSummary(summaryData);
+                updateData.aiSummary = aiSummary;
             } catch (error) {
                 console.error('Error generating AI summary during update:', error);
                 // Continue without updating AI summary if there's an error
             }
-        } else {
-            // Generate AI summary without category
-            const aiSummary = generateProductSummary({
-                name,
-                desc,
-                price,
-                category: null
-            });
-
-            // Add AI summary to update data
-            updateData.aiSummary = aiSummary;
         }
 
         // Update product
-        await Product.findByIdAndUpdate(req.params.id, updateData);
-        res.json({ message: 'Product updated' });
+        const updatedProduct = await Product.findByIdAndUpdate(
+            req.params.id,
+            updateData,
+            { new: true } // Return the updated document
+        );
+
+        if (!updatedProduct) {
+            return res.status(404).json({ message: 'Product not found' });
+        }
+
+        res.json({
+            message: 'Product updated',
+            product: updatedProduct
+        });
     } catch (err) {
         console.error('Error updating product:', err);
         res.status(500).json({ message: 'Error updating product' });
@@ -874,6 +931,208 @@ app.post('/products/regenerate-all-summaries', async (req, res) => {
     }
 });
 
+// ========== PRODUCT MEDIA ENDPOINTS ==========
+
+// Add media to a product
+app.post('/products/:id/media', async (req, res) => {
+    try {
+        const { media } = req.body;
+
+        if (!media || !Array.isArray(media) || media.length === 0) {
+            return res.status(400).json({ message: 'No media provided' });
+        }
+
+        // Find the product
+        const product = await Product.findById(req.params.id);
+
+        if (!product) {
+            return res.status(404).json({ message: 'Product not found' });
+        }
+
+        // Initialize media array if it doesn't exist
+        if (!product.media) {
+            product.media = [];
+        }
+
+        // Get the current highest order value
+        const highestOrder = product.media.length > 0
+            ? Math.max(...product.media.map(m => m.order || 0))
+            : -1;
+
+        // Add order to new media items if not provided
+        media.forEach((item, index) => {
+            if (item.order === undefined) {
+                item.order = highestOrder + index + 1;
+            }
+
+            // Set the first media item as primary if no primary exists
+            if (product.media.length === 0 && index === 0) {
+                item.isPrimary = true;
+            }
+        });
+
+        // Add new media to the product
+        product.media.push(...media);
+
+        // Update the image field if there's no image but we have a primary image in media
+        if (!product.image) {
+            const primaryImage = product.media.find(m => m.isPrimary && m.type === 'image');
+            if (primaryImage) {
+                product.image = primaryImage.url;
+            }
+        }
+
+        // Save the product
+        await product.save();
+
+        res.json({
+            message: 'Media added to product',
+            product
+        });
+    } catch (err) {
+        console.error('Error adding media to product:', err);
+        res.status(500).json({ message: 'Error adding media to product' });
+    }
+});
+
+// Remove media from a product
+app.delete('/products/:id/media/:mediaId', async (req, res) => {
+    try {
+        // Find the product
+        const product = await Product.findById(req.params.id);
+
+        if (!product) {
+            return res.status(404).json({ message: 'Product not found' });
+        }
+
+        // Check if product has media
+        if (!product.media || product.media.length === 0) {
+            return res.status(404).json({ message: 'Product has no media' });
+        }
+
+        // Find the media item
+        const mediaIndex = product.media.findIndex(m => m._id.toString() === req.params.mediaId);
+
+        if (mediaIndex === -1) {
+            return res.status(404).json({ message: 'Media not found' });
+        }
+
+        // Check if this is the primary media
+        const isRemovingPrimary = product.media[mediaIndex].isPrimary;
+
+        // Remove the media item
+        const removedMedia = product.media.splice(mediaIndex, 1)[0];
+
+        // If we removed the primary media, set a new primary
+        if (isRemovingPrimary && product.media.length > 0) {
+            // Find the first image to set as primary
+            const firstImage = product.media.find(m => m.type === 'image');
+            if (firstImage) {
+                firstImage.isPrimary = true;
+                product.image = firstImage.url;
+            }
+        }
+
+        // If we removed the last media item, clear the image field
+        if (product.media.length === 0) {
+            product.image = null;
+        }
+
+        // Save the product
+        await product.save();
+
+        res.json({
+            message: 'Media removed from product',
+            removedMedia,
+            product
+        });
+    } catch (err) {
+        console.error('Error removing media from product:', err);
+        res.status(500).json({ message: 'Error removing media from product' });
+    }
+});
+
+// Update media order or set primary media
+app.put('/products/:id/media', async (req, res) => {
+    try {
+        const { mediaUpdates } = req.body;
+
+        if (!mediaUpdates || !Array.isArray(mediaUpdates) || mediaUpdates.length === 0) {
+            return res.status(400).json({ message: 'No media updates provided' });
+        }
+
+        // Find the product
+        const product = await Product.findById(req.params.id);
+
+        if (!product) {
+            return res.status(404).json({ message: 'Product not found' });
+        }
+
+        // Check if product has media
+        if (!product.media || product.media.length === 0) {
+            return res.status(404).json({ message: 'Product has no media' });
+        }
+
+        // Track if we need to update the primary image
+        let primaryChanged = false;
+        let newPrimaryUrl = null;
+
+        // Apply updates to each media item
+        mediaUpdates.forEach(update => {
+            const mediaItem = product.media.id(update.mediaId);
+
+            if (mediaItem) {
+                // Update order if provided
+                if (update.order !== undefined) {
+                    mediaItem.order = update.order;
+                }
+
+                // Update isPrimary if provided
+                if (update.isPrimary !== undefined) {
+                    // If setting this as primary, unset any existing primary
+                    if (update.isPrimary) {
+                        product.media.forEach(m => {
+                            if (m._id.toString() !== update.mediaId) {
+                                m.isPrimary = false;
+                            }
+                        });
+
+                        mediaItem.isPrimary = true;
+
+                        // If this is an image, update the image field
+                        if (mediaItem.type === 'image') {
+                            primaryChanged = true;
+                            newPrimaryUrl = mediaItem.url;
+                        }
+                    } else {
+                        mediaItem.isPrimary = false;
+                    }
+                }
+
+                // Update other fields if provided
+                if (update.altText !== undefined) mediaItem.altText = update.altText;
+                if (update.caption !== undefined) mediaItem.caption = update.caption;
+            }
+        });
+
+        // Update the image field if primary changed
+        if (primaryChanged && newPrimaryUrl) {
+            product.image = newPrimaryUrl;
+        }
+
+        // Save the product
+        await product.save();
+
+        res.json({
+            message: 'Media updated',
+            product
+        });
+    } catch (err) {
+        console.error('Error updating product media:', err);
+        res.status(500).json({ message: 'Error updating product media' });
+    }
+});
+
 
 // ========== PASSWORD RESET ROUTES ==========
 
@@ -949,7 +1208,7 @@ app.post('/users/reset-password', async (req, res) => {
     }
 });
 
-// ========== CLOUDINARY CONFIG ==========
+// ========== CLOUDINARY CONFIG AND MEDIA HANDLING ==========
 
 // Endpoint to safely provide Cloudinary configuration
 app.get('/cloudinary-config', (req, res) => {
@@ -990,6 +1249,104 @@ app.get('/cloudinary-config', (req, res) => {
     } catch (err) {
         console.error('Error providing Cloudinary config:', err);
         res.status(500).json({ message: 'Error providing Cloudinary configuration' });
+    }
+});
+
+// Get Cloudinary signature for authenticated uploads (for videos and larger files)
+app.get('/cloudinary-signature', (req, res) => {
+    try {
+        const timestamp = Math.round(new Date().getTime() / 1000);
+        const apiSecret = process.env.CLOUDINARY_API_SECRET;
+
+        if (!apiSecret) {
+            return res.status(500).json({
+                message: 'Cloudinary API secret not configured',
+                error: 'CLOUDINARY_API_SECRET is missing in environment variables'
+            });
+        }
+
+        // Create the signature string
+        const folder = 'product_media';
+        const signatureString = `folder=${folder}&timestamp=${timestamp}${apiSecret}`;
+
+        // Create SHA-1 hash
+        const crypto = require('crypto');
+        const signature = crypto.createHash('sha1').update(signatureString).digest('hex');
+
+        res.json({
+            signature,
+            timestamp,
+            folder
+        });
+    } catch (err) {
+        console.error('Error generating Cloudinary signature:', err);
+        res.status(500).json({ message: 'Error generating Cloudinary signature' });
+    }
+});
+
+// Process uploaded media and create media objects
+app.post('/process-media', async (req, res) => {
+    try {
+        const { mediaItems } = req.body;
+
+        if (!mediaItems || !Array.isArray(mediaItems) || mediaItems.length === 0) {
+            return res.status(400).json({ message: 'No media items provided' });
+        }
+
+        // Process each media item to create proper media objects
+        const processedMedia = mediaItems.map((item, index) => {
+            // Determine media type based on URL or explicit type
+            let type = item.type || 'image';
+            if (!item.type && item.url) {
+                // Try to determine type from URL if not explicitly provided
+                if (item.url.match(/\.(mp4|mov|avi|wmv|flv|webm|mkv)($|\?)/i)) {
+                    type = 'video';
+                } else if (item.url.match(/\.(jpg|jpeg|png|gif|webp|svg|bmp)($|\?)/i)) {
+                    type = 'image';
+                }
+            }
+
+            // Create the media object
+            const mediaObject = {
+                type,
+                url: item.url,
+                order: item.order !== undefined ? item.order : index,
+                isPrimary: item.isPrimary !== undefined ? item.isPrimary : (index === 0),
+                altText: item.altText || '',
+                caption: item.caption || '',
+                publicId: item.publicId || null
+            };
+
+            // Add thumbnail URL for videos if provided
+            if (type === 'video' && item.thumbnailUrl) {
+                mediaObject.thumbnailUrl = item.thumbnailUrl;
+            } else if (type === 'video' && !item.thumbnailUrl && item.url) {
+                // Generate a thumbnail URL from Cloudinary video URL
+                // This assumes the URL is a Cloudinary URL
+                if (item.url.includes('cloudinary.com')) {
+                    // Extract the cloud name and public ID
+                    const urlParts = item.url.split('/');
+                    const videoIndex = urlParts.findIndex(part => part === 'video');
+                    if (videoIndex > 0 && videoIndex < urlParts.length - 2) {
+                        const cloudName = urlParts[videoIndex - 1];
+                        const publicId = urlParts.slice(videoIndex + 2).join('/').split('.')[0];
+
+                        // Create a thumbnail URL
+                        mediaObject.thumbnailUrl = `https://res.cloudinary.com/${cloudName}/video/upload/c_fill,h_300,w_300/so_auto,pg_1/${publicId}.jpg`;
+                    }
+                }
+            }
+
+            return mediaObject;
+        });
+
+        res.json({
+            message: 'Media processed successfully',
+            media: processedMedia
+        });
+    } catch (err) {
+        console.error('Error processing media:', err);
+        res.status(500).json({ message: 'Error processing media' });
     }
 });
 
