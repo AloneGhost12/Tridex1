@@ -650,7 +650,7 @@
                         </div>
 
                         <div style="margin-top:20px;">
-                            <button onclick="window.history.back()" style="background:none; border:none; color:#2874f0; cursor:pointer; font-size:14px;">
+                            <button id="back-button" style="background:none; border:none; color:#2874f0; cursor:pointer; font-size:14px;">
                                 <i class="fas fa-arrow-left"></i> Back to Products
                             </button>
                         </div>
@@ -679,7 +679,7 @@
                     <h2>Similar Products</h2>
                     <div class="similar-products-grid">
                         ${similar.map(product => `
-                            <div class="similar-product-card" onclick="window.location.href='product-details.html?id=${product._id}'">
+                            <div class="similar-product-card" onclick="navigateToProduct('${product._id}')">
                                 <img src="${product.image}" alt="${product.name}">
                                 <div class="similar-product-title">${product.name}</div>
                                 <div class="similar-product-price">₹${product.price}</div>
@@ -768,6 +768,18 @@
             if (currentProduct.media && currentProduct.media.length > 0) {
                 initProductGallery();
             }
+
+            // Back button click handler
+            document.getElementById('back-button').addEventListener('click', function() {
+                // Check if we have a history state to go back to
+                if (history.state && history.state.page === 'index') {
+                    // Go back to the previous page
+                    history.back();
+                } else {
+                    // If no history state, redirect to index.html
+                    window.location.href = 'index.html';
+                }
+            });
         }
 
         // Initialize product gallery
@@ -1134,6 +1146,15 @@
             });
         }
 
+        // Function to navigate to another product
+        function navigateToProduct(productId) {
+            // Save current page state before navigating
+            history.pushState({ page: 'product-details', id: getProductId() }, '', window.location.href);
+
+            // Navigate to the new product
+            window.location.href = `product-details.html?id=${productId}`;
+        }
+
         // Generate product highlights from description
         function generateHighlights(description) {
             // In a real app, highlights would be a separate field
@@ -1176,8 +1197,21 @@
             }, 2000);
         }
 
+        // Handle browser back button
+        window.addEventListener('popstate', function(event) {
+            // If we're navigating back from this page, redirect to the previous page
+            if (event.state === null) {
+                window.location.href = document.referrer || 'index.html';
+            }
+        });
+
         // Initialize the page
         initProductPage();
+
+        // Add the current page to browser history with state
+        if (history.state === null) {
+            history.replaceState({ page: 'product-details', id: getProductId() }, '', window.location.href);
+        }
     </script>
 </body>
 </html>

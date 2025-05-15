@@ -734,7 +734,11 @@ if (!isLoggedIn) {
                             <h3>${product.name}</h3>
                             <p>₹${product.price}</p>
                         `;
-                        div.querySelector('img').onclick = function() {
+                        div.querySelector('img').onclick = function(e) {
+                            // Save current page state before navigating
+                            history.pushState({ page: 'index', scrollPos: window.scrollY }, '', window.location.href);
+
+                            // Navigate to product details
                             window.location.href = `product-details.html?id=${product._id}`;
                         };
                         grid.appendChild(div);
@@ -817,6 +821,10 @@ if (!isLoggedIn) {
 
                     // Add click handler to redirect to category page
                     categoryItem.addEventListener('click', () => {
+                        // Save current page state before navigating
+                        history.pushState({ page: 'index', scrollPos: window.scrollY }, '', window.location.href);
+
+                        // Navigate to category page
                         window.location.href = `category.html?id=${category._id}`;
                     });
 
@@ -832,6 +840,18 @@ if (!isLoggedIn) {
         // Initial render
         fetchAndRenderProducts();
         fetchAndRenderCategories();
+
+        // Handle browser back button navigation
+        window.addEventListener('popstate', function(event) {
+            if (event.state && event.state.page === 'index') {
+                // Restore scroll position if available
+                if (event.state.scrollPos) {
+                    setTimeout(() => {
+                        window.scrollTo(0, event.state.scrollPos);
+                    }, 100);
+                }
+            }
+        });
 
         // Search form
         document.getElementById('search-form').onsubmit = function(e) {
