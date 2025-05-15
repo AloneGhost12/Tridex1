@@ -10,6 +10,10 @@ const ProductSchema = new mongoose.Schema({
         ref: 'Category',
         default: null
     },
+    aiSummary: {
+        type: String,
+        default: null
+    },
     createdAt: { type: Date, default: Date.now }
 });
 

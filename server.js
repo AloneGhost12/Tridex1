@@ -10,6 +10,7 @@ const Category = require('./models/Category');
 const Announcement = require('./models/Announcement');
 const ChatInteraction = require('./models/ChatInteraction');
 const ContactMessage = require('./models/ContactMessage');
+const { generateProductSummary } = require('./utils/aiSummaryGenerator');
 
 // Load environment variables
 dotenv.config();
@@ -694,7 +695,44 @@ app.get('/products', async (req, res) => {
 app.post('/products', async (req, res) => {
     try {
         const { name, image, desc, price, category } = req.body;
+
+        // Create product object
         const product = new Product({ name, image, desc, price, category });
+
+        // If category is provided, populate it to get category details for AI summary
+        if (category) {
+            try {
+                const categoryDetails = await Category.findById(category);
+                if (categoryDetails) {
+                    // Generate AI summary with category details
+                    const aiSummary = generateProductSummary({
+                        name,
+                        desc,
+                        price,
+                        category: categoryDetails
+                    });
+
+                    // Add AI summary to product
+                    product.aiSummary = aiSummary;
+                }
+            } catch (error) {
+                console.error('Error generating AI summary:', error);
+                // Continue without AI summary if there's an error
+            }
+        } else {
+            // Generate AI summary without category
+            const aiSummary = generateProductSummary({
+                name,
+                desc,
+                price,
+                category: null
+            });
+
+            // Add AI summary to product
+            product.aiSummary = aiSummary;
+        }
+
+        // Save product
         await product.save();
         res.json({ message: 'Product added', product });
     } catch (err) {
@@ -706,7 +744,45 @@ app.post('/products', async (req, res) => {
 app.put('/products/:id', async (req, res) => {
     try {
         const { name, image, desc, price, category } = req.body;
-        await Product.findByIdAndUpdate(req.params.id, { name, image, desc, price, category });
+
+        // Prepare update object
+        const updateData = { name, image, desc, price, category };
+
+        // Generate new AI summary if product details have changed
+        if (category) {
+            try {
+                const categoryDetails = await Category.findById(category);
+                if (categoryDetails) {
+                    // Generate AI summary with category details
+                    const aiSummary = generateProductSummary({
+                        name,
+                        desc,
+                        price,
+                        category: categoryDetails
+                    });
+
+                    // Add AI summary to update data
+                    updateData.aiSummary = aiSummary;
+                }
+            } catch (error) {
+                console.error('Error generating AI summary during update:', error);
+                // Continue without updating AI summary if there's an error
+            }
+        } else {
+            // Generate AI summary without category
+            const aiSummary = generateProductSummary({
+                name,
+                desc,
+                price,
+                category: null
+            });
+
+            // Add AI summary to update data
+            updateData.aiSummary = aiSummary;
+        }
+
+        // Update product
+        await Product.findByIdAndUpdate(req.params.id, updateData);
         res.json({ message: 'Product updated' });
     } catch (err) {
         console.error('Error updating product:', err);
@@ -721,6 +797,80 @@ app.delete('/products/:id', async (req, res) => {
     } catch (err) {
         console.error('Error deleting product:', err);
         res.status(500).json({ message: 'Error deleting product' });
+    }
+});
+
+// Regenerate AI summary for a product
+app.post('/products/:id/regenerate-summary', async (req, res) => {
+    try {
+        // Find the product
+        const product = await Product.findById(req.params.id).populate('category');
+
+        if (!product) {
+            return res.status(404).json({ message: 'Product not found' });
+        }
+
+        // Generate new AI summary
+        const aiSummary = generateProductSummary({
+            name: product.name,
+            desc: product.desc,
+            price: product.price,
+            category: product.category
+        });
+
+        // Update product with new summary
+        product.aiSummary = aiSummary;
+        await product.save();
+
+        res.json({
+            message: 'AI summary regenerated',
+            product: product
+        });
+    } catch (err) {
+        console.error('Error regenerating AI summary:', err);
+        res.status(500).json({ message: 'Error regenerating AI summary' });
+    }
+});
+
+// Regenerate AI summaries for all products
+app.post('/products/regenerate-all-summaries', async (req, res) => {
+    try {
+        // Get all products with populated categories
+        const products = await Product.find().populate('category');
+
+        // Counter for successful updates
+        let updatedCount = 0;
+
+        // Process each product
+        for (const product of products) {
+            try {
+                // Generate new AI summary
+                const aiSummary = generateProductSummary({
+                    name: product.name,
+                    desc: product.desc,
+                    price: product.price,
+                    category: product.category
+                });
+
+                // Update product with new summary
+                product.aiSummary = aiSummary;
+                await product.save();
+
+                updatedCount++;
+            } catch (error) {
+                console.error(`Error updating summary for product ${product._id}:`, error);
+                // Continue with next product
+            }
+        }
+
+        res.json({
+            message: `AI summaries regenerated for ${updatedCount} of ${products.length} products`,
+            totalProducts: products.length,
+            updatedProducts: updatedCount
+        });
+    } catch (err) {
+        console.error('Error regenerating all AI summaries:', err);
+        res.status(500).json({ message: 'Error regenerating all AI summaries' });
     }
 });
 
