@@ -747,7 +747,7 @@
                         currency: 'INR'
                     },
                     totalAmount: total,
-                    shippingFee: shipping, // Use the shipping variable (defined as 40)
+                    shippingFee: 40, // Fixed shipping fee value
                     tax: tax
                 };
 
@@ -815,6 +815,9 @@
 
         // Process Razorpay payment
         function processRazorpayPayment(orderData) {
+            // Log order data for debugging
+            console.log('Sending order data:', JSON.stringify(orderData, null, 2));
+
             // Create order on server
             fetch('https://tridex1.onrender.com/orders/create', {
                 method: 'POST',
@@ -825,11 +828,28 @@
                 },
                 body: JSON.stringify(orderData)
             })
-            .then(response => response.json())
+            .then(response => {
+                // Check if response is ok before parsing JSON
+                if (!response.ok) {
+                    console.error('Server responded with status:', response.status);
+                    return response.text().then(text => {
+                        try {
+                            // Try to parse as JSON
+                            return JSON.parse(text);
+                        } catch (e) {
+                            // If not JSON, return as text error
+                            throw new Error(`Server error: ${text || response.statusText}`);
+                        }
+                    });
+                }
+                return response.json();
+            })
             .then(data => {
                 if (data.error) {
                     throw new Error(data.error);
                 }
+
+                console.log('Order created successfully:', data);
 
                 // Initialize Razorpay
                 const options = {
@@ -878,6 +898,9 @@
 
         // Process Cash on Delivery
         function processCashOnDelivery(orderData) {
+            // Log order data for debugging
+            console.log('Sending COD order data:', JSON.stringify(orderData, null, 2));
+
             // Create order on server
             fetch('https://tridex1.onrender.com/orders/create', {
                 method: 'POST',
@@ -888,11 +911,28 @@
                 },
                 body: JSON.stringify(orderData)
             })
-            .then(response => response.json())
+            .then(response => {
+                // Check if response is ok before parsing JSON
+                if (!response.ok) {
+                    console.error('Server responded with status:', response.status);
+                    return response.text().then(text => {
+                        try {
+                            // Try to parse as JSON
+                            return JSON.parse(text);
+                        } catch (e) {
+                            // If not JSON, return as text error
+                            throw new Error(`Server error: ${text || response.statusText}`);
+                        }
+                    });
+                }
+                return response.json();
+            })
             .then(data => {
                 if (data.error) {
                     throw new Error(data.error);
                 }
+
+                console.log('COD order created successfully:', data);
 
                 // Handle successful order creation
                 handleOrderSuccess(data.orderId);
