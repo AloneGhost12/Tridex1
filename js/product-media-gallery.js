@@ -18,7 +18,8 @@ class ProductMediaGallery {
         this.cloudName = options.cloudName || 'dtzhskby3';
         this.uploadPreset = options.uploadPreset || 'tridex_products';
         this.apiKey = options.apiKey || '';
-        this.maxFileSize = options.maxFileSize || 10 * 1024 * 1024; // 10MB default
+        this.maxImageSize = options.maxImageSize || 10 * 1024 * 1024; // 10MB default for images
+        this.maxVideoSize = options.maxVideoSize || 100 * 1024 * 1024; // 100MB default for videos
         this.allowedImageTypes = options.allowedImageTypes || ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
         this.allowedVideoTypes = options.allowedVideoTypes || ['video/mp4', 'video/quicktime', 'video/webm'];
 
@@ -45,6 +46,11 @@ class ProductMediaGallery {
         // Set up event listeners
         if (this.mediaInput) {
             this.mediaInput.addEventListener('change', this.handleFileSelect.bind(this));
+
+            // Add file size info to the container if it exists
+            if (this.container) {
+                this.displayFileSizeLimits();
+            }
         }
 
         if (this.addVideoBtn && this.videoUrlInput) {
@@ -53,6 +59,28 @@ class ProductMediaGallery {
 
         // Render initial media if any
         this.renderMediaPreviews();
+    }
+
+    /**
+     * Display file size limits in the gallery container
+     */
+    displayFileSizeLimits() {
+        // Check if info element already exists
+        let infoElement = this.container.querySelector('.media-size-limits');
+        if (!infoElement) {
+            infoElement = document.createElement('div');
+            infoElement.className = 'media-size-limits';
+            infoElement.style.cssText = 'margin-top: 10px; font-size: 0.85em; color: #666; font-style: italic;';
+
+            // Add the info element to the container
+            this.container.appendChild(infoElement);
+        }
+
+        // Set the content
+        infoElement.innerHTML = `
+            <p>Maximum file sizes: Images - ${Math.round(this.maxImageSize/1024/1024)}MB, Videos - ${Math.round(this.maxVideoSize/1024/1024)}MB</p>
+            <p>Supported formats: Images - JPG, PNG, GIF, WEBP | Videos - MP4, MOV, WEBM</p>
+        `;
     }
 
     /**
@@ -66,19 +94,27 @@ class ProductMediaGallery {
 
         // Filter files by type and size
         const validFiles = files.filter(file => {
-            // Check file size
-            if (file.size > this.maxFileSize) {
-                this.showNotification(`File ${file.name} exceeds the maximum size limit of ${Math.round(this.maxFileSize/1024/1024)}MB`, 'error');
-                return false;
-            }
+            // Check file type first
+            const isImage = this.allowedImageTypes.includes(file.type);
+            const isVideo = this.allowedVideoTypes.includes(file.type);
 
-            // Check file type
-            if (this.allowedImageTypes.includes(file.type) || this.allowedVideoTypes.includes(file.type)) {
-                return true;
-            } else {
+            if (!isImage && !isVideo) {
                 this.showNotification(`File type ${file.type} is not supported`, 'error');
                 return false;
             }
+
+            // Check file size based on type
+            if (isImage && file.size > this.maxImageSize) {
+                this.showNotification(`Image ${file.name} exceeds the maximum size limit of ${Math.round(this.maxImageSize/1024/1024)}MB`, 'error');
+                return false;
+            }
+
+            if (isVideo && file.size > this.maxVideoSize) {
+                this.showNotification(`Video ${file.name} exceeds the maximum size limit of ${Math.round(this.maxVideoSize/1024/1024)}MB`, 'error');
+                return false;
+            }
+
+            return true;
         });
 
         // Add valid files to upload queue
@@ -196,7 +232,7 @@ class ProductMediaGallery {
                 formData.append('upload_preset', this.uploadPreset);
                 formData.append('folder', 'product_media');
 
-                // For videos, we might need to use signed uploads
+                // For videos, we might need to use signed uploads for larger files
                 if (isVideo && file.size > 10 * 1024 * 1024) {
                     try {
                         // Get signature from server
@@ -206,6 +242,9 @@ class ProductMediaGallery {
                             formData.append('signature', signatureData.signature);
                             formData.append('timestamp', signatureData.timestamp);
                             formData.append('api_key', this.apiKey);
+
+                            // Log that we're using signed upload for large video
+                            console.log(`Using signed upload for large video (${Math.round(file.size/1024/1024)}MB)`);
                         }
                     } catch (error) {
                         console.warn('Could not get signature for video upload, trying unsigned upload', error);

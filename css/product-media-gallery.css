@@ -1,6 +1,6 @@
 /**
  * Product Media Gallery Styles
- * 
+ *
  * Styles for the product media gallery component, including
  * media previews, controls, and notifications.
  */
@@ -20,6 +20,21 @@
     background-color: #f8f9fa;
     border-radius: 8px;
     border: 1px solid #e9ecef;
+}
+
+/* Media Size Limits Info */
+.media-size-limits {
+    margin-top: 10px;
+    padding: 10px;
+    background-color: #f8f9fa;
+    border-radius: 6px;
+    border: 1px dashed #ced4da;
+}
+
+.media-size-limits p {
+    margin: 5px 0;
+    font-size: 0.85em;
+    color: #666;
 }
 
 .media-upload-btn {
@@ -303,12 +318,12 @@
     .media-preview-container {
         grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
     }
-    
+
     .media-preview-image,
     .media-preview-video {
         height: 120px;
     }
-    
+
     .media-notification {
         left: 20px;
         right: 20px;
@@ -446,7 +461,7 @@
     .gallery-main-video {
         height: 300px;
     }
-    
+
     .swipe-indicator {
         display: block;
     }
