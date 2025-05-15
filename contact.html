@@ -36,6 +36,7 @@
                 position: absolute;
                 top: 15px;
                 right: 15px;
+                z-index: 1100;
             }
             #main-nav {
                 width: 100%;
@@ -51,8 +52,10 @@
                 left: 0;
                 width: 100vw;
                 padding: 0;
-                z-index: 1000;
+                z-index: 1050;
                 box-shadow: 0 4px 16px rgba(0,0,0,0.13);
+                overflow-y: auto;
+                max-height: calc(100vh - 60px);
             }
             #nav.show {
                 display: flex !important;
@@ -390,7 +393,7 @@
             </div>
 
             <!-- Hamburger menu for mobile -->
-            <button id="hamburger-menu" style="background:none; border:none; cursor:pointer; display:none; padding:10px; z-index:1000;">
+            <button id="hamburger-menu" style="background:none; border:none; cursor:pointer; display:none; padding:10px; z-index:1100; position:absolute; top:15px; right:15px;">
                 <div style="width:30px; height:3px; background-color:white; margin:6px 0; transition:0.4s;"></div>
                 <div style="width:30px; height:3px; background-color:white; margin:6px 0; transition:0.4s;"></div>
                 <div style="width:30px; height:3px; background-color:white; margin:6px 0; transition:0.4s;"></div>
@@ -721,13 +724,16 @@
             const hamburger = document.getElementById('hamburger-menu');
             const nav = document.getElementById('nav');
 
-            if (hamburger) {
-                hamburger.addEventListener('click', function(e) {
-                    e.stopPropagation(); // Prevent event from bubbling up
+            // Function to toggle the hamburger menu
+            function toggleHamburgerMenu(show) {
+                if (!hamburger || !nav) return;
+
+                const divs = hamburger.querySelectorAll('div');
+
+                if (show === undefined) {
+                    // Toggle mode
                     nav.classList.toggle('show');
 
-                    // Animate hamburger icon
-                    const divs = hamburger.querySelectorAll('div');
                     if (nav.classList.contains('show')) {
                         // X shape when menu is open
                         divs[0].style.transform = 'rotate(-45deg) translate(-5px, 6px)';
@@ -739,6 +745,26 @@
                         divs[1].style.opacity = '1';
                         divs[2].style.transform = 'none';
                     }
+                } else if (show) {
+                    // Show menu
+                    nav.classList.add('show');
+                    divs[0].style.transform = 'rotate(-45deg) translate(-5px, 6px)';
+                    divs[1].style.opacity = '0';
+                    divs[2].style.transform = 'rotate(45deg) translate(-5px, -6px)';
+                } else {
+                    // Hide menu
+                    nav.classList.remove('show');
+                    divs[0].style.transform = 'none';
+                    divs[1].style.opacity = '1';
+                    divs[2].style.transform = 'none';
+                }
+            }
+
+            if (hamburger) {
+                hamburger.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation(); // Prevent event from bubbling up
+                    toggleHamburgerMenu();
                 });
             }
 
@@ -748,14 +774,19 @@
                     !hamburger.contains(event.target) &&
                     !nav.contains(event.target)) {
 
-                    nav.classList.remove('show');
-
-                    // Reset hamburger icon
-                    const divs = hamburger.querySelectorAll('div');
-                    divs[0].style.transform = 'none';
-                    divs[1].style.opacity = '1';
-                    divs[2].style.transform = 'none';
+                    // Use our toggle function to hide the menu
+                    toggleHamburgerMenu(false);
                 }
+            });
+
+            // Close menu when a navigation link is clicked
+            const navLinks = document.querySelectorAll('#nav a');
+            navLinks.forEach(link => {
+                link.addEventListener('click', function() {
+                    if (window.innerWidth <= 900 && nav.classList.contains('show')) {
+                        toggleHamburgerMenu(false);
+                    }
+                });
             });
 
             // Show hamburger on mobile
@@ -764,20 +795,16 @@
                     if (hamburger) hamburger.style.display = 'flex';
                 } else {
                     if (hamburger) hamburger.style.display = 'none';
-                    if (nav) nav.classList.remove('show');
-
-                    // Reset hamburger icon
-                    const divs = hamburger.querySelectorAll('div');
-                    if (divs.length > 0) {
-                        divs[0].style.transform = 'none';
-                        divs[1].style.opacity = '1';
-                        divs[2].style.transform = 'none';
+                    if (nav && nav.classList.contains('show')) {
+                        // Hide the menu when resizing to desktop
+                        toggleHamburgerMenu(false);
                     }
                 }
             }
 
             // Initial check and add resize listener
-            adjustForMobile();
+            // Small delay to ensure all elements are loaded
+            setTimeout(adjustForMobile, 100);
             window.addEventListener('resize', adjustForMobile);
 
             // Check for ban status
