@@ -605,7 +605,7 @@
                     currency: 'INR',
                     name: 'Tridex',
                     description: 'Purchase from Tridex',
-                    order_id: data.orderId, // This comes from the server
+                    order_id: data.razorpayOrderId || data.orderId, // Use the Razorpay order ID if available
                     handler: function(response) {
                         // Handle successful payment
                         handlePaymentSuccess(data.orderId, response.razorpay_payment_id);
@@ -618,6 +618,9 @@
                     theme: {
                         color: '#007bff'
                     },
+                    notes: {
+                        order_id: data.orderId // Store our internal order ID in notes
+                    },
                     modal: {
                         ondismiss: function() {
                             hideLoading();
@@ -625,6 +628,9 @@
                         }
                     }
                 };
+
+                // Log the Razorpay options for debugging
+                console.log('Razorpay options:', options);
 
                 const rzp = new Razorpay(options);
                 rzp.open();

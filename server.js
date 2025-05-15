@@ -1869,40 +1869,37 @@ app.post('/orders/create', async (req, res) => {
         // Save order to database
         const savedOrder = await newOrder.save();
 
-        // For Razorpay integration, create a Razorpay order
+        // For Razorpay integration
         if (orderData.payment && orderData.payment.method === 'razorpay') {
             try {
-                // This is where you would normally create a Razorpay order using their API
-                // For now, we'll just return the order ID from our database
-                // In a production environment, you would use the Razorpay SDK to create an order
+                // Since we don't have the actual Razorpay SDK integration yet,
+                // we'll create a fake Razorpay order ID that will work with the client-side
+                // This is a temporary solution until proper Razorpay integration is implemented
 
-                // Example of how you would create a Razorpay order:
-                // const razorpay = new Razorpay({
-                //     key_id: process.env.RAZORPAY_KEY_ID,
-                //     key_secret: process.env.RAZORPAY_KEY_SECRET
-                // });
-                //
-                // const razorpayOrder = await razorpay.orders.create({
-                //     amount: orderData.totalAmount * 100, // amount in smallest currency unit (paise)
-                //     currency: 'INR',
-                //     receipt: savedOrder._id.toString(),
-                //     payment_capture: 1 // auto capture
-                // });
-                //
-                // return res.status(201).json({
-                //     message: 'Order created successfully',
-                //     orderId: razorpayOrder.id
-                // });
+                // Generate a fake Razorpay order ID (format: order_xxxxxxxxxxxx)
+                // In production, this would come from the Razorpay API
+                const fakeRazorpayOrderId = 'order_' + Math.random().toString(36).substring(2, 15) +
+                                           Math.random().toString(36).substring(2, 15);
 
-                // For now, we'll just return our order ID
-                console.log('Razorpay order created with ID:', savedOrder._id);
+                // Update our order with the fake Razorpay order ID
+                savedOrder.payment.razorpayOrderId = fakeRazorpayOrderId;
+                await savedOrder.save();
+
+                console.log('Fake Razorpay order created with ID:', fakeRazorpayOrderId);
+
+                // Return both our order ID and the fake Razorpay order ID
+                return res.status(201).json({
+                    message: 'Order created successfully',
+                    orderId: savedOrder._id,
+                    razorpayOrderId: fakeRazorpayOrderId
+                });
             } catch (razorpayError) {
                 console.error('Error creating Razorpay order:', razorpayError);
                 // Continue with our order even if Razorpay fails
             }
         }
 
-        // Return order ID
+        // Return order ID for non-Razorpay orders
         res.status(201).json({
             message: 'Order created successfully',
             orderId: savedOrder._id
