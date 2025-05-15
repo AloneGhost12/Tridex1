@@ -394,6 +394,7 @@
         let users = [];
         let products = [];
         let announcements = [];
+        let mediaGallery; // Media gallery instance
 
         // Load users from backend
         async function fetchUsers() {
@@ -2842,6 +2843,39 @@
         };
 
         // We already have a renderProducts function, so we don't need to override it
+
+        // Initialize the media gallery
+        function initMediaGallery(initialMedia = []) {
+            // Get Cloudinary configuration
+            getCloudinaryConfig().then(cloudinaryConfig => {
+                // Initialize the media gallery
+                mediaGallery = new ProductMediaGallery({
+                    container: document.getElementById('media-gallery-container'),
+                    mediaPreviewContainer: document.getElementById('media-preview-container'),
+                    mediaInput: document.getElementById('media-file-input'),
+                    videoUrlInput: document.getElementById('video-url-input'),
+                    addVideoBtn: document.getElementById('add-video-btn'),
+                    cloudName: cloudinaryConfig.cloudName,
+                    apiKey: cloudinaryConfig.apiKey,
+                    initialMedia: initialMedia,
+                    onMediaChange: function(mediaItems) {
+                        // Update the legacy image field for backward compatibility
+                        const primaryImage = mediaItems.find(item => item.isPrimary && item.type === 'image');
+                        if (primaryImage) {
+                            document.getElementById('product-image').value = primaryImage.url;
+                            document.getElementById('product-image-preview').src = primaryImage.url;
+                            document.getElementById('product-image-preview').style.display = '';
+                        } else {
+                            document.getElementById('product-image').value = '';
+                            document.getElementById('product-image-preview').style.display = 'none';
+                        }
+                    }
+                });
+            }).catch(error => {
+                console.error('Error initializing media gallery:', error);
+                alert('Failed to initialize media gallery. Images will be stored as base64.');
+            });
+        }
 
         // Initialize the media gallery when the page loads
         document.addEventListener('DOMContentLoaded', function() {
