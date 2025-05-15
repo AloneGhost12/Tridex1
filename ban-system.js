@@ -2,7 +2,7 @@
  * Ban System for Tridex
  * This file contains all the functionality related to the user ban system.
  *
- * Version 2.0 - Complete rewrite with improved mobile support
+ * Version 2.1 - Improved ban message display and handling
  */
 
 // Initialize the ban system immediately
