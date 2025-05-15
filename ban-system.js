@@ -2,12 +2,12 @@
  * Ban System for Tridex
  * This file contains all the functionality related to the user ban system.
  *
- * Version 2.5 - Enhanced ban message persistence and improved user experience for banned users
+ * Version 2.6 - Fixed unban functionality to properly clear all ban flags and verify with server
  */
 
 // Initialize the ban system immediately
 (function() {
-    console.log('Ban System 2.5 initializing...');
+    console.log('Ban System 2.6 initializing...');
 
     // Create a global variable to track initialization
     window.banSystemInitialized = false;
@@ -33,7 +33,7 @@
                 checkServerBanStatus: checkServerBanStatus,
                 getBannedUsers: getBannedUsers,
                 debugBanSystem: debugBanSystem,
-                version: '2.5',
+                version: '2.6',
                 forceCheckBanStatus: forceCheckBanStatus
             };
 
@@ -300,9 +300,11 @@ function unbanUser(username) {
             if (username === currentUser) {
                 console.log(`Ban System: Current user ${username} was unbanned, clearing ban flags...`);
 
-                // Clear ban flags in sessionStorage
+                // Clear all ban-related flags
                 sessionStorage.removeItem('userBanned');
                 sessionStorage.removeItem('showBanMessage');
+                localStorage.removeItem('loginPageBanMessageShown');
+                localStorage.removeItem('bannedUsername');
 
                 // Remove any existing ban message
                 const banMessage = document.getElementById('ban-message');
@@ -673,9 +675,11 @@ async function checkServerBanStatus(username) {
                 if (username === currentUser) {
                     console.log(`Ban System: Current user ${username} was unbanned by server, clearing ban flags`);
 
-                    // Clear ban flags in sessionStorage
+                    // Clear all ban-related flags
                     sessionStorage.removeItem('userBanned');
                     sessionStorage.removeItem('showBanMessage');
+                    localStorage.removeItem('loginPageBanMessageShown');
+                    localStorage.removeItem('bannedUsername');
 
                     // Remove any existing ban message
                     const banMessage = document.getElementById('ban-message');

@@ -180,7 +180,7 @@
         }
 
         // Function to check if the user is banned
-        function checkBanStatus() {
+        async function checkBanStatus() {
             try {
                 console.log('Checking ban status on login page');
 
@@ -193,9 +193,71 @@
                     localStorage.setItem('bannedUsername', bannedUsername);
                 }
 
+                // If we have a banned username, verify with the server first
+                if (bannedUsername) {
+                    console.log(`Verifying ban status with server for username: ${bannedUsername}`);
+
+                    try {
+                        // Check with the server if this user is actually banned
+                        const response = await fetch(`https://tridex1.onrender.com/users/check-ban/${bannedUsername}`);
+
+                        if (response.ok) {
+                            const data = await response.json();
+                            console.log(`Server says user ${bannedUsername} ban status is: ${data.isBanned}`);
+
+                            // If the server says the user is not banned, clear all ban flags
+                            if (!data.isBanned) {
+                                console.log(`Server confirms ${bannedUsername} is NOT banned, clearing all ban flags`);
+                                localStorage.removeItem('loginPageBanMessageShown');
+                                localStorage.removeItem('bannedUsername');
+                                sessionStorage.removeItem('userBanned');
+                                sessionStorage.removeItem('showBanMessage');
+
+                                // Also update the bannedUsers list
+                                try {
+                                    const bannedUsers = JSON.parse(localStorage.getItem('bannedUsers') || '[]');
+                                    const updatedList = bannedUsers.filter(user => user !== bannedUsername);
+                                    localStorage.setItem('bannedUsers', JSON.stringify(updatedList));
+                                    sessionStorage.setItem('bannedUsers', JSON.stringify(updatedList));
+                                } catch (error) {
+                                    console.error('Error updating banned users list:', error);
+                                }
+
+                                // If the ban system is available, update it
+                                if (window.banSystem && typeof window.banSystem.unbanUser === 'function') {
+                                    window.banSystem.unbanUser(bannedUsername);
+                                }
+
+                                return false; // User is not banned according to server
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Error checking ban status with server:', error);
+                        // Continue with local checks if server check fails
+                    }
+                }
+
                 // Check if the ban message was already shown on this page
                 if (localStorage.getItem('loginPageBanMessageShown') === 'true') {
                     console.log('Ban message already shown on login page');
+
+                    // Double-check with the server if we have a username
+                    if (bannedUsername) {
+                        try {
+                            const response = await fetch(`https://tridex1.onrender.com/users/check-ban/${bannedUsername}`);
+                            if (response.ok) {
+                                const data = await response.json();
+                                if (!data.isBanned) {
+                                    console.log(`Server confirms ${bannedUsername} is NOT banned, clearing ban message flag`);
+                                    localStorage.removeItem('loginPageBanMessageShown');
+                                    return false;
+                                }
+                            }
+                        } catch (error) {
+                            console.error('Error verifying ban status with server:', error);
+                        }
+                    }
+
                     showBanMessage(bannedUsername);
                     return true;
                 }
@@ -204,6 +266,23 @@
                 const banRedirect = new URLSearchParams(window.location.search).get('banned');
                 if (banRedirect === 'true') {
                     console.log('User was redirected here due to a ban parameter in URL');
+
+                    // Verify with the server if we have a username
+                    if (bannedUsername) {
+                        try {
+                            const response = await fetch(`https://tridex1.onrender.com/users/check-ban/${bannedUsername}`);
+                            if (response.ok) {
+                                const data = await response.json();
+                                if (!data.isBanned) {
+                                    console.log(`Server confirms ${bannedUsername} is NOT banned, ignoring ban redirect`);
+                                    return false;
+                                }
+                            }
+                        } catch (error) {
+                            console.error('Error verifying ban status with server:', error);
+                        }
+                    }
+
                     showBanMessage(bannedUsername);
                     return true;
                 }
@@ -211,22 +290,90 @@
                 // Check if there's a flag to show the ban message
                 if (sessionStorage.getItem('showBanMessage') === 'true' || sessionStorage.getItem('userBanned') === 'true') {
                     console.log('Ban flag found in sessionStorage');
+
+                    // Verify with the server if we have a username
+                    if (bannedUsername) {
+                        try {
+                            const response = await fetch(`https://tridex1.onrender.com/users/check-ban/${bannedUsername}`);
+                            if (response.ok) {
+                                const data = await response.json();
+                                if (!data.isBanned) {
+                                    console.log(`Server confirms ${bannedUsername} is NOT banned, clearing session flags`);
+                                    sessionStorage.removeItem('showBanMessage');
+                                    sessionStorage.removeItem('userBanned');
+                                    return false;
+                                }
+                            }
+                        } catch (error) {
+                            console.error('Error verifying ban status with server:', error);
+                        }
+                    }
+
                     showBanMessage(bannedUsername);
                     return true;
                 }
 
                 // Check if the current user is banned using the ban system
                 const username = localStorage.getItem('username') || localStorage.getItem('currentUser');
-                if (username && window.banSystem && window.banSystem.isUserBanned(username)) {
-                    console.log(`User ${username} is banned according to ban system`);
-                    showBanMessage(username);
-                    // Store the banned username for future reference
-                    localStorage.setItem('bannedUsername', username);
-                    return true;
-                }
-
-                // Check if the user is in the banned users list in localStorage
                 if (username) {
+                    // First check with the server
+                    try {
+                        const response = await fetch(`https://tridex1.onrender.com/users/check-ban/${username}`);
+                        if (response.ok) {
+                            const data = await response.json();
+                            console.log(`Server says user ${username} ban status is: ${data.isBanned}`);
+
+                            if (data.isBanned) {
+                                console.log(`Server confirms ${username} IS banned`);
+                                showBanMessage(username);
+                                // Store the banned username for future reference
+                                localStorage.setItem('bannedUsername', username);
+                                return true;
+                            } else {
+                                // Server says user is not banned, make sure local storage reflects this
+                                console.log(`Server confirms ${username} is NOT banned, updating local storage`);
+
+                                // Update the bannedUsers list
+                                try {
+                                    const bannedUsers = JSON.parse(localStorage.getItem('bannedUsers') || '[]');
+                                    if (bannedUsers.includes(username)) {
+                                        const updatedList = bannedUsers.filter(user => user !== username);
+                                        localStorage.setItem('bannedUsers', JSON.stringify(updatedList));
+                                        sessionStorage.setItem('bannedUsers', JSON.stringify(updatedList));
+                                    }
+                                } catch (error) {
+                                    console.error('Error updating banned users list:', error);
+                                }
+
+                                // If the ban system is available, update it
+                                if (window.banSystem && typeof window.banSystem.unbanUser === 'function') {
+                                    window.banSystem.unbanUser(username);
+                                }
+
+                                // Clear all ban flags
+                                localStorage.removeItem('loginPageBanMessageShown');
+                                localStorage.removeItem('bannedUsername');
+                                sessionStorage.removeItem('userBanned');
+                                sessionStorage.removeItem('showBanMessage');
+
+                                return false; // User is not banned according to server
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Error checking ban status with server:', error);
+                        // Continue with local checks if server check fails
+                    }
+
+                    // Fall back to local checks if server check fails
+                    if (window.banSystem && window.banSystem.isUserBanned(username)) {
+                        console.log(`User ${username} is banned according to ban system`);
+                        showBanMessage(username);
+                        // Store the banned username for future reference
+                        localStorage.setItem('bannedUsername', username);
+                        return true;
+                    }
+
+                    // Check if the user is in the banned users list in localStorage
                     try {
                         const bannedUsers = JSON.parse(localStorage.getItem('bannedUsers') || '[]');
                         if (bannedUsers.includes(username)) {
@@ -244,6 +391,8 @@
                 // If we get here, the user is not banned, so clear any ban flags
                 localStorage.removeItem('loginPageBanMessageShown');
                 localStorage.removeItem('bannedUsername');
+                sessionStorage.removeItem('userBanned');
+                sessionStorage.removeItem('showBanMessage');
 
                 return false;
             } catch (error) {
@@ -252,21 +401,58 @@
             }
         }
 
+        // Function to handle async ban status checking
+        function performBanCheck() {
+            console.log('Performing ban status check');
+            // Show loading indicator while checking
+            const loadingOverlay = document.getElementById('loading-overlay');
+            if (loadingOverlay) {
+                loadingOverlay.style.display = 'flex';
+            }
+
+            checkBanStatus().then(isBanned => {
+                console.log('Ban check completed, user is banned:', isBanned);
+
+                // Hide loading indicator
+                if (loadingOverlay) {
+                    loadingOverlay.style.display = 'none';
+                }
+
+                // If not banned, enable the form
+                if (!isBanned) {
+                    const usernameInput = document.getElementById('username');
+                    const passwordInput = document.getElementById('password');
+                    const submitButton = document.querySelector('#login-form button[type="submit"]');
+
+                    if (usernameInput) usernameInput.disabled = false;
+                    if (passwordInput) passwordInput.disabled = false;
+                    if (submitButton) submitButton.disabled = false;
+                }
+            }).catch(error => {
+                console.error('Error during ban check:', error);
+
+                // Hide loading indicator
+                if (loadingOverlay) {
+                    loadingOverlay.style.display = 'none';
+                }
+            });
+        }
+
         // Check ban status immediately
         if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', checkBanStatus);
+            document.addEventListener('DOMContentLoaded', performBanCheck);
         } else {
-            checkBanStatus();
+            performBanCheck();
         }
 
         // Also check on window load
         window.addEventListener('load', function() {
             console.log('Login page loaded, checking for banned status');
-            checkBanStatus();
+            performBanCheck();
         });
 
         // Check again after a short delay to catch any race conditions
-        setTimeout(checkBanStatus, 500);
+        setTimeout(performBanCheck, 500);
     })();
 
     document.getElementById('login-form').addEventListener('submit', async function(e) {
@@ -345,40 +531,112 @@
 
         // Always check if user is banned before attempting to log in
 
-        // First check if the ban message is already shown
-        if (localStorage.getItem('loginPageBanMessageShown') === 'true') {
-            console.log('Ban message already shown on login page');
-            handleBannedUser(userInput);
-            return;
-        }
-
-        // Method 1: Check using the ban system
-        if (window.banSystem && window.banSystem.isUserBanned(userInput)) {
-            console.log(`User ${userInput} is banned according to ban system`);
-            handleBannedUser(userInput);
-            return;
-        }
-
-        // Method 2: Check the banned users list directly
+        // First check with the server
         try {
-            const bannedUsers = JSON.parse(localStorage.getItem('bannedUsers') || '[]');
-            if (bannedUsers.includes(userInput)) {
-                console.log(`User ${userInput} found in banned users list`);
+            // Show a temporary loading message
+            const tempLoadingMsg = document.createElement('div');
+            tempLoadingMsg.style.cssText = 'color:#007bff; margin-top:10px; font-size:0.9em;';
+            tempLoadingMsg.textContent = 'Verifying account status...';
+            document.getElementById('login-error').after(tempLoadingMsg);
 
-                // If the user is in the banned list but not detected by the ban system,
-                // make sure the ban system is updated
-                if (window.banSystem) {
-                    window.banSystem.banUser(userInput);
+            // Check with the server
+            const response = await fetch(`https://tridex1.onrender.com/users/check-ban/${userInput}`);
+
+            // Remove the temporary message
+            tempLoadingMsg.remove();
+
+            if (response.ok) {
+                const data = await response.json();
+                console.log(`Server says user ${userInput} ban status is: ${data.isBanned}`);
+
+                if (data.isBanned) {
+                    console.log(`Server confirms ${userInput} IS banned`);
+
+                    // Update local storage to match server
+                    if (window.banSystem) {
+                        window.banSystem.banUser(userInput);
+                    } else {
+                        // If ban system is not available, add to banned users list directly
+                        try {
+                            const bannedUsers = JSON.parse(localStorage.getItem('bannedUsers') || '[]');
+                            if (!bannedUsers.includes(userInput)) {
+                                bannedUsers.push(userInput);
+                                localStorage.setItem('bannedUsers', JSON.stringify(bannedUsers));
+                                sessionStorage.setItem('bannedUsers', JSON.stringify(bannedUsers));
+                            }
+                        } catch (error) {
+                            console.error('Error updating banned users list:', error);
+                        }
+                    }
+
+                    handleBannedUser(userInput);
+                    return;
+                } else {
+                    // Server says user is not banned, make sure local storage reflects this
+                    console.log(`Server confirms ${userInput} is NOT banned, updating local storage`);
+
+                    // Clear all ban flags
+                    localStorage.removeItem('loginPageBanMessageShown');
+                    localStorage.removeItem('bannedUsername');
+                    sessionStorage.removeItem('userBanned');
+                    sessionStorage.removeItem('showBanMessage');
+
+                    // Update the bannedUsers list
+                    try {
+                        const bannedUsers = JSON.parse(localStorage.getItem('bannedUsers') || '[]');
+                        if (bannedUsers.includes(userInput)) {
+                            const updatedList = bannedUsers.filter(user => user !== userInput);
+                            localStorage.setItem('bannedUsers', JSON.stringify(updatedList));
+                            sessionStorage.setItem('bannedUsers', JSON.stringify(updatedList));
+                        }
+                    } catch (error) {
+                        console.error('Error updating banned users list:', error);
+                    }
+
+                    // If the ban system is available, update it
+                    if (window.banSystem && typeof window.banSystem.unbanUser === 'function') {
+                        window.banSystem.unbanUser(userInput);
+                    }
                 }
+            }
+        } catch (error) {
+            console.error('Error checking ban status with server:', error);
 
+            // Fall back to local checks if server check fails
+
+            // Check if the ban message is already shown
+            if (localStorage.getItem('loginPageBanMessageShown') === 'true') {
+                console.log('Ban message already shown on login page');
                 handleBannedUser(userInput);
                 return;
             }
-        } catch (error) {
-            console.error('Error checking banned users list:', error);
-        }
 
-        // Method 3: Check with the server (will be done during login attempt)
+            // Check using the ban system
+            if (window.banSystem && window.banSystem.isUserBanned(userInput)) {
+                console.log(`User ${userInput} is banned according to ban system`);
+                handleBannedUser(userInput);
+                return;
+            }
+
+            // Check the banned users list directly
+            try {
+                const bannedUsers = JSON.parse(localStorage.getItem('bannedUsers') || '[]');
+                if (bannedUsers.includes(userInput)) {
+                    console.log(`User ${userInput} found in banned users list`);
+
+                    // If the user is in the banned list but not detected by the ban system,
+                    // make sure the ban system is updated
+                    if (window.banSystem) {
+                        window.banSystem.banUser(userInput);
+                    }
+
+                    handleBannedUser(userInput);
+                    return;
+                }
+            } catch (error) {
+                console.error('Error checking banned users list:', error);
+            }
+        }
 
         try {
             console.log('Attempting to login with:', { username: userInput });
