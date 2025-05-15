@@ -267,6 +267,7 @@
         <div style="display:flex; gap:12px; margin-bottom:18px; justify-content:center; flex-wrap:wrap;">
             <button id="edit-profile-btn" style="background:#28a745;">Edit Profile</button>
             <button id="change-password-btn" style="background:#ffc107;">Change Password</button>
+            <button id="view-orders-btn" style="background:#007bff;">My Orders</button>
             <button id="toggle-theme-btn" style="background:#222;">Dark Mode</button>
             <button id="logout-profile-btn" class="modern-button" style="background:linear-gradient(135deg, #dc3545, #c82333) !important; margin-top:10px; width:100%;">Logout</button>
         </div>
@@ -671,6 +672,11 @@
 
         // Fetch user data when page loads
         fetchUserData();
+
+        // Add event listener for the "My Orders" button
+        document.getElementById('view-orders-btn').addEventListener('click', function() {
+            window.location.href = 'orders.html';
+        });
 
         document.getElementById('profile-form').onsubmit = async function(e) {
             e.preventDefault();

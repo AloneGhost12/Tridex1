@@ -395,47 +395,63 @@
 
         // Function to handle checkout process
         function proceedToCheckout() {
-            showLoading();
+            // Check if user is logged in
+            const isLoggedIn = localStorage.getItem('isLoggedIn') || localStorage.getItem('token');
+            const username = localStorage.getItem('username') || localStorage.getItem('currentUser');
 
-            // Simulate processing
-            setTimeout(() => {
-                hideLoading();
+            if (!isLoggedIn || !username) {
+                showLoading();
 
-                // Create a modal for checkout confirmation
-                const checkoutModal = document.createElement('div');
-                checkoutModal.className = 'modal-overlay';
-                checkoutModal.style.cssText = 'display:flex; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.8); z-index:999999; align-items:center; justify-content:center; opacity:0; transition:opacity 0.3s ease;';
-
-                const modalContent = document.createElement('div');
-                modalContent.className = 'modal-content';
-                modalContent.style.cssText = 'background:#fff; padding:32px 24px; border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,0.3); min-width:320px; max-width:90%; text-align:center; transform:scale(0.9); transition:transform 0.3s ease;';
-
-                modalContent.innerHTML = `
-                    <div style="margin-bottom:15px; font-size:3em; color:#28a745;">✓</div>
-                    <h2 style="margin-bottom:15px; color:#333; font-size:1.6em; font-weight:700;">Ready to Checkout</h2>
-                    <p style="margin-bottom:24px; font-size:1.1em; color:#555; line-height:1.6;">Your order is ready for checkout. This feature is not yet implemented.</p>
-                    <button id="close-checkout-btn" class="continue-shopping-btn" style="margin-top:10px;">Close</button>
-                `;
-
-                checkoutModal.appendChild(modalContent);
-                document.body.appendChild(checkoutModal);
-
-                // Show with animation
                 setTimeout(() => {
-                    checkoutModal.style.opacity = '1';
-                    modalContent.style.transform = 'scale(1)';
-                }, 10);
+                    hideLoading();
 
-                // Add close button functionality
-                document.getElementById('close-checkout-btn').onclick = function() {
-                    checkoutModal.style.opacity = '0';
-                    modalContent.style.transform = 'scale(0.9)';
+                    // Show login required message
+                    const loginModal = document.createElement('div');
+                    loginModal.className = 'modal-overlay';
+                    loginModal.style.cssText = 'display:flex; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.8); z-index:999999; align-items:center; justify-content:center; opacity:0; transition:opacity 0.3s ease;';
 
+                    const modalContent = document.createElement('div');
+                    modalContent.className = 'modal-content';
+                    modalContent.style.cssText = 'background:#fff; padding:32px 24px; border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,0.3); min-width:320px; max-width:90%; text-align:center; transform:scale(0.9); transition:transform 0.3s ease;';
+
+                    modalContent.innerHTML = `
+                        <div style="margin-bottom:15px; font-size:3em; color:#dc3545;">!</div>
+                        <h2 style="margin-bottom:15px; color:#333; font-size:1.6em; font-weight:700;">Login Required</h2>
+                        <p style="margin-bottom:24px; font-size:1.1em; color:#555; line-height:1.6;">Please login to proceed with checkout.</p>
+                        <button id="login-btn" class="continue-shopping-btn" style="margin-top:10px; background:linear-gradient(135deg, #007bff, #0056b3);">Login</button>
+                        <button id="close-login-btn" class="continue-shopping-btn" style="margin-top:10px; background:none; color:#007bff; box-shadow:none;">Cancel</button>
+                    `;
+
+                    loginModal.appendChild(modalContent);
+                    document.body.appendChild(loginModal);
+
+                    // Show with animation
                     setTimeout(() => {
-                        document.body.removeChild(checkoutModal);
-                    }, 300);
-                };
-            }, 800);
+                        loginModal.style.opacity = '1';
+                        modalContent.style.transform = 'scale(1)';
+                    }, 10);
+
+                    // Add login button functionality
+                    document.getElementById('login-btn').onclick = function() {
+                        window.location.href = 'login.html';
+                    };
+
+                    // Add close button functionality
+                    document.getElementById('close-login-btn').onclick = function() {
+                        loginModal.style.opacity = '0';
+                        modalContent.style.transform = 'scale(0.9)';
+
+                        setTimeout(() => {
+                            document.body.removeChild(loginModal);
+                        }, 300);
+                    };
+                }, 500);
+
+                return;
+            }
+
+            // Redirect to checkout page
+            window.location.href = 'checkout.html';
         }
 
         // Initialize the cart
