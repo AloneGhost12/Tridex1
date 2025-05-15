@@ -1869,6 +1869,39 @@ app.post('/orders/create', async (req, res) => {
         // Save order to database
         const savedOrder = await newOrder.save();
 
+        // For Razorpay integration, create a Razorpay order
+        if (orderData.payment && orderData.payment.method === 'razorpay') {
+            try {
+                // This is where you would normally create a Razorpay order using their API
+                // For now, we'll just return the order ID from our database
+                // In a production environment, you would use the Razorpay SDK to create an order
+
+                // Example of how you would create a Razorpay order:
+                // const razorpay = new Razorpay({
+                //     key_id: process.env.RAZORPAY_KEY_ID,
+                //     key_secret: process.env.RAZORPAY_KEY_SECRET
+                // });
+                //
+                // const razorpayOrder = await razorpay.orders.create({
+                //     amount: orderData.totalAmount * 100, // amount in smallest currency unit (paise)
+                //     currency: 'INR',
+                //     receipt: savedOrder._id.toString(),
+                //     payment_capture: 1 // auto capture
+                // });
+                //
+                // return res.status(201).json({
+                //     message: 'Order created successfully',
+                //     orderId: razorpayOrder.id
+                // });
+
+                // For now, we'll just return our order ID
+                console.log('Razorpay order created with ID:', savedOrder._id);
+            } catch (razorpayError) {
+                console.error('Error creating Razorpay order:', razorpayError);
+                // Continue with our order even if Razorpay fails
+            }
+        }
+
         // Return order ID
         res.status(201).json({
             message: 'Order created successfully',
@@ -1947,6 +1980,157 @@ app.get('/orders/user/:username', async (req, res) => {
     } catch (err) {
         console.error('Error fetching user orders:', err);
         res.status(500).json({ error: 'Error fetching user orders' });
+    }
+});
+
+// Cancel order
+app.put('/orders/:id/cancel', async (req, res) => {
+    try {
+        // Find order
+        const order = await Order.findById(req.params.id);
+
+        if (!order) {
+            return res.status(404).json({ error: 'Order not found' });
+        }
+
+        // Check if order can be cancelled
+        if (!['pending', 'processing'].includes(order.status)) {
+            return res.status(400).json({
+                error: 'Cannot cancel order',
+                message: 'Only pending or processing orders can be cancelled'
+            });
+        }
+
+        // Update order status
+        order.status = 'cancelled';
+        order.updatedAt = Date.now();
+
+        // Save updated order
+        await order.save();
+
+        res.json({
+            message: 'Order cancelled successfully',
+            order
+        });
+    } catch (err) {
+        console.error('Error cancelling order:', err);
+        res.status(500).json({ error: 'Error cancelling order' });
+    }
+});
+
+// Get all orders (admin only)
+app.get('/orders', async (req, res) => {
+    try {
+        // Get query parameters for filtering and pagination
+        const {
+            status,
+            customer,
+            startDate,
+            endDate,
+            page = 1,
+            limit = 20,
+            sort = 'createdAt',
+            order = 'desc'
+        } = req.query;
+
+        // Build query
+        const query = {};
+
+        // Filter by status if provided
+        if (status) {
+            query.status = status;
+        }
+
+        // Filter by customer (username or email) if provided
+        if (customer) {
+            query.$or = [
+                { 'user.username': { $regex: customer, $options: 'i' } },
+                { 'user.email': { $regex: customer, $options: 'i' } }
+            ];
+        }
+
+        // Filter by date range if provided
+        if (startDate || endDate) {
+            query.createdAt = {};
+
+            if (startDate) {
+                query.createdAt.$gte = new Date(startDate);
+            }
+
+            if (endDate) {
+                // Add one day to include the end date fully
+                const endDateObj = new Date(endDate);
+                endDateObj.setDate(endDateObj.getDate() + 1);
+                query.createdAt.$lt = endDateObj;
+            }
+        }
+
+        // Calculate pagination
+        const skip = (parseInt(page) - 1) * parseInt(limit);
+
+        // Determine sort order
+        const sortOrder = order === 'asc' ? 1 : -1;
+        const sortOptions = {};
+        sortOptions[sort] = sortOrder;
+
+        // Get orders with pagination and sorting
+        const orders = await Order.find(query)
+            .sort(sortOptions)
+            .skip(skip)
+            .limit(parseInt(limit));
+
+        // Get total count for pagination
+        const total = await Order.countDocuments(query);
+
+        res.json({
+            orders,
+            pagination: {
+                total,
+                page: parseInt(page),
+                pages: Math.ceil(total / parseInt(limit))
+            }
+        });
+    } catch (err) {
+        console.error('Error fetching orders:', err);
+        res.status(500).json({ error: 'Error fetching orders' });
+    }
+});
+
+// Update order status
+app.put('/orders/:id/status', async (req, res) => {
+    try {
+        const { status } = req.body;
+
+        // Validate status
+        const allowedStatuses = ['pending', 'processing', 'shipped', 'delivered', 'cancelled'];
+        if (!allowedStatuses.includes(status)) {
+            return res.status(400).json({
+                error: 'Invalid status',
+                message: 'Status must be one of: pending, processing, shipped, delivered, cancelled'
+            });
+        }
+
+        // Find order
+        const order = await Order.findById(req.params.id);
+
+        if (!order) {
+            return res.status(404).json({ error: 'Order not found' });
+        }
+
+        // Update order status
+        order.status = status;
+        order.updatedAt = Date.now();
+
+        // Save updated order
+        await order.save();
+
+        res.json({
+            message: 'Order status updated successfully',
+            order
+        });
+    } catch (err) {
+        console.error('Error updating order status:', err);
+        res.status(500).json({ error: 'Error updating order status' });
     }
 });
 

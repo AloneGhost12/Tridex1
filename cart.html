@@ -99,6 +99,36 @@
             font-size: 1.05em;
         }
 
+        /* Cart Item Actions */
+        .cart-item-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        /* Buy Now Button */
+        .buy-now-btn {
+            background: linear-gradient(135deg, #28a745, #218838);
+            color: #fff;
+            border: none;
+            border-radius: 30px;
+            padding: 8px 16px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 5px rgba(40, 167, 69, 0.3);
+        }
+
+        .buy-now-btn:hover {
+            background: linear-gradient(135deg, #218838, #1e7e34);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(40, 167, 69, 0.4);
+        }
+
+        .buy-now-btn:active {
+            transform: translateY(1px);
+        }
+
         /* Remove Button */
         .cart-remove-btn {
             background: linear-gradient(135deg, #dc3545, #c82333);
@@ -265,9 +295,15 @@
                 margin-bottom: 4px;
             }
 
+            .cart-item-actions {
+                width: 100%;
+                flex-direction: row;
+                justify-content: center;
+                gap: 10px;
+            }
+
+            .buy-now-btn,
             .cart-remove-btn {
-                margin: 0 auto;
-                display: block;
                 font-size: 0.9em;
                 padding: 6px 14px;
             }
@@ -340,9 +376,12 @@
                             <div class="cart-item-name">${item.name}</div>
                             <div class="cart-item-price">₹${item.price}</div>
                         </div>
-                        <button class="cart-remove-btn" data-idx="${idx}">
-                            <span class="remove-text">Remove</span>
-                        </button>
+                        <div class="cart-item-actions">
+                            <button class="buy-now-btn" data-idx="${idx}">Buy Now</button>
+                            <button class="cart-remove-btn" data-idx="${idx}">
+                                <span class="remove-text">Remove</span>
+                            </button>
+                        </div>
                     </div>
                 `;
             }).join('');
@@ -371,6 +410,14 @@
                     }, 300);
                 };
             });
+
+            // Buy Now button logic
+            document.querySelectorAll('.buy-now-btn').forEach(btn => {
+                btn.onclick = function() {
+                    const idx = parseInt(this.getAttribute('data-idx'));
+                    buyNow(idx);
+                };
+            });
         }
         function showLoading() {
             document.getElementById('loading-overlay').style.display = 'flex';
@@ -393,6 +440,85 @@
             document.head.appendChild(meta);
         }
 
+        // Function to handle individual product purchase
+        function buyNow(idx) {
+            // Check if user is logged in
+            const isLoggedIn = localStorage.getItem('isLoggedIn') || localStorage.getItem('token');
+            const username = localStorage.getItem('username') || localStorage.getItem('currentUser');
+
+            if (!isLoggedIn || !username) {
+                showLoginRequiredModal();
+                return;
+            }
+
+            // Get the selected item
+            const selectedItem = cart[idx];
+
+            // Create a temporary cart with only this item
+            const tempCart = [selectedItem];
+
+            // Save the original cart
+            const originalCart = JSON.stringify(cart);
+            localStorage.setItem('original_cart', originalCart);
+
+            // Set the temporary cart as the current cart
+            localStorage.setItem('cart', JSON.stringify(tempCart));
+            localStorage.setItem('is_buy_now', 'true');
+
+            // Redirect to checkout page
+            window.location.href = 'checkout.html';
+        }
+
+        // Show login required modal
+        function showLoginRequiredModal() {
+            showLoading();
+
+            setTimeout(() => {
+                hideLoading();
+
+                // Show login required message
+                const loginModal = document.createElement('div');
+                loginModal.className = 'modal-overlay';
+                loginModal.style.cssText = 'display:flex; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.8); z-index:999999; align-items:center; justify-content:center; opacity:0; transition:opacity 0.3s ease;';
+
+                const modalContent = document.createElement('div');
+                modalContent.className = 'modal-content';
+                modalContent.style.cssText = 'background:#fff; padding:32px 24px; border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,0.3); min-width:320px; max-width:90%; text-align:center; transform:scale(0.9); transition:transform 0.3s ease;';
+
+                modalContent.innerHTML = `
+                    <div style="margin-bottom:15px; font-size:3em; color:#dc3545;">!</div>
+                    <h2 style="margin-bottom:15px; color:#333; font-size:1.6em; font-weight:700;">Login Required</h2>
+                    <p style="margin-bottom:24px; font-size:1.1em; color:#555; line-height:1.6;">Please login to proceed with checkout.</p>
+                    <button id="login-btn" class="continue-shopping-btn" style="margin-top:10px; background:linear-gradient(135deg, #007bff, #0056b3);">Login</button>
+                    <button id="close-login-btn" class="continue-shopping-btn" style="margin-top:10px; background:none; color:#007bff; box-shadow:none;">Cancel</button>
+                `;
+
+                loginModal.appendChild(modalContent);
+                document.body.appendChild(loginModal);
+
+                // Show with animation
+                setTimeout(() => {
+                    loginModal.style.opacity = '1';
+                    modalContent.style.transform = 'scale(1)';
+                }, 10);
+
+                // Add login button functionality
+                document.getElementById('login-btn').onclick = function() {
+                    window.location.href = 'login.html';
+                };
+
+                // Add close button functionality
+                document.getElementById('close-login-btn').onclick = function() {
+                    loginModal.style.opacity = '0';
+                    modalContent.style.transform = 'scale(0.9)';
+
+                    setTimeout(() => {
+                        document.body.removeChild(loginModal);
+                    }, 300);
+                };
+            }, 500);
+        }
+
         // Function to handle checkout process
         function proceedToCheckout() {
             // Check if user is logged in
@@ -400,55 +526,13 @@
             const username = localStorage.getItem('username') || localStorage.getItem('currentUser');
 
             if (!isLoggedIn || !username) {
-                showLoading();
-
-                setTimeout(() => {
-                    hideLoading();
-
-                    // Show login required message
-                    const loginModal = document.createElement('div');
-                    loginModal.className = 'modal-overlay';
-                    loginModal.style.cssText = 'display:flex; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.8); z-index:999999; align-items:center; justify-content:center; opacity:0; transition:opacity 0.3s ease;';
-
-                    const modalContent = document.createElement('div');
-                    modalContent.className = 'modal-content';
-                    modalContent.style.cssText = 'background:#fff; padding:32px 24px; border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,0.3); min-width:320px; max-width:90%; text-align:center; transform:scale(0.9); transition:transform 0.3s ease;';
-
-                    modalContent.innerHTML = `
-                        <div style="margin-bottom:15px; font-size:3em; color:#dc3545;">!</div>
-                        <h2 style="margin-bottom:15px; color:#333; font-size:1.6em; font-weight:700;">Login Required</h2>
-                        <p style="margin-bottom:24px; font-size:1.1em; color:#555; line-height:1.6;">Please login to proceed with checkout.</p>
-                        <button id="login-btn" class="continue-shopping-btn" style="margin-top:10px; background:linear-gradient(135deg, #007bff, #0056b3);">Login</button>
-                        <button id="close-login-btn" class="continue-shopping-btn" style="margin-top:10px; background:none; color:#007bff; box-shadow:none;">Cancel</button>
-                    `;
-
-                    loginModal.appendChild(modalContent);
-                    document.body.appendChild(loginModal);
-
-                    // Show with animation
-                    setTimeout(() => {
-                        loginModal.style.opacity = '1';
-                        modalContent.style.transform = 'scale(1)';
-                    }, 10);
-
-                    // Add login button functionality
-                    document.getElementById('login-btn').onclick = function() {
-                        window.location.href = 'login.html';
-                    };
-
-                    // Add close button functionality
-                    document.getElementById('close-login-btn').onclick = function() {
-                        loginModal.style.opacity = '0';
-                        modalContent.style.transform = 'scale(0.9)';
-
-                        setTimeout(() => {
-                            document.body.removeChild(loginModal);
-                        }, 300);
-                    };
-                }, 500);
-
+                showLoginRequiredModal();
                 return;
             }
+
+            // Remove any buy now flags
+            localStorage.removeItem('is_buy_now');
+            localStorage.removeItem('original_cart');
 
             // Redirect to checkout page
             window.location.href = 'checkout.html';

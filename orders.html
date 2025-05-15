@@ -282,7 +282,7 @@
         function showLoading() {
             document.getElementById('loading-overlay').style.display = 'flex';
         }
-        
+
         function hideLoading() {
             document.getElementById('loading-overlay').style.display = 'none';
         }
@@ -293,15 +293,15 @@
                 // Check if user is logged in
                 const isLoggedIn = localStorage.getItem('isLoggedIn') || localStorage.getItem('token');
                 const username = localStorage.getItem('username') || localStorage.getItem('currentUser');
-                
+
                 if (!isLoggedIn || !username) {
                     window.location.href = 'login.html';
                     return;
                 }
-                
+
                 // Fetch user orders
                 await fetchOrders(username);
-                
+
                 // Render orders
                 renderOrders();
             } catch (error) {
@@ -326,11 +326,11 @@
                         'X-Username': username
                     }
                 });
-                
+
                 if (!response.ok) {
                     throw new Error('Failed to fetch orders');
                 }
-                
+
                 orders = await response.json();
             } catch (error) {
                 console.error('Error fetching orders:', error);
@@ -341,10 +341,10 @@
         // Render orders
         function renderOrders() {
             const ordersContainer = document.getElementById('orders-list');
-            
+
             // Clear loading indicator
             ordersContainer.innerHTML = '';
-            
+
             // Check if there are orders
             if (!orders || orders.length === 0) {
                 ordersContainer.innerHTML = `
@@ -357,25 +357,25 @@
                 `;
                 return;
             }
-            
+
             // Render each order
             orders.forEach(order => {
                 const orderElement = document.createElement('div');
                 orderElement.className = 'order-card';
-                
+
                 // Format date
                 const orderDate = new Date(order.createdAt).toLocaleDateString('en-US', {
                     year: 'numeric',
                     month: 'short',
                     day: 'numeric'
                 });
-                
+
                 // Get status class
                 const statusClass = `status-${order.status.toLowerCase()}`;
-                
+
                 // Calculate order totals
                 const subtotal = order.totalAmount - order.shippingFee - order.tax;
-                
+
                 orderElement.innerHTML = `
                     <div class="order-header">
                         <div class="order-id">Order #${order._id.substring(0, 8)}</div>
@@ -417,18 +417,15 @@
                         </div>
                     </div>
                 `;
-                
+
                 ordersContainer.appendChild(orderElement);
             });
         }
 
         // View order details
         function viewOrderDetails(orderId) {
-            // For now, just show an alert
-            alert(`View details for order ${orderId}`);
-            
-            // In a real implementation, you would redirect to an order details page
-            // window.location.href = `order-details.html?id=${orderId}`;
+            // Redirect to order details page
+            window.location.href = `order-details.html?id=${orderId}`;
         }
 
         // Initialize on page load

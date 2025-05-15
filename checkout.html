@@ -256,7 +256,7 @@
 
     <div class="checkout-container">
         <h1 class="checkout-title">Checkout</h1>
-        
+
         <div class="checkout-grid">
             <div>
                 <div class="checkout-section">
@@ -351,7 +351,7 @@
 
     <!-- Razorpay Script -->
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
-    
+
     <script>
         // Global variables
         let cart = [];
@@ -365,7 +365,7 @@
         function showLoading() {
             document.getElementById('loading-overlay').style.display = 'flex';
         }
-        
+
         function hideLoading() {
             document.getElementById('loading-overlay').style.display = 'none';
         }
@@ -374,13 +374,13 @@
         function initCheckout() {
             // Load cart items
             loadCart();
-            
+
             // Render order summary
             renderOrderSummary();
-            
+
             // Pre-fill user information if logged in
             prefillUserInfo();
-            
+
             // Add event listeners
             setupEventListeners();
         }
@@ -389,7 +389,7 @@
         function loadCart() {
             const username = localStorage.getItem('username') || localStorage.getItem('currentUser');
             const cartUser = localStorage.getItem('cartUser');
-            
+
             if (cartUser !== username) {
                 const userCart = localStorage.getItem('cart_' + username);
                 if (userCart) {
@@ -399,13 +399,13 @@
                 }
                 localStorage.setItem('cartUser', username);
             }
-            
+
             try {
                 cart = JSON.parse(localStorage.getItem('cart')) || [];
             } catch (e) {
                 cart = [];
             }
-            
+
             // Redirect to cart if cart is empty
             if (cart.length === 0) {
                 window.location.href = 'cart.html';
@@ -415,18 +415,18 @@
         // Render order summary
         function renderOrderSummary() {
             const orderItemsContainer = document.getElementById('order-items');
-            
+
             // Clear container
             orderItemsContainer.innerHTML = '';
-            
+
             // Reset totals
             subtotal = 0;
-            
+
             // Render each item
             cart.forEach(item => {
                 const itemPrice = Number(item.price) || 0;
                 subtotal += itemPrice;
-                
+
                 const itemElement = document.createElement('div');
                 itemElement.className = 'order-item';
                 itemElement.innerHTML = `
@@ -436,16 +436,16 @@
                         <div class="order-item-price">₹${itemPrice}</div>
                     </div>
                 `;
-                
+
                 orderItemsContainer.appendChild(itemElement);
             });
-            
+
             // Calculate tax (5% of subtotal)
             tax = Math.round(subtotal * 0.05);
-            
+
             // Calculate total
             total = subtotal + shipping + tax;
-            
+
             // Update summary
             document.getElementById('subtotal').textContent = `₹${subtotal}`;
             document.getElementById('shipping').textContent = `₹${shipping}`;
@@ -456,7 +456,7 @@
         // Pre-fill user information if logged in
         function prefillUserInfo() {
             const username = localStorage.getItem('username') || localStorage.getItem('currentUser');
-            
+
             if (username) {
                 // Fetch user profile from server
                 fetch(`https://tridex1.onrender.com/users/profile?username=${encodeURIComponent(username)}`, {
@@ -489,18 +489,18 @@
                     document.querySelectorAll('.payment-method').forEach(m => {
                         m.classList.remove('selected');
                     });
-                    
+
                     // Add selected class to clicked method
                     this.classList.add('selected');
-                    
+
                     // Update selected payment method
                     selectedPaymentMethod = this.getAttribute('data-method');
-                    
+
                     // Check the radio button
                     this.querySelector('input[type="radio"]').checked = true;
                 });
             });
-            
+
             // Place order button
             document.getElementById('place-order-btn').addEventListener('click', placeOrder);
         }
@@ -511,10 +511,10 @@
             if (!validateForm()) {
                 return;
             }
-            
+
             // Show loading overlay
             showLoading();
-            
+
             // Get form data
             const orderData = {
                 user: {
@@ -546,7 +546,7 @@
                 shippingFee: shipping,
                 tax: tax
             };
-            
+
             // Process based on payment method
             if (selectedPaymentMethod === 'razorpay') {
                 processRazorpayPayment(orderData);
@@ -560,9 +560,9 @@
             const requiredFields = [
                 'fullname', 'email', 'phone', 'address', 'city', 'state', 'postalCode', 'country'
             ];
-            
+
             let isValid = true;
-            
+
             requiredFields.forEach(field => {
                 const input = document.getElementById(field);
                 if (!input.value.trim()) {
@@ -572,11 +572,11 @@
                     input.style.borderColor = '#ddd';
                 }
             });
-            
+
             if (!isValid) {
                 alert('Please fill in all required fields');
             }
-            
+
             return isValid;
         }
 
@@ -597,10 +597,10 @@
                 if (data.error) {
                     throw new Error(data.error);
                 }
-                
+
                 // Initialize Razorpay
                 const options = {
-                    key: 'rzp_test_YourTestKey', // Replace with your Razorpay key
+                    key: 'rzp_test_438531956929485', // Updated Razorpay test key
                     amount: total * 100, // Amount in paise
                     currency: 'INR',
                     name: 'Tridex',
@@ -617,9 +617,15 @@
                     },
                     theme: {
                         color: '#007bff'
+                    },
+                    modal: {
+                        ondismiss: function() {
+                            hideLoading();
+                            console.log('Payment modal closed');
+                        }
                     }
                 };
-                
+
                 const rzp = new Razorpay(options);
                 rzp.open();
                 hideLoading();
@@ -648,7 +654,7 @@
                 if (data.error) {
                     throw new Error(data.error);
                 }
-                
+
                 // Handle successful order creation
                 handleOrderSuccess(data.orderId);
             })
@@ -679,7 +685,7 @@
                 if (data.error) {
                     throw new Error(data.error);
                 }
-                
+
                 // Handle successful order
                 handleOrderSuccess(orderId);
             })
@@ -692,9 +698,24 @@
 
         // Handle order success
         function handleOrderSuccess(orderId) {
-            // Clear cart
-            localStorage.removeItem('cart');
-            
+            // Check if this was a "Buy Now" purchase
+            const isBuyNow = localStorage.getItem('is_buy_now') === 'true';
+
+            if (isBuyNow) {
+                // Restore the original cart
+                const originalCart = localStorage.getItem('original_cart');
+                if (originalCart) {
+                    localStorage.setItem('cart', originalCart);
+                }
+
+                // Clear the buy now flags
+                localStorage.removeItem('is_buy_now');
+                localStorage.removeItem('original_cart');
+            } else {
+                // Clear the entire cart for normal checkout
+                localStorage.removeItem('cart');
+            }
+
             // Show success message
             showOrderConfirmation(orderId);
         }
@@ -702,16 +723,16 @@
         // Show order confirmation
         function showOrderConfirmation(orderId) {
             hideLoading();
-            
+
             // Create modal for order confirmation
             const confirmationModal = document.createElement('div');
             confirmationModal.className = 'modal-overlay';
             confirmationModal.style.cssText = 'display:flex; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.8); z-index:999999; align-items:center; justify-content:center; opacity:0; transition:opacity 0.3s ease;';
-            
+
             const modalContent = document.createElement('div');
             modalContent.className = 'modal-content';
             modalContent.style.cssText = 'background:#fff; padding:32px 24px; border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,0.3); min-width:320px; max-width:90%; text-align:center; transform:scale(0.9); transition:transform 0.3s ease;';
-            
+
             modalContent.innerHTML = `
                 <div style="margin-bottom:15px; font-size:3em; color:#28a745;">✓</div>
                 <h2 style="margin-bottom:15px; color:#333; font-size:1.6em; font-weight:700;">Order Placed Successfully!</h2>
@@ -719,16 +740,16 @@
                 <p style="margin-bottom:24px; font-size:1em; color:#666;">Order ID: ${orderId}</p>
                 <button id="continue-shopping-btn" class="checkout-button" style="margin-top:10px;">Continue Shopping</button>
             `;
-            
+
             confirmationModal.appendChild(modalContent);
             document.body.appendChild(confirmationModal);
-            
+
             // Show with animation
             setTimeout(() => {
                 confirmationModal.style.opacity = '1';
                 modalContent.style.transform = 'scale(1)';
             }, 10);
-            
+
             // Add continue shopping button functionality
             document.getElementById('continue-shopping-btn').onclick = function() {
                 window.location.href = 'index.html';
