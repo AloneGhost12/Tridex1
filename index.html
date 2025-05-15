@@ -513,12 +513,23 @@ document.addEventListener('DOMContentLoaded', function() {
     const nav = document.getElementById('nav');
 
     // Toggle navigation when hamburger is clicked
-    hamburger.addEventListener('click', function() {
+    hamburger.addEventListener('click', function(e) {
+        e.stopPropagation(); // Prevent event from bubbling up
         nav.classList.toggle('show');
 
-        // Animate hamburger icon
-        const spans = hamburger.querySelectorAll('span');
-        spans.forEach(span => span.classList.toggle('active'));
+        // Animate hamburger icon to X when menu is open
+        const divs = hamburger.querySelectorAll('div');
+        if (nav.classList.contains('show')) {
+            // X shape when menu is open
+            divs[0].style.transform = 'rotate(-45deg) translate(-5px, 6px)';
+            divs[1].style.opacity = '0';
+            divs[2].style.transform = 'rotate(45deg) translate(-5px, -6px)';
+        } else {
+            // Reset to hamburger shape
+            divs[0].style.transform = 'none';
+            divs[1].style.opacity = '1';
+            divs[2].style.transform = 'none';
+        }
     });
 
     // Close navigation when clicking outside
@@ -527,8 +538,10 @@ document.addEventListener('DOMContentLoaded', function() {
             nav.classList.remove('show');
 
             // Reset hamburger icon
-            const spans = hamburger.querySelectorAll('span');
-            spans.forEach(span => span.classList.remove('active'));
+            const divs = hamburger.querySelectorAll('div');
+            divs[0].style.transform = 'none';
+            divs[1].style.opacity = '1';
+            divs[2].style.transform = 'none';
         }
     });
 
@@ -538,8 +551,12 @@ document.addEventListener('DOMContentLoaded', function() {
             nav.classList.remove('show');
 
             // Reset hamburger icon
-            const spans = hamburger.querySelectorAll('span');
-            spans.forEach(span => span.classList.remove('active'));
+            const divs = hamburger.querySelectorAll('div');
+            if (divs.length > 0) {
+                divs[0].style.transform = 'none';
+                divs[1].style.opacity = '1';
+                divs[2].style.transform = 'none';
+            }
         }
     });
 });
