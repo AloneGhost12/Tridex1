@@ -462,7 +462,8 @@ app.put('/users/update', async (req, res) => {
                     age: req.body.age || '30',
                     gender: req.body.gender || 'other',
                     verified: username === 'admin' ? true : false,
-                    isAdmin: username === 'admin' ? true : false
+                    isAdmin: username === 'admin' ? true : false,
+                    addresses: []
                 }
             });
         }
@@ -486,6 +487,292 @@ app.put('/users/update', async (req, res) => {
     } catch (err) {
         console.error('Error updating user profile:', err);
         res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// ========== ADDRESS MANAGEMENT ==========
+
+// Add a new address to user profile
+app.post('/users/addresses', async (req, res) => {
+    try {
+        // Authenticate user
+        const authHeader = req.headers.authorization;
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            return res.status(401).json({ message: 'Unauthorized' });
+        }
+
+        // Get username from token or headers
+        const token = authHeader.split(' ')[1];
+        let username = null;
+
+        if (token === 'dev-admin-token') {
+            username = 'admin';
+        } else if (token === 'dev-user-token') {
+            username = 'user';
+        } else if (token.startsWith('fake-jwt-token-')) {
+            username = req.headers['x-username'] || req.body.username;
+        }
+
+        if (!username) {
+            return res.status(401).json({ message: 'Invalid token or missing username' });
+        }
+
+        // Find user
+        const user = await User.findOne({ username });
+
+        // Handle hardcoded users
+        if (!user && (username === 'admin' || username === 'user')) {
+            // For hardcoded users, just return success without actually updating
+            return res.json({
+                message: 'Address added successfully (demo mode)',
+                address: req.body
+            });
+        }
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Create new address
+        const newAddress = {
+            name: req.body.name,
+            address: req.body.address,
+            city: req.body.city,
+            state: req.body.state,
+            postalCode: req.body.postalCode,
+            country: req.body.country || 'India',
+            phone: req.body.phone,
+            isDefault: req.body.isDefault || false
+        };
+
+        // If this is the first address or marked as default, update other addresses
+        if (newAddress.isDefault || user.addresses.length === 0) {
+            // Set all existing addresses to non-default
+            user.addresses.forEach(addr => {
+                addr.isDefault = false;
+            });
+
+            // Make sure the new address is default
+            newAddress.isDefault = true;
+        }
+
+        // Add address to user
+        user.addresses.push(newAddress);
+
+        // Save user
+        await user.save();
+
+        res.status(201).json({
+            message: 'Address added successfully',
+            address: user.addresses[user.addresses.length - 1]
+        });
+    } catch (err) {
+        console.error('Error adding address:', err);
+        res.status(500).json({ message: 'Error adding address' });
+    }
+});
+
+// Get all addresses for a user
+app.get('/users/addresses', async (req, res) => {
+    try {
+        // Authenticate user
+        const authHeader = req.headers.authorization;
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            return res.status(401).json({ message: 'Unauthorized' });
+        }
+
+        // Get username from token or headers
+        const token = authHeader.split(' ')[1];
+        let username = null;
+
+        if (token === 'dev-admin-token') {
+            username = 'admin';
+        } else if (token === 'dev-user-token') {
+            username = 'user';
+        } else if (token.startsWith('fake-jwt-token-')) {
+            username = req.headers['x-username'] || req.query.username;
+        }
+
+        if (!username) {
+            return res.status(401).json({ message: 'Invalid token or missing username' });
+        }
+
+        // Find user
+        const user = await User.findOne({ username });
+
+        // Handle hardcoded users
+        if (!user && (username === 'admin' || username === 'user')) {
+            // For hardcoded users, return empty addresses array
+            return res.json([]);
+        }
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Return addresses
+        res.json(user.addresses);
+    } catch (err) {
+        console.error('Error fetching addresses:', err);
+        res.status(500).json({ message: 'Error fetching addresses' });
+    }
+});
+
+// Update an address
+app.put('/users/addresses/:addressId', async (req, res) => {
+    try {
+        // Authenticate user
+        const authHeader = req.headers.authorization;
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            return res.status(401).json({ message: 'Unauthorized' });
+        }
+
+        // Get username from token or headers
+        const token = authHeader.split(' ')[1];
+        let username = null;
+
+        if (token === 'dev-admin-token') {
+            username = 'admin';
+        } else if (token === 'dev-user-token') {
+            username = 'user';
+        } else if (token.startsWith('fake-jwt-token-')) {
+            username = req.headers['x-username'] || req.body.username;
+        }
+
+        if (!username) {
+            return res.status(401).json({ message: 'Invalid token or missing username' });
+        }
+
+        // Find user
+        const user = await User.findOne({ username });
+
+        // Handle hardcoded users
+        if (!user && (username === 'admin' || username === 'user')) {
+            // For hardcoded users, just return success without actually updating
+            return res.json({
+                message: 'Address updated successfully (demo mode)',
+                address: req.body
+            });
+        }
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Find address by ID
+        const addressId = req.params.addressId;
+        const addressIndex = user.addresses.findIndex(addr => addr._id.toString() === addressId);
+
+        if (addressIndex === -1) {
+            return res.status(404).json({ message: 'Address not found' });
+        }
+
+        // Update address fields
+        const updatedAddress = {
+            ...user.addresses[addressIndex].toObject(),
+            name: req.body.name || user.addresses[addressIndex].name,
+            address: req.body.address || user.addresses[addressIndex].address,
+            city: req.body.city || user.addresses[addressIndex].city,
+            state: req.body.state || user.addresses[addressIndex].state,
+            postalCode: req.body.postalCode || user.addresses[addressIndex].postalCode,
+            country: req.body.country || user.addresses[addressIndex].country,
+            phone: req.body.phone || user.addresses[addressIndex].phone,
+            isDefault: req.body.isDefault !== undefined ? req.body.isDefault : user.addresses[addressIndex].isDefault
+        };
+
+        // If setting this address as default, update other addresses
+        if (updatedAddress.isDefault && !user.addresses[addressIndex].isDefault) {
+            // Set all other addresses to non-default
+            user.addresses.forEach((addr, idx) => {
+                if (idx !== addressIndex) {
+                    addr.isDefault = false;
+                }
+            });
+        }
+
+        // Update the address
+        user.addresses[addressIndex] = updatedAddress;
+
+        // Save user
+        await user.save();
+
+        res.json({
+            message: 'Address updated successfully',
+            address: user.addresses[addressIndex]
+        });
+    } catch (err) {
+        console.error('Error updating address:', err);
+        res.status(500).json({ message: 'Error updating address' });
+    }
+});
+
+// Delete an address
+app.delete('/users/addresses/:addressId', async (req, res) => {
+    try {
+        // Authenticate user
+        const authHeader = req.headers.authorization;
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            return res.status(401).json({ message: 'Unauthorized' });
+        }
+
+        // Get username from token or headers
+        const token = authHeader.split(' ')[1];
+        let username = null;
+
+        if (token === 'dev-admin-token') {
+            username = 'admin';
+        } else if (token === 'dev-user-token') {
+            username = 'user';
+        } else if (token.startsWith('fake-jwt-token-')) {
+            username = req.headers['x-username'] || req.query.username;
+        }
+
+        if (!username) {
+            return res.status(401).json({ message: 'Invalid token or missing username' });
+        }
+
+        // Find user
+        const user = await User.findOne({ username });
+
+        // Handle hardcoded users
+        if (!user && (username === 'admin' || username === 'user')) {
+            // For hardcoded users, just return success without actually updating
+            return res.json({
+                message: 'Address deleted successfully (demo mode)'
+            });
+        }
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Find address by ID
+        const addressId = req.params.addressId;
+        const addressIndex = user.addresses.findIndex(addr => addr._id.toString() === addressId);
+
+        if (addressIndex === -1) {
+            return res.status(404).json({ message: 'Address not found' });
+        }
+
+        // Check if this is the default address
+        const isDefault = user.addresses[addressIndex].isDefault;
+
+        // Remove the address
+        user.addresses.splice(addressIndex, 1);
+
+        // If the deleted address was the default and there are other addresses,
+        // set the first remaining address as default
+        if (isDefault && user.addresses.length > 0) {
+            user.addresses[0].isDefault = true;
+        }
+
+        // Save user
+        await user.save();
+
+        res.json({ message: 'Address deleted successfully' });
+    } catch (err) {
+        console.error('Error deleting address:', err);
+        res.status(500).json({ message: 'Error deleting address' });
     }
 });
 
