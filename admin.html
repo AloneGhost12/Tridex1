@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="css/product-media-gallery.css">
     <link rel="stylesheet" href="css/color-variant-manager.css">
+    <link rel="stylesheet" href="css/admin-responsive.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
     <!-- Include the ban system script -->
     <script src="ban-system.js"></script>
@@ -76,45 +77,55 @@
     </div>
     <h1>Admin Panel</h1>
     <!-- Admin controls -->
-    <div class="admin-controls" style="margin-bottom:15px;">
-        <button id="verify-cloudinary-btn" class="btn btn-info btn-sm" style="padding:5px 10px; background:#17a2b8; color:white; border:none; border-radius:4px; cursor:pointer; margin-right:10px;">Check Cloudinary Connection</button>
-        <button id="verify-product-images-btn" class="btn btn-info btn-sm" style="padding:5px 10px; background:#6c757d; color:white; border:none; border-radius:4px; cursor:pointer;">Verify Product Images</button>
-        <span id="cloudinary-status" style="margin-left:10px; font-size:0.9em;"></span>
+    <div class="admin-controls">
+        <button id="verify-cloudinary-btn" class="btn btn-info btn-sm" style="background:#17a2b8; color:white; border:none; border-radius:4px; cursor:pointer;">
+            <i class="fas fa-cloud-upload-alt"></i> Check Cloudinary
+        </button>
+        <button id="verify-product-images-btn" class="btn btn-info btn-sm" style="background:#6c757d; color:white; border:none; border-radius:4px; cursor:pointer;">
+            <i class="fas fa-images"></i> Verify Images
+        </button>
+        <span id="cloudinary-status" style="font-size:0.9em;"></span>
     </div>
 
     <!-- Admin navigation buttons -->
-    <div style="margin-bottom:24px;">
-        <button class="admin-nav-btn active" id="show-users-btn">User Details</button>
-        <button class="admin-nav-btn" id="show-products-btn">Product Management</button>
-        <button class="admin-nav-btn" id="show-categories-btn">Categories</button>
-        <button class="admin-nav-btn" id="show-orders-btn" title="Order Management">📦 Orders</button>
-        <button class="admin-nav-btn" id="show-mail-btn" title="Send Announcement">&#9993; Mail</button>
-        <button class="admin-nav-btn" id="show-contact-btn" title="Contact Messages">📞 Contact Messages</button>
+    <div class="admin-nav-container">
+        <button class="admin-nav-btn active" id="show-users-btn"><i class="fas fa-users"></i> Users</button>
+        <button class="admin-nav-btn" id="show-products-btn"><i class="fas fa-box"></i> Products</button>
+        <button class="admin-nav-btn" id="show-categories-btn"><i class="fas fa-tags"></i> Categories</button>
+        <button class="admin-nav-btn" id="show-orders-btn" title="Order Management"><i class="fas fa-shipping-fast"></i> Orders</button>
+        <button class="admin-nav-btn" id="show-mail-btn" title="Send Announcement"><i class="fas fa-envelope"></i> Mail</button>
+        <button class="admin-nav-btn" id="show-contact-btn" title="Contact Messages"><i class="fas fa-phone"></i> Messages</button>
     </div>
 
     <!-- User Details Section -->
     <div id="user-section">
-        <div style="margin-bottom: 15px;">
-            <button id="debug-ban-system" style="padding: 8px 15px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer; margin-right: 10px;">Debug Ban System</button>
-            <button id="force-check-ban-status" style="padding: 8px 15px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer;">Force Check Ban Status</button>
-            <span id="debug-output" style="margin-left: 10px; font-family: monospace;"></span>
+        <div class="admin-controls">
+            <button id="debug-ban-system" style="background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                <i class="fas fa-bug"></i> Debug Ban System
+            </button>
+            <button id="force-check-ban-status" style="background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                <i class="fas fa-sync-alt"></i> Check Ban Status
+            </button>
+            <span id="debug-output" style="font-family: monospace;"></span>
         </div>
-        <table id="user-table">
-            <thead>
-                <tr>
-                    <th>Username</th>
-                    <th>Email</th>
-                    <th>Phone</th>
-                    <th>Age</th>
-                    <th>Password</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                <!-- User rows will be rendered here -->
-            </tbody>
-        </table>
+        <div class="table-responsive">
+            <table id="user-table" class="mobile-optimized-table">
+                <thead>
+                    <tr>
+                        <th>Username</th>
+                        <th>Email</th>
+                        <th>Phone</th>
+                        <th>Age</th>
+                        <th>Password</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- User rows will be rendered here -->
+                </tbody>
+            </table>
+        </div>
         <!-- User detail modal -->
         <div id="user-detail-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.3); z-index:2000; align-items:center; justify-content:center;">
             <div style="background:#fff; padding:32px 24px; border-radius:8px; box-shadow:0 2px 12px rgba(0,0,0,0.15); min-width:300px; max-width:90vw;">
@@ -179,51 +190,68 @@
             <button type="button" id="product-cancel-btn" style="display:none;">Cancel</button>
             <button type="button" id="regenerate-summary-btn" style="display:none;">Regenerate AI Summary</button>
         </form>
-        <table id="product-list">
-            <thead>
-                <tr>
-                    <th>Photo</th>
-                    <th>Name</th>
-                    <th>Description</th>
-                    <th>Price</th>
-                    <th>Category</th>
-                    <th>AI Summary</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                <!-- Product rows will be rendered here -->
-            </tbody>
-        </table>
+        <div class="table-responsive">
+            <table id="product-list" class="mobile-optimized-table">
+                <thead>
+                    <tr>
+                        <th>Photo</th>
+                        <th>Name</th>
+                        <th>Description</th>
+                        <th>Price</th>
+                        <th>Category</th>
+                        <th>AI Summary</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Product rows will be rendered here -->
+                </tbody>
+            </table>
+        </div>
     </div>
 
     <!-- Category Management Section -->
     <div id="category-section" style="display:none;">
         <form id="category-form">
             <input type="hidden" id="category-id">
-            <label>Category Name: <input type="text" id="category-name" required></label>
+            <div class="form-group">
+                <label for="category-name">Category Name:</label>
+                <input type="text" id="category-name" required>
+            </div>
             <!-- Icon upload and preview -->
-            <label>Icon: <input type="file" id="category-icon-file" accept="image/*"></label>
+            <div class="form-group">
+                <label for="category-icon-file">Icon:</label>
+                <input type="file" id="category-icon-file" accept="image/*">
+            </div>
             <input type="hidden" id="category-icon">
-            <img id="category-icon-preview" src="" alt="Preview" style="display:none;max-width:80px;max-height:80px;margin-bottom:8px;">
-            <label>Description: <textarea id="category-desc"></textarea></label>
-            <button type="submit" id="category-save-btn">Add Category</button>
-            <button type="button" id="category-cancel-btn" style="display:none;">Cancel</button>
+            <div class="form-group">
+                <img id="category-icon-preview" src="" alt="Preview" style="display:none;max-width:80px;max-height:80px;margin-bottom:8px;">
+            </div>
+            <div class="form-group">
+                <label for="category-desc">Description:</label>
+                <textarea id="category-desc"></textarea>
+            </div>
+            <div class="form-actions">
+                <button type="submit" id="category-save-btn">Add Category</button>
+                <button type="button" id="category-cancel-btn" style="display:none;">Cancel</button>
+            </div>
         </form>
-        <table id="category-list">
-            <thead>
-                <tr>
-                    <th>Icon</th>
-                    <th>Name</th>
-                    <th>Description</th>
-                    <th>Products</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                <!-- Category rows will be rendered here -->
-            </tbody>
-        </table>
+        <div class="table-responsive">
+            <table id="category-list" class="mobile-optimized-table">
+                <thead>
+                    <tr>
+                        <th>Icon</th>
+                        <th>Name</th>
+                        <th>Description</th>
+                        <th>Products</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Category rows will be rendered here -->
+                </tbody>
+            </table>
+        </div>
     </div>
 
     <!-- Orders Section -->
@@ -314,8 +342,8 @@
 
     <!-- Contact Messages Section -->
     <div id="contact-section" style="display:none;">
-        <div style="margin-bottom:15px; display:flex; justify-content:space-between; align-items:center;">
-            <div>
+        <div class="admin-controls">
+            <div class="contact-filters">
                 <select id="contact-status-filter" style="padding:8px; border-radius:4px; border:1px solid #ccc;">
                     <option value="">All Statuses</option>
                     <option value="New">New</option>
@@ -324,29 +352,37 @@
                     <option value="Closed">Closed</option>
                 </select>
                 <input type="text" id="contact-search" placeholder="Search messages..." style="padding:8px; border-radius:4px; border:1px solid #ccc; margin-left:10px; width:250px;">
-                <button id="contact-search-btn" style="padding:8px 15px; background:#007bff; color:white; border:none; border-radius:4px; cursor:pointer; margin-left:10px;">Search</button>
+                <button id="contact-search-btn" style="padding:8px 15px; background:#007bff; color:white; border:none; border-radius:4px; cursor:pointer; margin-left:10px;">
+                    <i class="fas fa-search"></i> Search
+                </button>
             </div>
-            <div>
+            <div class="contact-pagination">
                 <span id="contact-pagination-info" style="margin-right:15px;">Showing 1-20 of 0</span>
-                <button id="contact-prev-page" style="padding:5px 10px; background:#6c757d; color:white; border:none; border-radius:4px; cursor:pointer;">Previous</button>
-                <button id="contact-next-page" style="padding:5px 10px; background:#6c757d; color:white; border:none; border-radius:4px; cursor:pointer; margin-left:5px;">Next</button>
+                <button id="contact-prev-page" style="padding:5px 10px; background:#6c757d; color:white; border:none; border-radius:4px; cursor:pointer;">
+                    <i class="fas fa-chevron-left"></i> Previous
+                </button>
+                <button id="contact-next-page" style="padding:5px 10px; background:#6c757d; color:white; border:none; border-radius:4px; cursor:pointer; margin-left:5px;">
+                    Next <i class="fas fa-chevron-right"></i>
+                </button>
             </div>
         </div>
-        <table id="contact-table">
-            <thead>
-                <tr>
-                    <th>Date</th>
-                    <th>Name</th>
-                    <th>Email</th>
-                    <th>Subject</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                <!-- Contact message rows will be rendered here -->
-            </tbody>
-        </table>
+        <div class="table-responsive">
+            <table id="contact-table" class="mobile-optimized-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Subject</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Contact message rows will be rendered here -->
+                </tbody>
+            </table>
+        </div>
     </div>
 
     <!-- Contact Message Detail Modal -->
