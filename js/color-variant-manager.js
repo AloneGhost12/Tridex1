@@ -1,0 +1,513 @@
+/**
+ * Color Variant Manager
+ *
+ * This module provides functionality for managing product color variants
+ * in the admin panel.
+ */
+
+class ColorVariantManager {
+    /**
+     * Initialize the color variant manager
+     * @param {Object} options Configuration options
+     */
+    constructor(options = {}) {
+        // Container for the color variant UI
+        this.container = options.container || document.getElementById('color-variant-container');
+
+        // Parent product ID
+        this.parentProductId = options.parentProductId || null;
+
+        // Callback when variants change
+        this.onVariantsChange = options.onVariantsChange || function() {};
+
+        // Cloudinary configuration
+        this.cloudName = options.cloudName || '';
+        this.apiKey = options.apiKey || '';
+
+        // Array of color variants
+        this.variants = [];
+
+        // Standard color options
+        this.standardColors = [
+            { name: 'Black', hexCode: '#000000' },
+            { name: 'White', hexCode: '#FFFFFF' },
+            { name: 'Red', hexCode: '#FF0000' },
+            { name: 'Green', hexCode: '#008000' },
+            { name: 'Blue', hexCode: '#0000FF' },
+            { name: 'Yellow', hexCode: '#FFFF00' },
+            { name: 'Purple', hexCode: '#800080' },
+            { name: 'Orange', hexCode: '#FFA500' },
+            { name: 'Pink', hexCode: '#FFC0CB' },
+            { name: 'Gray', hexCode: '#808080' },
+            { name: 'Brown', hexCode: '#A52A2A' },
+            { name: 'Navy Blue', hexCode: '#000080' },
+            { name: 'Teal', hexCode: '#008080' },
+            { name: 'Gold', hexCode: '#FFD700' },
+            { name: 'Silver', hexCode: '#C0C0C0' }
+        ];
+
+        // Initialize the UI
+        this.initUI();
+    }
+
+    /**
+     * Initialize the user interface
+     */
+    initUI() {
+        if (!this.container) {
+            console.error('Color variant container not found');
+            return;
+        }
+
+        // Create the UI elements
+        this.container.innerHTML = `
+            <div class="color-variant-manager">
+                <h3>Color Variants</h3>
+                <div class="color-variant-controls">
+                    <button type="button" id="add-variant-btn" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Add Color Variant
+                    </button>
+                </div>
+                <div class="color-variants-list" id="color-variants-list">
+                    <div class="no-variants-message">No color variants added yet.</div>
+                </div>
+            </div>
+
+            <!-- Color Variant Modal -->
+            <div class="modal fade" id="colorVariantModal" tabindex="-1" role="dialog" aria-labelledby="colorVariantModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-lg" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="colorVariantModalLabel">Add Color Variant</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            <form id="color-variant-form">
+                                <div class="form-group">
+                                    <label for="variant-color">Color</label>
+                                    <select id="variant-color" class="form-control" required>
+                                        <option value="">-- Select Color --</option>
+                                        ${this.standardColors.map(color =>
+                                            `<option value="${color.name}" data-hex="${color.hexCode}">${color.name}</option>`
+                                        ).join('')}
+                                        <option value="custom">Custom Color...</option>
+                                    </select>
+                                </div>
+
+                                <div id="custom-color-fields" style="display: none;">
+                                    <div class="form-group">
+                                        <label for="custom-color-name">Custom Color Name</label>
+                                        <input type="text" id="custom-color-name" class="form-control" placeholder="e.g., Midnight Blue">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="custom-color-hex">Color Code (Hex)</label>
+                                        <input type="color" id="custom-color-hex" class="form-control" value="#0000FF">
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="variant-price">Price (leave empty to use parent price)</label>
+                                    <input type="number" id="variant-price" class="form-control" min="0" step="0.01">
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="variant-inventory">Inventory Quantity</label>
+                                    <input type="number" id="variant-inventory" class="form-control" min="0" value="0">
+                                </div>
+
+                                <div class="form-group">
+                                    <div class="custom-control custom-checkbox">
+                                        <input type="checkbox" class="custom-control-input" id="variant-in-stock" checked>
+                                        <label class="custom-control-label" for="variant-in-stock">In Stock</label>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Color-specific Images</label>
+                                    <div id="variant-media-gallery"></div>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                            <button type="button" class="btn btn-primary" id="save-variant-btn">Save Color Variant</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Add event listeners
+        document.getElementById('add-variant-btn').addEventListener('click', () => this.openVariantModal());
+        document.getElementById('variant-color').addEventListener('change', this.handleColorSelectChange.bind(this));
+        document.getElementById('save-variant-btn').addEventListener('click', this.saveVariant.bind(this));
+
+        // Initialize the media gallery for variants
+        this.initVariantMediaGallery();
+    }
+
+    /**
+     * Initialize the media gallery for variant images
+     */
+    initVariantMediaGallery() {
+        // This will be initialized when the modal is opened
+        this.variantMediaGallery = null;
+    }
+
+    /**
+     * Handle color select change
+     */
+    handleColorSelectChange(event) {
+        const colorSelect = event.target;
+        const customFieldsContainer = document.getElementById('custom-color-fields');
+
+        if (colorSelect.value === 'custom') {
+            customFieldsContainer.style.display = 'block';
+        } else {
+            customFieldsContainer.style.display = 'none';
+
+            // Set the hex color from the selected option
+            const selectedOption = colorSelect.options[colorSelect.selectedIndex];
+            const hexCode = selectedOption.getAttribute('data-hex');
+
+            if (hexCode) {
+                document.getElementById('custom-color-hex').value = hexCode;
+            }
+        }
+    }
+
+    /**
+     * Open the variant modal for adding/editing a variant
+     * @param {Object} variant Existing variant to edit (optional)
+     */
+    openVariantModal(variant = null) {
+        // Set modal title based on whether we're adding or editing
+        const modalTitle = document.getElementById('colorVariantModalLabel');
+        modalTitle.textContent = variant ? 'Edit Color Variant' : 'Add Color Variant';
+
+        // Reset the form
+        document.getElementById('color-variant-form').reset();
+
+        // Initialize the media gallery if not already done
+        if (!this.variantMediaGallery) {
+            // Get Cloudinary configuration
+            getCloudinaryConfig().then(cloudinaryConfig => {
+                this.variantMediaGallery = new ProductMediaGallery({
+                    container: document.getElementById('variant-media-gallery'),
+                    cloudName: cloudinaryConfig.cloudName,
+                    apiKey: cloudinaryConfig.apiKey,
+                    initialMedia: variant && variant.media ? variant.media : []
+                });
+            });
+        } else {
+            // Reset the media gallery with variant media if editing
+            this.variantMediaGallery.setMediaItems(variant && variant.media ? variant.media : []);
+        }
+
+        // If editing, populate the form with variant data
+        if (variant) {
+            // Store the variant ID for updating
+            this.editingVariantId = variant._id;
+
+            // Set color
+            const colorSelect = document.getElementById('variant-color');
+            const customColorName = document.getElementById('custom-color-name');
+            const customColorHex = document.getElementById('custom-color-hex');
+
+            // Check if the color is in our standard colors
+            const standardColor = this.standardColors.find(c =>
+                c.name.toLowerCase() === variant.color.name.toLowerCase());
+
+            if (standardColor) {
+                colorSelect.value = standardColor.name;
+                customColorName.value = '';
+                customColorHex.value = standardColor.hexCode;
+                document.getElementById('custom-color-fields').style.display = 'none';
+            } else {
+                colorSelect.value = 'custom';
+                customColorName.value = variant.color.name;
+                customColorHex.value = variant.color.hexCode;
+                document.getElementById('custom-color-fields').style.display = 'block';
+            }
+
+            // Set price and inventory
+            document.getElementById('variant-price').value = variant.price || '';
+            document.getElementById('variant-inventory').value =
+                variant.inventory && variant.inventory.quantity !== undefined ?
+                variant.inventory.quantity : 0;
+            document.getElementById('variant-in-stock').checked =
+                variant.inventory ? variant.inventory.inStock : true;
+        } else {
+            // Clear editing variant ID
+            this.editingVariantId = null;
+        }
+
+        // Show the modal
+        $('#colorVariantModal').modal('show');
+    }
+
+    /**
+     * Save the current variant
+     */
+    async saveVariant() {
+        try {
+            // Get form values
+            const colorSelect = document.getElementById('variant-color');
+            const customColorName = document.getElementById('custom-color-name');
+            const customColorHex = document.getElementById('custom-color-hex');
+            const priceInput = document.getElementById('variant-price');
+            const inventoryInput = document.getElementById('variant-inventory');
+            const inStockCheckbox = document.getElementById('variant-in-stock');
+
+            // Validate color selection
+            if (colorSelect.value === '') {
+                alert('Please select a color');
+                return;
+            }
+
+            if (colorSelect.value === 'custom' && !customColorName.value.trim()) {
+                alert('Please enter a custom color name');
+                return;
+            }
+
+            // Prepare color data
+            const colorData = {
+                name: colorSelect.value === 'custom' ? customColorName.value.trim() : colorSelect.value,
+                hexCode: colorSelect.value === 'custom' ?
+                    customColorHex.value :
+                    colorSelect.options[colorSelect.selectedIndex].getAttribute('data-hex')
+            };
+
+            // Prepare inventory data
+            const inventoryData = {
+                quantity: parseInt(inventoryInput.value) || 0,
+                inStock: inStockCheckbox.checked
+            };
+
+            // Prepare media data
+            const mediaItems = this.variantMediaGallery ?
+                this.variantMediaGallery.getMediaItems() : [];
+
+            // Prepare variant data
+            const variantData = {
+                color: colorData,
+                price: priceInput.value ? parseFloat(priceInput.value) : undefined,
+                inventory: inventoryData,
+                media: mediaItems
+            };
+
+            // If editing, update the variant
+            if (this.editingVariantId) {
+                const response = await fetch(`https://tridex1.onrender.com/products/${this.parentProductId}/variants/${this.editingVariantId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(variantData)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Failed to update variant: ${response.statusText}`);
+                }
+
+                const result = await response.json();
+
+                // Update the variant in the local array
+                const index = this.variants.findIndex(v => v._id === this.editingVariantId);
+                if (index !== -1) {
+                    this.variants[index] = result.variant;
+                }
+
+                alert('Color variant updated successfully');
+            } else {
+                // Create a new variant
+                const response = await fetch(`https://tridex1.onrender.com/products/${this.parentProductId}/variants`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(variantData)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Failed to create variant: ${response.statusText}`);
+                }
+
+                const result = await response.json();
+
+                // Add the new variant to the local array
+                this.variants.push(result.variant);
+
+                alert('Color variant added successfully');
+            }
+
+            // Close the modal
+            $('#colorVariantModal').modal('hide');
+
+            // Refresh the variants list
+            this.renderVariantsList();
+
+            // Notify of changes
+            this.onVariantsChange(this.variants);
+        } catch (error) {
+            console.error('Error saving variant:', error);
+            alert(`Error: ${error.message}`);
+        }
+    }
+
+    /**
+     * Set the parent product ID
+     * @param {string} productId The parent product ID
+     */
+    setParentProductId(productId) {
+        this.parentProductId = productId;
+
+        // Load variants for this product
+        if (productId) {
+            this.loadVariants();
+        } else {
+            this.variants = [];
+            this.renderVariantsList();
+        }
+    }
+
+    /**
+     * Load variants for the current parent product
+     */
+    async loadVariants() {
+        if (!this.parentProductId) {
+            console.error('No parent product ID set');
+            return;
+        }
+
+        try {
+            const response = await fetch(`https://tridex1.onrender.com/products/${this.parentProductId}/variants`);
+
+            if (!response.ok) {
+                throw new Error(`Failed to load variants: ${response.statusText}`);
+            }
+
+            const data = await response.json();
+            this.variants = data.variants || [];
+
+            // Render the variants list
+            this.renderVariantsList();
+
+            // Notify of changes
+            this.onVariantsChange(this.variants);
+        } catch (error) {
+            console.error('Error loading variants:', error);
+            this.variants = [];
+            this.renderVariantsList();
+        }
+    }
+
+    /**
+     * Render the list of variants
+     */
+    renderVariantsList() {
+        const listContainer = document.getElementById('color-variants-list');
+
+        if (!listContainer) {
+            console.error('Variants list container not found');
+            return;
+        }
+
+        if (this.variants.length === 0) {
+            listContainer.innerHTML = '<div class="no-variants-message">No color variants added yet.</div>';
+            return;
+        }
+
+        // Sort variants by color name
+        const sortedVariants = [...this.variants].sort((a, b) =>
+            a.color.name.localeCompare(b.color.name));
+
+        // Generate HTML for each variant
+        const variantsHtml = sortedVariants.map(variant => `
+            <div class="color-variant-item" data-id="${variant._id}">
+                <div class="color-swatch" style="background-color: ${variant.color.hexCode}"></div>
+                <div class="variant-details">
+                    <div class="variant-name">${variant.color.name}</div>
+                    <div class="variant-price">₹${variant.price}</div>
+                    <div class="variant-inventory">
+                        Stock: ${variant.inventory ? variant.inventory.quantity : 0}
+                        (${variant.inventory && variant.inventory.inStock ? 'In Stock' : 'Out of Stock'})
+                    </div>
+                </div>
+                <div class="variant-actions">
+                    <button type="button" class="btn btn-sm btn-outline-primary edit-variant-btn">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-danger delete-variant-btn">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+        `).join('');
+
+        // Update the container
+        listContainer.innerHTML = variantsHtml;
+
+        // Add event listeners to the buttons
+        listContainer.querySelectorAll('.edit-variant-btn').forEach(button => {
+            button.addEventListener('click', (event) => {
+                const variantId = event.target.closest('.color-variant-item').dataset.id;
+                const variant = this.variants.find(v => v._id === variantId);
+                if (variant) {
+                    this.openVariantModal(variant);
+                }
+            });
+        });
+
+        listContainer.querySelectorAll('.delete-variant-btn').forEach(button => {
+            button.addEventListener('click', (event) => {
+                const variantId = event.target.closest('.color-variant-item').dataset.id;
+                const variant = this.variants.find(v => v._id === variantId);
+                if (variant && confirm(`Are you sure you want to delete the ${variant.color.name} variant?`)) {
+                    this.deleteVariant(variantId);
+                }
+            });
+        });
+    }
+
+    /**
+     * Delete a variant
+     * @param {string} variantId The ID of the variant to delete
+     */
+    async deleteVariant(variantId) {
+        if (!this.parentProductId || !variantId) {
+            console.error('Missing parent product ID or variant ID');
+            return;
+        }
+
+        try {
+            const response = await fetch(`https://tridex1.onrender.com/products/${this.parentProductId}/variants/${variantId}`, {
+                method: 'DELETE'
+            });
+
+            if (!response.ok) {
+                throw new Error(`Failed to delete variant: ${response.statusText}`);
+            }
+
+            // Remove the variant from the local array
+            this.variants = this.variants.filter(v => v._id !== variantId);
+
+            // Render the updated list
+            this.renderVariantsList();
+
+            // Notify of changes
+            this.onVariantsChange(this.variants);
+
+            alert('Color variant deleted successfully');
+        } catch (error) {
+            console.error('Error deleting variant:', error);
+            alert(`Error: ${error.message}`);
+        }
+    }
+
+    /**
+     * Get all variants
+     * @returns {Array} The array of variants
+     */
+    getVariants() {
+        return this.variants;
+    }
+}

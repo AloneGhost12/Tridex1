@@ -6,6 +6,7 @@
     <title>Product Details</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="css/product-media-gallery.css">
+    <link rel="stylesheet" href="css/color-variant-selector.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
     <style>
         /* Main container styles */
@@ -485,6 +486,8 @@
         let allProducts = [];
         let reviews = [];
         let currentRating = 0;
+        let colorVariants = [];
+        let selectedVariant = null;
 
         // Get product id from URL
         function getProductId() {
@@ -527,6 +530,9 @@
 
                 // Fetch or initialize reviews
                 await loadReviews();
+
+                // Load color variants if this is a parent product or a variant
+                await loadColorVariants();
 
                 // Render all sections
                 renderProductDetails();
@@ -617,6 +623,11 @@
                             ₹${currentProduct.price}
                             <span class="original-price">₹${originalPrice}</span>
                             <span class="discount">${discountPercent}% off</span>
+                        </div>
+
+                        <!-- Color Variants Section -->
+                        <div class="color-variants-container" id="color-variants-container">
+                            <!-- Color variants will be loaded dynamically if available -->
                         </div>
 
                         ${currentProduct.aiSummary ? `
@@ -1096,6 +1107,124 @@
             // For now, we'll use localStorage
             const allReviews = JSON.parse(localStorage.getItem('productReviews')) || [];
             reviews = allReviews.filter(review => review.productId === currentProduct._id);
+        }
+
+        // Load color variants for the current product
+        async function loadColorVariants() {
+            try {
+                // If this is a parent product, load its variants
+                if (currentProduct.isParentProduct) {
+                    const response = await fetch(`https://tridex1.onrender.com/products/${currentProduct._id}/variants`);
+                    if (response.ok) {
+                        const data = await response.json();
+                        colorVariants = data.variants || [];
+                        selectedVariant = null; // No variant selected initially
+                    }
+                }
+                // If this is a variant, load its siblings
+                else if (currentProduct.parentProduct) {
+                    const parentId = typeof currentProduct.parentProduct === 'object'
+                        ? currentProduct.parentProduct._id
+                        : currentProduct.parentProduct;
+
+                    const response = await fetch(`https://tridex1.onrender.com/products/${parentId}/variants`);
+                    if (response.ok) {
+                        const data = await response.json();
+                        colorVariants = data.variants || [];
+
+                        // Set the current product as the selected variant
+                        selectedVariant = currentProduct;
+                    }
+                }
+
+                // Render color variants if available
+                if (colorVariants.length > 0) {
+                    renderColorVariants();
+                }
+            } catch (error) {
+                console.error('Error loading color variants:', error);
+                colorVariants = [];
+            }
+        }
+
+        // Render color variants
+        function renderColorVariants() {
+            const container = document.getElementById('color-variants-container');
+            if (!container) return;
+
+            // Only show if we have variants
+            if (colorVariants.length === 0) {
+                container.style.display = 'none';
+                return;
+            }
+
+            // Show the container
+            container.style.display = 'block';
+
+            // Sort variants by color name
+            const sortedVariants = [...colorVariants].sort((a, b) =>
+                a.color.name.localeCompare(b.color.name));
+
+            // Generate HTML
+            container.innerHTML = `
+                <h3>Available Colors</h3>
+                <div class="color-variants-list">
+                    ${sortedVariants.map(variant => {
+                        const isSelected = selectedVariant && selectedVariant._id === variant._id;
+                        const isOutOfStock = variant.inventory && !variant.inventory.inStock;
+
+                        return `
+                            <div class="color-variant-option ${isSelected ? 'selected' : ''} ${isOutOfStock ? 'out-of-stock' : ''}"
+                                 data-id="${variant._id}"
+                                 data-color="${variant.color.name}"
+                                 ${isOutOfStock ? 'title="Out of stock"' : ''}>
+                                <div class="color-swatch" style="background-color: ${variant.color.hexCode}"></div>
+                                <div class="color-tooltip">${variant.color.name}</div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            `;
+
+            // Add event listeners
+            container.querySelectorAll('.color-variant-option:not(.out-of-stock)').forEach(option => {
+                option.addEventListener('click', function() {
+                    const variantId = this.getAttribute('data-id');
+                    selectColorVariant(variantId);
+                });
+            });
+        }
+
+        // Select a color variant
+        function selectColorVariant(variantId) {
+            // Find the variant
+            const variant = colorVariants.find(v => v._id === variantId);
+            if (!variant) return;
+
+            // Update selected variant
+            selectedVariant = variant;
+
+            // Update URL without reloading the page
+            const url = new URL(window.location.href);
+            url.searchParams.set('id', variantId);
+            window.history.pushState({}, '', url);
+
+            // Update current product
+            currentProduct = variant;
+
+            // Re-render the product details
+            renderProductDetails();
+
+            // Re-render color variants
+            renderColorVariants();
+
+            // Re-initialize product gallery if it exists
+            if (currentProduct.media && currentProduct.media.length > 0) {
+                initProductGallery();
+            }
+
+            // Show message
+            showActionMessage(`Selected color: ${variant.color.name}`);
         }
 
         // Save reviews to localStorage

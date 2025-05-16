@@ -965,14 +965,38 @@ app.get('/categories/:id/products', async (req, res) => {
 
 app.get('/products', async (req, res) => {
     try {
-        // If category query parameter is provided, filter by category
+        // Build filter based on query parameters
         const filter = {};
+
+        // Filter by category if provided
         if (req.query.category) {
             filter.category = req.query.category;
         }
 
+        // Filter by parent/variant status
+        if (req.query.parentOnly === 'true') {
+            // Only return parent products
+            filter.$or = [
+                { isParentProduct: true },
+                { parentProduct: null }
+            ];
+        } else if (req.query.variantsOnly === 'true') {
+            // Only return variant products
+            filter.parentProduct = { $ne: null };
+        } else if (req.query.includeVariants !== 'true') {
+            // By default, exclude variants unless explicitly requested
+            filter.$or = [
+                { parentProduct: null },
+                { isParentProduct: true }
+            ];
+        }
+
         // Populate the category field to get category details
-        const products = await Product.find(filter).populate('category');
+        // Also populate parent product if it's a variant
+        const products = await Product.find(filter)
+            .populate('category')
+            .populate('parentProduct');
+
         res.json(products);
     } catch (err) {
         console.error('Error fetching products:', err);
@@ -1216,6 +1240,214 @@ app.post('/products/regenerate-all-summaries', async (req, res) => {
     } catch (err) {
         console.error('Error regenerating all AI summaries:', err);
         res.status(500).json({ message: 'Error regenerating all AI summaries' });
+    }
+});
+
+// ========== COLOR VARIANT MANAGEMENT ==========
+
+// Get a single product with all its color variants
+app.get('/products/:id/variants', async (req, res) => {
+    try {
+        // Find the parent product
+        const parentProduct = await Product.findById(req.params.id);
+
+        if (!parentProduct) {
+            return res.status(404).json({ message: 'Product not found' });
+        }
+
+        // Find all variants of this product
+        let variants = [];
+
+        // If this is already a parent product
+        if (parentProduct.isParentProduct) {
+            variants = await Product.find({ parentProduct: parentProduct._id });
+        }
+        // If this is a variant, find the parent and all siblings
+        else if (parentProduct.parentProduct) {
+            const actualParent = await Product.findById(parentProduct.parentProduct);
+            if (actualParent) {
+                variants = await Product.find({ parentProduct: actualParent._id });
+            }
+        }
+
+        res.json({
+            parent: parentProduct,
+            variants: variants
+        });
+    } catch (err) {
+        console.error('Error fetching product variants:', err);
+        res.status(500).json({ message: 'Error fetching product variants' });
+    }
+});
+
+// Create a new color variant for a product
+app.post('/products/:id/variants', async (req, res) => {
+    try {
+        const { color, price, inventory, media } = req.body;
+
+        if (!color || !color.name || !color.hexCode) {
+            return res.status(400).json({ message: 'Color information is required' });
+        }
+
+        // Find the parent product
+        const parentProduct = await Product.findById(req.params.id);
+
+        if (!parentProduct) {
+            return res.status(404).json({ message: 'Parent product not found' });
+        }
+
+        // If this is the first variant, mark the parent product as a parent
+        if (!parentProduct.isParentProduct) {
+            parentProduct.isParentProduct = true;
+            await parentProduct.save();
+        }
+
+        // Create the variant product
+        const variantProduct = new Product({
+            name: parentProduct.name,
+            desc: parentProduct.desc,
+            price: price || parentProduct.price,
+            category: parentProduct.category,
+            parentProduct: parentProduct._id,
+            color: color,
+            inventory: inventory || { quantity: 0, inStock: true },
+            isActive: true
+        });
+
+        // If media is provided, add it to the variant
+        if (media && Array.isArray(media) && media.length > 0) {
+            variantProduct.media = media;
+
+            // Set the first image as the primary image
+            const firstImage = media.find(m => m.type === 'image');
+            if (firstImage) {
+                variantProduct.image = firstImage.url;
+            }
+        }
+
+        // Generate AI summary for the variant
+        try {
+            const categoryDetails = parentProduct.category ?
+                await Category.findById(parentProduct.category) : null;
+
+            const aiSummary = generateProductSummary({
+                name: variantProduct.name,
+                desc: variantProduct.desc,
+                price: variantProduct.price,
+                category: categoryDetails
+            });
+
+            variantProduct.aiSummary = aiSummary;
+        } catch (error) {
+            console.error('Error generating AI summary for variant:', error);
+            // Continue without AI summary if there's an error
+        }
+
+        // Save the variant
+        await variantProduct.save();
+
+        res.status(201).json({
+            message: 'Color variant created successfully',
+            variant: variantProduct
+        });
+    } catch (err) {
+        console.error('Error creating color variant:', err);
+        res.status(500).json({ message: 'Error creating color variant' });
+    }
+});
+
+// Update a color variant
+app.put('/products/:id/variants/:variantId', async (req, res) => {
+    try {
+        const { color, price, inventory, isActive, media } = req.body;
+
+        // Find the variant
+        const variant = await Product.findById(req.params.variantId);
+
+        if (!variant || !variant.parentProduct) {
+            return res.status(404).json({ message: 'Color variant not found' });
+        }
+
+        // Verify this variant belongs to the specified parent
+        if (variant.parentProduct.toString() !== req.params.id) {
+            return res.status(400).json({ message: 'This variant does not belong to the specified parent product' });
+        }
+
+        // Update fields
+        if (color) {
+            variant.color = color;
+        }
+
+        if (price !== undefined) {
+            variant.price = price;
+        }
+
+        if (inventory) {
+            variant.inventory = inventory;
+        }
+
+        if (isActive !== undefined) {
+            variant.isActive = isActive;
+        }
+
+        // Update media if provided
+        if (media && Array.isArray(media)) {
+            variant.media = media;
+
+            // Update the primary image
+            const primaryImage = media.find(m => m.isPrimary && m.type === 'image');
+            if (primaryImage) {
+                variant.image = primaryImage.url;
+            }
+        }
+
+        // Save the updated variant
+        await variant.save();
+
+        res.json({
+            message: 'Color variant updated successfully',
+            variant: variant
+        });
+    } catch (err) {
+        console.error('Error updating color variant:', err);
+        res.status(500).json({ message: 'Error updating color variant' });
+    }
+});
+
+// Delete a color variant
+app.delete('/products/:id/variants/:variantId', async (req, res) => {
+    try {
+        // Find the variant
+        const variant = await Product.findById(req.params.variantId);
+
+        if (!variant || !variant.parentProduct) {
+            return res.status(404).json({ message: 'Color variant not found' });
+        }
+
+        // Verify this variant belongs to the specified parent
+        if (variant.parentProduct.toString() !== req.params.id) {
+            return res.status(400).json({ message: 'This variant does not belong to the specified parent product' });
+        }
+
+        // Delete the variant
+        await Product.findByIdAndDelete(req.params.variantId);
+
+        // Check if this was the last variant
+        const remainingVariants = await Product.countDocuments({ parentProduct: req.params.id });
+
+        // If no variants remain, update the parent product
+        if (remainingVariants === 0) {
+            const parentProduct = await Product.findById(req.params.id);
+            if (parentProduct) {
+                parentProduct.isParentProduct = false;
+                await parentProduct.save();
+            }
+        }
+
+        res.json({ message: 'Color variant deleted successfully' });
+    } catch (err) {
+        console.error('Error deleting color variant:', err);
+        res.status(500).json({ message: 'Error deleting color variant' });
     }
 });
 

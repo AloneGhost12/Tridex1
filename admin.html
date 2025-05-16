@@ -6,6 +6,7 @@
     <title>Admin Panel</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="css/product-media-gallery.css">
+    <link rel="stylesheet" href="css/color-variant-manager.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
     <!-- Include the ban system script -->
     <script src="ban-system.js"></script>
@@ -170,6 +171,10 @@
                     <!-- Categories will be loaded dynamically -->
                 </select>
             </label>
+
+            <!-- Color Variant Management -->
+            <div id="color-variant-container"></div>
+
             <button type="submit" id="product-save-btn">Add Product</button>
             <button type="button" id="product-cancel-btn" style="display:none;">Cancel</button>
             <button type="button" id="regenerate-summary-btn" style="display:none;">Regenerate AI Summary</button>
@@ -384,6 +389,8 @@
 
     <!-- Include the product media gallery script -->
     <script src="js/product-media-gallery.js"></script>
+    <!-- Include the color variant manager script -->
+    <script src="js/color-variant-manager.js"></script>
 
     <script>
         // --- Simple login protection: redirect to login.html if not logged in ---
@@ -482,6 +489,7 @@
         let products = [];
         let announcements = [];
         let mediaGallery; // Media gallery instance
+        let colorVariantManager; // Color variant manager instance
 
         // Load users from backend
         async function fetchUsers() {
@@ -1624,6 +1632,11 @@
             // Reset media gallery
             if (mediaGallery) {
                 mediaGallery.setMediaItems([]);
+            }
+
+            // Reset color variant manager
+            if (colorVariantManager) {
+                colorVariantManager.setParentProductId(null);
             }
         };
 
@@ -2897,7 +2910,7 @@
             });
         }
 
-        // Update product form to include category and media gallery
+        // Update product form to include category, media gallery, and color variants
         const originalSetProductForm = window.setProductForm;
         window.setProductForm = function(product) {
             originalSetProductForm(product);
@@ -2929,6 +2942,11 @@
                     // No media
                     mediaGallery.setMediaItems([]);
                 }
+            }
+
+            // Set the parent product ID for the color variant manager
+            if (colorVariantManager) {
+                colorVariantManager.setParentProductId(product._id);
             }
         };
 
@@ -2967,10 +2985,32 @@
             });
         }
 
-        // Initialize the media gallery when the page loads
+        // Initialize the color variant manager
+        function initColorVariantManager() {
+            // Get Cloudinary configuration
+            getCloudinaryConfig().then(cloudinaryConfig => {
+                // Initialize the color variant manager
+                colorVariantManager = new ColorVariantManager({
+                    container: document.getElementById('color-variant-container'),
+                    cloudName: cloudinaryConfig.cloudName,
+                    apiKey: cloudinaryConfig.apiKey,
+                    onVariantsChange: function(variants) {
+                        console.log('Variants changed:', variants);
+                    }
+                });
+            }).catch(error => {
+                console.error('Error initializing color variant manager:', error);
+                alert('Failed to initialize color variant manager.');
+            });
+        }
+
+        // Initialize the media gallery and color variant manager when the page loads
         document.addEventListener('DOMContentLoaded', function() {
             // Initialize the media gallery
             initMediaGallery();
+
+            // Initialize the color variant manager
+            initColorVariantManager();
         });
 
         // Update product form submission to include category and media gallery
