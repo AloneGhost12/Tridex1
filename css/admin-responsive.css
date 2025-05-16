@@ -1,0 +1,339 @@
+/**
+ * Admin Panel Responsive Styles
+ *
+ * This file contains responsive styles for the admin panel
+ * to ensure it works well on all device sizes.
+ */
+
+/* Base styles for better mobile experience */
+body {
+    padding: 10px;
+    max-width: 100%;
+    overflow-x: hidden;
+}
+
+h1 {
+    font-size: 1.8rem;
+    margin-bottom: 15px;
+    text-align: center;
+}
+
+/* Admin navigation buttons */
+.admin-nav-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 20px;
+    justify-content: center;
+}
+
+.admin-nav-btn {
+    margin: 0;
+    padding: 8px 12px;
+    font-size: 0.9rem;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+}
+
+.admin-nav-btn i {
+    margin-right: 5px;
+}
+
+/* Admin controls */
+.admin-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 15px;
+    justify-content: center;
+}
+
+.admin-controls button {
+    margin: 0;
+    white-space: nowrap;
+}
+
+/* Tables */
+.table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin-bottom: 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+table {
+    min-width: 650px; /* Ensure tables have a minimum width */
+}
+
+/* Forms */
+form {
+    max-width: 100%;
+}
+
+input, textarea, select {
+    max-width: 100%;
+    font-size: 16px; /* Prevent zoom on iOS */
+}
+
+/* Product form */
+#product-form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-width: 100%;
+}
+
+#product-form label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 500;
+}
+
+/* Category form */
+#category-form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-width: 100%;
+}
+
+/* Color variant manager */
+.color-variants-list {
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+}
+
+/* Modals */
+.modal-content {
+    max-width: 90vw;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+/* Debug controls */
+#debug-ban-system, #force-check-ban-status {
+    font-size: 0.85rem;
+    padding: 6px 10px;
+}
+
+/* Contact section styles */
+.contact-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 15px;
+    align-items: center;
+}
+
+.contact-pagination {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 15px;
+    align-items: center;
+    justify-content: center;
+}
+
+#contact-search {
+    flex: 1;
+    min-width: 150px;
+    max-width: 300px;
+}
+
+/* Form styles */
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 500;
+}
+
+.form-group input,
+.form-group textarea,
+.form-group select {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+}
+
+.form-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+    margin-bottom: 20px;
+}
+
+/* Media queries for different screen sizes */
+
+/* Medium devices (tablets) */
+@media (max-width: 992px) {
+    .admin-nav-container {
+        justify-content: flex-start;
+        overflow-x: auto;
+        padding-bottom: 5px;
+    }
+
+    h1 {
+        font-size: 1.6rem;
+    }
+
+    .color-variants-list {
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    }
+
+    .contact-filters,
+    .contact-pagination {
+        justify-content: center;
+    }
+
+    #contact-search {
+        width: 100%;
+        max-width: none;
+    }
+}
+
+/* Small devices (landscape phones) */
+@media (max-width: 768px) {
+    h1 {
+        font-size: 1.4rem;
+    }
+
+    .admin-nav-btn {
+        padding: 6px 10px;
+        font-size: 0.85rem;
+    }
+
+    .color-variants-list {
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    }
+
+    /* Simplify table display on small screens */
+    .mobile-optimized-table th:nth-child(n+4),
+    .mobile-optimized-table td:nth-child(n+4) {
+        display: none;
+    }
+
+    .mobile-optimized-table th:last-child,
+    .mobile-optimized-table td:last-child {
+        display: table-cell;
+    }
+
+    /* Adjust contact section */
+    .contact-filters {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    #contact-search {
+        margin-left: 0 !important;
+        max-width: none;
+    }
+
+    /* Adjust form layouts */
+    .form-actions {
+        flex-direction: column;
+    }
+
+    .form-actions button {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+
+    /* Adjust modals */
+    #contact-detail-modal > div,
+    #admin-mail-modal > div,
+    #user-detail-modal > div {
+        min-width: auto !important;
+        width: 90% !important;
+        max-height: 80vh;
+        overflow-y: auto;
+    }
+}
+
+/* Extra small devices (phones) */
+@media (max-width: 576px) {
+    body {
+        padding: 5px;
+    }
+
+    h1 {
+        font-size: 1.2rem;
+    }
+
+    .admin-nav-btn {
+        padding: 5px 8px;
+        font-size: 0.8rem;
+    }
+
+    .admin-nav-btn i {
+        margin-right: 2px;
+    }
+
+    .admin-controls button {
+        padding: 5px 8px;
+        font-size: 0.8rem;
+    }
+
+    .color-variants-list {
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    }
+
+    /* Further simplify tables on very small screens */
+    .mobile-optimized-table th:nth-child(n+3),
+    .mobile-optimized-table td:nth-child(n+3) {
+        display: none;
+    }
+
+    .mobile-optimized-table th:last-child,
+    .mobile-optimized-table td:last-child {
+        display: table-cell;
+    }
+
+    /* Adjust modal sizing */
+    .modal-content {
+        padding: 15px;
+    }
+
+    /* Make buttons more touch-friendly */
+    button, .btn {
+        min-height: 40px;
+        min-width: 40px;
+    }
+
+    /* Adjust contact pagination */
+    .contact-pagination {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    #contact-pagination-info {
+        text-align: center;
+        margin-bottom: 10px;
+        margin-right: 0 !important;
+    }
+
+    /* Adjust order filters */
+    .orders-filters > div {
+        flex-direction: column !important;
+    }
+
+    .orders-filters > div > div {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+
+    /* Adjust media gallery */
+    .media-upload-controls {
+        flex-direction: column;
+    }
+
+    .media-upload-controls > div {
+        margin-left: 0 !important;
+        margin-top: 10px;
+    }
+}
