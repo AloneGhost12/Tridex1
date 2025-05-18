@@ -2,226 +2,24 @@
 <html lang="en">
 <head>
    <meta charset="UTF-8">
-   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
    <title>Tridex</title>
    <link rel="stylesheet" href="style.css">
    <link rel="stylesheet" href="chatbot.css">
+   <link rel="stylesheet" href="css/responsive.css">
+   <link rel="stylesheet" href="css/navigation.css">
    <!-- Include the ban system script -->
    <script src="ban-system.js"></script>
    <!-- Include enhanced chatbot scripts -->
    <script src="chatbot.js" defer></script>
    <script src="chatbot-ai.js" defer></script>
+   <!-- Include responsive behavior script -->
+   <script src="js/responsive.js" defer></script>
+   <!-- Include navigation state management script -->
+   <script src="js/navigation-state.js" defer></script>
    <style>
-       /* Responsive Navbar */
-       @media (max-width: 900px) {
-           header > div {
-               flex-direction: column;
-               align-items: flex-start !important;
-           }
-           nav ul {
-               gap: 10px !important;
-           }
-           .search-bar {
-               max-width: 98vw !important;
-           }
-       }
-       @media (max-width: 600px) {
-           header > div {
-               flex-direction: column;
-               align-items: flex-start !important;
-               padding: 0 8px;
-           }
-           h1 {
-               font-size: 1.5rem !important;
-               margin-bottom: 8px !important;
-           }
-           nav ul {
-               flex-wrap: wrap;
-               gap: 6px !important;
-               font-size: 0.98em;
-           }
-           .search-bar {
-               flex-direction: column !important;
-               max-width: 100vw !important;
-               margin: 10px 0 0 0 !important;
-               position: relative !important;
-           }
-           .search-bar input {
-               border-radius: 5px !important;
-               margin-bottom: 0;
-               padding-right: 38px !important;
-           }
-           .search-bar button {
-               border-radius: 5px !important;
-               width: auto;
-               position: absolute !important;
-               right: 8px;
-               top: 50%;
-               transform: translateY(-50%);
-               padding: 0 !important;
-               background: none !important;
-               box-shadow: none !important;
-               height: 32px;
-               min-width: 32px;
-               display: flex;
-               align-items: center;
-               justify-content: center;
-           }
-           .search-bar .search-icon {
-               font-size: 1.2em;
-               color: #007bff;
-           }
-           #username-display {
-               font-size: 0.98em !important;
-           }
-       }
-       @media (max-width: 420px) {
-           h1 {
-               font-size: 1.1rem !important;
-           }
-           nav ul {
-               font-size: 0.9em;
-           }
-           .product-card h3, .product-card p {
-               font-size: 0.95em;
-           }
-       }
-       /* Responsive Product Grid */
-       .product-grid {
-           display: grid;
-           grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-           gap: 18px;
-           padding: 24px 12px;
-           max-width: 1200px;
-           margin: 0 auto;
-       }
-       .product-card {
-           background: #fff;
-           border-radius: 8px;
-           box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-           padding: 18px 12px;
-           text-align: center;
-           transition: box-shadow 0.2s;
-       }
-       .product-card img {
-           width: 100%;
-           height: 180px;
-           object-fit: contain;
-           margin-bottom: 10px;
-           border-radius: 6px;
-           background-color: #f9f9f9;
-           padding: 8px;
-       }
-       .product-card:hover {
-           box-shadow: 0 4px 16px rgba(0,0,0,0.13);
-       }
-       .product-image-container {
-           height: 180px;
-           display: flex;
-           align-items: center;
-           justify-content: center;
-           margin-bottom: 10px;
-       }
-       /* Responsive logout button */
-       @media (max-width: 600px) {
-           #logout-btn {
-               top: 8px !important;
-               right: 8px !important;
-               font-size: 0.95rem !important;
-               padding: 6px 12px !important;
-           }
-       }
-       #nav {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    gap: 18px;
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    background: none;
-    position: static;
-    width: auto;
-}
-.hamburger {
-    display: none;
-    flex-direction: column;
-    justify-content: center;
-    width: 36px;
-    height: 36px;
-    cursor: pointer;
-    margin-left: 8px;
-    z-index: 1001;
-}
-.hamburger span {
-    height: 4px;
-    width: 100%;
-    background: #fff;
-    margin: 4px 0;
-    border-radius: 2px;
-    transition: 0.3s;
-    display: block;
-}
-@media (max-width: 900px) {
-    .hamburger { display: flex; }
-    #nav {
-        display: none;
-        flex-direction: column !important;
-        align-items: flex-start !important;
-        gap: 0 !important;
-        background: #222;
-        position: absolute;
-        top: 60px;
-        left: 0;
-        width: 100vw;
-        padding: 0;
-        z-index: 1000;
-        box-shadow: 0 4px 16px rgba(0,0,0,0.13);
-    }
-    #nav.show {
-        display: flex !important;
-    }
-    #nav li {
-        width: 100%;
-        border-bottom: 1px solid #333;
-        padding: 12px 18px;
-        text-align: left;
-        position: relative; /* Ensure proper positioning for notification badges */
-    }
-    #nav li:last-child {
-        border-bottom: none;
-    }
-    nav ul li a {
-        width: 100%;
-        display: block;
-        color: #fff !important;
-        text-decoration: none;
-        text-align: left;
-        font-size: 1em !important; /* Make nav text and icons smaller */
-        padding: 8px 0;
-    }
-    .nav-icon {
-        font-size: 1.1em !important; /* Make nav icons smaller in hamburger */
-    }
-    /* Ensure notification badges are visible in mobile menu */
-    #mail-count, #cart-count {
-        position: absolute !important;
-        top: 12px !important;
-        right: 18px !important;
-        z-index: 1001 !important;
-    }
-    /* Ensure dropdown menus appear properly in mobile view */
-    .dropdown-menu {
-        position: fixed !important;
-        top: 120px !important;
-        right: 20px !important;
-        z-index: 1002 !important;
-    }
-}
-@media (max-width: 600px) {
-    /* ...existing code... */
-    .hamburger { margin-bottom: 8px; }
-}
+       /* Additional page-specific styles */
+       /* Any page-specific styles that aren't covered by responsive.css can go here */
    </style>
 </head>
 <body>
@@ -235,62 +33,82 @@
             100% { transform: rotate(360deg);}
         }
     </style>
-   <header style="background-color: #333; color: white; padding: 15px 0; position:relative;">
-       <div style="display:flex; align-items:center; justify-content:space-between; padding:0 15px;">
-           <div style="display:flex; align-items:center;">
-               <h1>Tridex</h1>
-               <span id="username-display"></span>
+   <header>
+       <div class="container">
+           <!-- New Navigation Structure -->
+           <div class="header-wrapper">
+               <!-- Logo -->
+               <div class="logo-container">
+                   <h1>Tridex</h1>
+                   <span id="username-display"></span>
+               </div>
+
+               <!-- Hamburger Menu Button -->
+               <div class="hamburger-container">
+                   <button id="hamburger-btn" aria-label="Menu">
+                       <span></span>
+                       <span></span>
+                       <span></span>
+                   </button>
+               </div>
+
+               <!-- Navigation Menu -->
+               <nav id="site-navigation">
+                   <ul class="nav-menu">
+                       <li><a href="index.html" class="nav-link">Home</a></li>
+                       <li><a href="about.html" class="nav-link">About</a></li>
+                       <li><a href="more.html" class="nav-link">More</a></li>
+                       <li><a href="contact.html" class="nav-link">Contact Us</a></li>
+                   </ul>
+
+                   <!-- Mobile Icons Container (visible only on mobile) -->
+                   <div class="mobile-icon-container">
+                       <div class="nav-icon-item">
+                           <a href="#" class="nav-icon" id="userIcon" title="User Profile">
+                               <i class="fas fa-user"></i>
+                           </a>
+                       </div>
+                       <div class="nav-icon-item">
+                           <a href="#" class="nav-icon" id="mailIcon" title="Mailbox">
+                               <i class="fas fa-envelope"></i>
+                               <span id="mail-count" class="badge">0</span>
+                           </a>
+                       </div>
+                       <div class="nav-icon-item">
+                           <a href="cart.html" class="nav-icon" id="cartIcon" title="Cart">
+                               <i class="fas fa-shopping-cart"></i>
+                               <span id="cart-count" class="badge">0</span>
+                           </a>
+                       </div>
+                   </div>
+               </nav>
            </div>
 
-           <!-- Hamburger icon for mobile -->
-           <button id="hamburger-menu" style="background:none; border:none; cursor:pointer; display:none; padding:10px; z-index:1000;">
-               <div style="width:30px; height:3px; background-color:white; margin:6px 0; transition:0.4s;"></div>
-               <div style="width:30px; height:3px; background-color:white; margin:6px 0; transition:0.4s;"></div>
-               <div style="width:30px; height:3px; background-color:white; margin:6px 0; transition:0.4s;"></div>
-           </button>
+           <!-- Search Bar -->
+           <form class="search-bar" id="search-form">
+               <input type="text" id="search-input" placeholder="Search products...">
+               <button type="submit" aria-label="Search">
+                   <i class="fas fa-search search-icon"></i>
+               </button>
+           </form>
 
-           <nav id="main-nav" style="display:flex;">
-               <ul id="nav" style="display:flex; list-style:none; margin:0; padding:0; align-items:center;">
-                   <li class="nav"><a href="index.html">Home</a></li>
-                   <li class="nav"><a href="about.html">About</a></li>
-                   <li class="nav"><a href="more.html">More</a></li>
-                   <li class="nav"><a href="contact.html">Contact Us</a></li>
-                   <li><a href="#" class="nav-icon" id="userIcon">👤</a></li>
-                   <li>
-                       <a href="#" class="nav-icon" id="mailIcon" title="Mailbox">
-                           &#9993;
-                           <span id="mail-count">0</span>
-                       </a>
-                   </li>
-                   <li>
-                       <a href="cart.html" class="nav-icon" id="cartIcon" title="Cart">
-                           🛒<span id="cart-count">0</span>
-                       </a>
-                   </li>
-               </ul>
-           </nav>
-       </div>
-       <form class="search-bar" id="search-form">
-           <input type="text" id="search-input" placeholder="Search...">
-           <button type="submit">
-               <span class="search-icon">🔍</span>
-           </button>
-       </form>
-       <div class="dropdown-menu" id="userDropdown" style="display:none;">
-           <a href="login.html" class="dropdown-btn">Login</a>
-           <a href="signup.html" class="dropdown-btn">Sign Up</a>
+           <!-- User Dropdown Menu -->
+           <div class="dropdown-menu" id="userDropdown" style="display:none;">
+               <a href="login.html" class="dropdown-btn">Login</a>
+               <a href="signup.html" class="dropdown-btn">Sign Up</a>
+           </div>
        </div>
    </header>
 
    <!-- Category Navigation -->
-   <div class="category-nav" style="padding:20px 0; background:#f4f4f9; text-align:center; overflow-x:auto; white-space:nowrap; scrollbar-width:none; -ms-overflow-style:none;">
-       <div style="max-width:1200px; margin:0 auto; padding:0 15px;">
-           <h2 style="margin-bottom:15px; color:#333; font-size:1.5rem; text-align:center;">Shop by Category</h2>
-           <div id="category-icons" style="display:flex; gap:20px; justify-content:center; flex-wrap:wrap;">
+   <div class="category-nav">
+       <div class="container">
+           <h2>Shop by Category</h2>
+           <div id="category-icons" class="category-icons-container">
                <!-- Category icons will be rendered here by JS -->
-               <div class="category-loading" style="text-align:center; padding:20px;">
-                   <div style="display:inline-block; border:3px solid #f3f3f3; border-top:3px solid #007bff; border-radius:50%; width:30px; height:30px; animation:spin 1s linear infinite;"></div>
-                   <p style="margin-top:10px; color:#666;">Loading categories...</p>
+               <div class="category-loading">
+                   <div class="loading-spinner"></div>
+                   <p>Loading categories...</p>
                </div>
            </div>
        </div>
@@ -507,58 +325,72 @@ function updateCartCount() {
     }
 }
 
-// --- Hamburger menu functionality ---
+// --- Navigation System ---
 document.addEventListener('DOMContentLoaded', function() {
-    const hamburger = document.getElementById('hamburger-menu');
-    const nav = document.getElementById('nav');
+    console.log('Initializing navigation system');
+
+    // Get navigation elements
+    const hamburgerBtn = document.getElementById('hamburger-btn');
+    const siteNavigation = document.getElementById('site-navigation');
+
+    // Check if elements exist
+    if (!hamburgerBtn) {
+        console.error('Hamburger button not found!');
+        return;
+    }
+
+    if (!siteNavigation) {
+        console.error('Site navigation not found!');
+        return;
+    }
 
     // Toggle navigation when hamburger is clicked
-    hamburger.addEventListener('click', function(e) {
-        e.stopPropagation(); // Prevent event from bubbling up
-        nav.classList.toggle('show');
+    hamburgerBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
 
-        // Animate hamburger icon to X when menu is open
-        const divs = hamburger.querySelectorAll('div');
-        if (nav.classList.contains('show')) {
-            // X shape when menu is open
-            divs[0].style.transform = 'rotate(-45deg) translate(-5px, 6px)';
-            divs[1].style.opacity = '0';
-            divs[2].style.transform = 'rotate(45deg) translate(-5px, -6px)';
-        } else {
-            // Reset to hamburger shape
-            divs[0].style.transform = 'none';
-            divs[1].style.opacity = '1';
-            divs[2].style.transform = 'none';
-        }
+        // Toggle active classes
+        hamburgerBtn.classList.toggle('active');
+        siteNavigation.classList.toggle('active');
+
+        console.log('Navigation toggled:', siteNavigation.classList.contains('active'));
     });
 
     // Close navigation when clicking outside
     document.addEventListener('click', function(event) {
-        if (!hamburger.contains(event.target) && !nav.contains(event.target) && nav.classList.contains('show')) {
-            nav.classList.remove('show');
+        if (siteNavigation.classList.contains('active') &&
+            !hamburgerBtn.contains(event.target) &&
+            !siteNavigation.contains(event.target)) {
 
-            // Reset hamburger icon
-            const divs = hamburger.querySelectorAll('div');
-            divs[0].style.transform = 'none';
-            divs[1].style.opacity = '1';
-            divs[2].style.transform = 'none';
+            hamburgerBtn.classList.remove('active');
+            siteNavigation.classList.remove('active');
+
+            console.log('Navigation closed (clicked outside)');
         }
     });
 
-    // Close navigation when window is resized
+    // Handle window resize
     window.addEventListener('resize', function() {
-        if (window.innerWidth > 992 && nav.classList.contains('show')) {
-            nav.classList.remove('show');
-
-            // Reset hamburger icon
-            const divs = hamburger.querySelectorAll('div');
-            if (divs.length > 0) {
-                divs[0].style.transform = 'none';
-                divs[1].style.opacity = '1';
-                divs[2].style.transform = 'none';
+        if (window.innerWidth > 992) {
+            // Reset for desktop view
+            if (siteNavigation.classList.contains('active')) {
+                hamburgerBtn.classList.remove('active');
+                siteNavigation.classList.remove('active');
             }
         }
     });
+
+    // Initialize navigation based on screen size
+    function initNavigation() {
+        if (window.innerWidth <= 992) {
+            console.log('Initial setup: mobile navigation');
+        } else {
+            console.log('Initial setup: desktop navigation');
+        }
+    }
+
+    // Run initial setup
+    initNavigation();
 });
 
 // Ban check logic (must be first in script)
@@ -1002,8 +834,9 @@ if (!isLoggedIn) {
 
         // If not logged in, hide the mail count
         const mailCount = document.getElementById('mail-count');
+
         if (!isActuallyLoggedIn || !username) {
-            mailCount.style.display = 'none';
+            if (mailCount) mailCount.style.display = 'none';
             return;
         }
 
@@ -1049,10 +882,12 @@ if (!isLoggedIn) {
 
         // Update the badge
         if (unreadCount > 0) {
-            mailCount.textContent = unreadCount;
-            mailCount.style.display = '';
+            if (mailCount) {
+                mailCount.textContent = unreadCount;
+                mailCount.style.display = '';
+            }
         } else {
-            mailCount.style.display = 'none';
+            if (mailCount) mailCount.style.display = 'none';
         }
     }
     updateMailCount();
@@ -1093,8 +928,10 @@ if (!isLoggedIn) {
         // Recheck login status after potential updates
         const isActuallyLoggedIn = localStorage.getItem('isLoggedIn') || hasToken;
 
+        const cartCount = document.getElementById('cart-count');
+
         if (!isActuallyLoggedIn || !username) {
-            document.getElementById('cart-count').style.display = 'none';
+            if (cartCount) cartCount.style.display = 'none';
             return;
         }
         // Ensure cart is isolated per user
@@ -1111,12 +948,15 @@ if (!isLoggedIn) {
         let cart = [];
         try { cart = JSON.parse(localStorage.getItem('cart')) || []; } catch (e) { cart = []; }
         const count = cart.length;
-        const cartCount = document.getElementById('cart-count');
+
+        // Update cart count badge
         if (count > 0) {
-            cartCount.textContent = count;
-            cartCount.style.display = '';
+            if (cartCount) {
+                cartCount.textContent = count;
+                cartCount.style.display = '';
+            }
         } else {
-            cartCount.style.display = 'none';
+            if (cartCount) cartCount.style.display = 'none';
         }
     }
     updateCartCount();
@@ -1126,8 +966,8 @@ if (!isLoggedIn) {
         if (e.key === 'cart') updateCartCount();
     });
 
-    // Cart icon click: show cart page or popup (redirect to cart.html)
-    document.getElementById('cartIcon').onclick = function(e) {
+    // Cart icon click handler function
+    function handleCartIconClick(e) {
         e.preventDefault();
         const isLoggedIn = localStorage.getItem('isLoggedIn');
         const hasToken = localStorage.getItem('token');
@@ -1147,94 +987,64 @@ if (!isLoggedIn) {
         }
 
         window.location.href = 'cart.html';
-    };
+    }
+
+    // Attach click handler to cart icon
+    const cartIcon = document.getElementById('cartIcon');
+    if (cartIcon) {
+        cartIcon.onclick = handleCartIconClick;
+    }
+
+    // User icon click handler function
+    function handleUserIconClick(e) {
+        e.preventDefault();
+        const userDropdown = document.getElementById('userDropdown');
+
+        if (userDropdown) {
+            // Toggle dropdown visibility
+            if (userDropdown.style.display === 'none' || userDropdown.style.display === '') {
+                userDropdown.style.display = 'block';
+            } else {
+                userDropdown.style.display = 'none';
+            }
+        }
+    }
+
+    // Attach click handler to user icon
+    const userIcon = document.getElementById('userIcon');
+    if (userIcon) {
+        userIcon.onclick = handleUserIconClick;
+    }
+
+    // Mail icon click handler function
+    function handleMailIconClick(e) {
+        e.preventDefault();
+        const mailboxModal = document.getElementById('mailbox-modal');
+
+        if (mailboxModal) {
+            mailboxModal.style.display = 'block';
+
+            // Update the last seen count
+            const username = localStorage.getItem('username') || localStorage.getItem('currentUser');
+            if (username) {
+                const lastSeenKey = `mailLastSeen_${username}`;
+                const messages = JSON.parse(localStorage.getItem('adminMessages') || '[]');
+                localStorage.setItem(lastSeenKey, messages.length.toString());
+
+                // Update the mail count display
+                updateMailCount();
+            }
+        }
+    }
+
+    // Attach click handler to mail icon
+    const mailIcon = document.getElementById('mailIcon');
+    if (mailIcon) {
+        mailIcon.onclick = handleMailIconClick;
+    }
 
     // If you want to update cart count after adding to cart from product-details.html,
     // you must call updateCartCount() after adding to cart, or reload the index page.
-
-    // Simple hamburger menu implementation
-    document.addEventListener('DOMContentLoaded', function() {
-        const hamburger = document.getElementById('hamburger-menu');
-        const nav = document.getElementById('main-nav');
-
-        // Function to check window size and adjust menu visibility
-        function checkWindowSize() {
-            if (window.innerWidth <= 768) {
-                // Mobile view
-                hamburger.style.display = 'block';
-                nav.style.display = 'none';
-            } else {
-                // Desktop view
-                hamburger.style.display = 'none';
-                nav.style.display = 'flex';
-            }
-        }
-
-        // Initial check
-        checkWindowSize();
-
-        // Check on window resize
-        window.addEventListener('resize', checkWindowSize);
-
-        // Toggle menu when hamburger is clicked
-        hamburger.addEventListener('click', function() {
-            if (nav.style.display === 'none' || nav.style.display === '') {
-                nav.style.display = 'flex';
-                nav.style.position = 'absolute';
-                nav.style.top = '60px';
-                nav.style.left = '0';
-                nav.style.width = '100%';
-                nav.style.backgroundColor = '#333';
-                nav.style.flexDirection = 'column';
-                nav.style.zIndex = '1000';
-
-                // Make the nav items stack vertically
-                document.getElementById('nav').style.flexDirection = 'column';
-                document.getElementById('nav').style.width = '100%';
-
-                // Add some styling to nav items
-                const navItems = document.querySelectorAll('#nav li');
-                navItems.forEach(item => {
-                    item.style.width = '100%';
-                    item.style.textAlign = 'left';
-                    item.style.padding = '10px 0';
-                    item.style.borderBottom = '1px solid #444';
-                    item.style.position = 'relative'; // Ensure proper positioning for notification badges
-                });
-
-                // Ensure notification badges are visible
-                const mailCount = document.getElementById('mail-count');
-                const cartCount = document.getElementById('cart-count');
-
-                if (mailCount) {
-                    mailCount.style.position = 'absolute';
-                    mailCount.style.right = '18px';
-                    mailCount.style.top = '12px';
-                    mailCount.style.zIndex = '1001';
-                }
-
-                if (cartCount) {
-                    cartCount.style.position = 'absolute';
-                    cartCount.style.right = '18px';
-                    cartCount.style.top = '12px';
-                    cartCount.style.zIndex = '1001';
-                }
-            } else {
-                nav.style.display = 'none';
-            }
-        });
-
-        // Close menu when clicking outside
-        document.addEventListener('click', function(event) {
-            if (window.innerWidth <= 768 &&
-                nav.style.display === 'flex' &&
-                !nav.contains(event.target) &&
-                event.target !== hamburger &&
-                !hamburger.contains(event.target)) {
-                nav.style.display = 'none';
-            }
-        });
-    });
 
     // This event listener is now handled in the DOMContentLoaded block above
     </script>
