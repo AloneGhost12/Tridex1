@@ -36,7 +36,34 @@ TridexChatbot.prototype.aiResponse = async function(question) {
     }
 
     // Standard response patterns
-    return this.getStandardResponse(q);
+    const standardResponse = this.getStandardResponse(q);
+    // Only use standardResponse if it is NOT the fallback
+    if (standardResponse && !standardResponse.includes("I'm not sure I understand")) {
+        return standardResponse;
+    }
+
+    // If the standard response is the fallback, try the AI API for a better answer
+    try {
+        // Call your backend proxy endpoint instead of OpenAI directly
+        const response = await fetch('/api/ai-chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ question })
+        });
+        if (response.ok) {
+            const data = await response.json();
+            if (data.answer) return data.answer;
+        } else {
+            // If backend returns an error, log and fall through
+            console.error('AI proxy error:', response.status, await response.text());
+        }
+    } catch (err) {
+        // If fetch fails, log and fall through
+        console.error('AI proxy fetch error:', err);
+    }
+
+    // If all else fails, return a more helpful fallback instead of the default
+    return "Sorry, I couldn't find an answer to your question right now. Please try rephrasing, or contact support if you need urgent help.";
 };
 
 /**

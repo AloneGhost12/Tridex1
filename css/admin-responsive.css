@@ -7,46 +7,76 @@
 
 /* Base styles for better mobile experience */
 body {
-    padding: 10px;
+    padding: 20px;
     max-width: 100%;
     overflow-x: hidden;
+    background-color: #f8f9fa;
+    font-family: Arial, sans-serif;
 }
 
 h1 {
     font-size: 1.8rem;
-    margin-bottom: 15px;
+    margin-bottom: 20px;
     text-align: center;
+    color: #333;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #007bff;
+    max-width: 300px;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 /* Admin navigation buttons */
 .admin-nav-container {
     display: flex;
     flex-wrap: wrap;
-    gap: 8px;
-    margin-bottom: 20px;
+    gap: 10px;
+    margin-bottom: 25px;
     justify-content: center;
+    background-color: #fff;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
 }
 
 .admin-nav-btn {
     margin: 0;
-    padding: 8px 12px;
-    font-size: 0.9rem;
+    padding: 10px 15px;
+    font-size: 0.95rem;
     white-space: nowrap;
     display: flex;
     align-items: center;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+.admin-nav-btn:hover {
+    background-color: #0069d9;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.admin-nav-btn.active {
+    background-color: #0056b3;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
 }
 
 .admin-nav-btn i {
-    margin-right: 5px;
+    margin-right: 8px;
+    font-size: 1.1em;
 }
 
 /* Admin controls */
 .admin-controls {
     display: flex;
     flex-wrap: wrap;
-    gap: 8px;
-    margin-bottom: 15px;
+    gap: 10px;
+    margin-bottom: 20px;
     justify-content: center;
+    background-color: #fff;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
 }
 
 .admin-controls button {
@@ -58,30 +88,110 @@ h1 {
 .table-responsive {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
-    margin-bottom: 15px;
+    margin-bottom: 20px;
     border-radius: 8px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    background-color: #fff;
 }
 
 table {
     min-width: 650px; /* Ensure tables have a minimum width */
+    width: 100%;
+    border-collapse: collapse;
+}
+
+table th {
+    background-color: #f8f9fa;
+    color: #495057;
+    font-weight: 600;
+    text-align: left;
+    padding: 12px 15px;
+    border-bottom: 2px solid #dee2e6;
+}
+
+table td {
+    padding: 10px 15px;
+    border-bottom: 1px solid #e9ecef;
+    vertical-align: middle;
+}
+
+table tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+.edit-btn, .delete-btn, .ban-btn, .unban-btn, .verify-btn {
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+    margin-right: 5px;
+}
+
+.edit-btn {
+    background-color: #007bff;
+    color: white;
+}
+
+.edit-btn:hover {
+    background-color: #0069d9;
+}
+
+.delete-btn {
+    background-color: #dc3545;
+    color: white;
+}
+
+.delete-btn:hover {
+    background-color: #c82333;
+}
+
+.ban-btn {
+    background-color: #dc3545;
+    color: white;
+}
+
+.unban-btn {
+    background-color: #28a745;
+    color: white;
+}
+
+.verify-btn {
+    background-color: #17a2b8;
+    color: white;
 }
 
 /* Forms */
 form {
     max-width: 100%;
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    margin-bottom: 20px;
 }
 
 input, textarea, select {
     max-width: 100%;
     font-size: 16px; /* Prevent zoom on iOS */
+    padding: 10px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+input:focus, textarea:focus, select:focus {
+    border-color: #80bdff;
+    outline: 0;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
 }
 
 /* Product form */
 #product-form {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 15px;
     max-width: 100%;
 }
 
@@ -89,14 +199,51 @@ input, textarea, select {
     display: block;
     margin-bottom: 5px;
     font-weight: 500;
+    color: #495057;
 }
 
 /* Category form */
 #category-form {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 15px;
     max-width: 100%;
+}
+
+#category-form label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 500;
+    color: #495057;
+}
+
+/* Form buttons */
+form button[type="submit"],
+form button[type="button"] {
+    padding: 10px 15px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+form button[type="submit"] {
+    background-color: #007bff;
+    color: white;
+}
+
+form button[type="submit"]:hover {
+    background-color: #0069d9;
+}
+
+form button[type="button"] {
+    background-color: #6c757d;
+    color: white;
+}
+
+form button[type="button"]:hover {
+    background-color: #5a6268;
 }
 
 /* Color variant manager */
