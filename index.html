@@ -721,278 +721,301 @@ if (!isLoggedIn) {
     // User is not logged in
 }
 
-// Render products function with detailed error logging
-        function renderProducts(products) {
-            try {
-                const grid = document.getElementById('product-grid');
-                grid.innerHTML = '';
-                if (!products || products.length === 0) {
-                    grid.innerHTML = '<div style="text-align:center; color:#888; font-size:1.2em; padding:32px 0;">No results found.</div>';
-                    return;
-                }
-                products.forEach(product => {
-                    try {
-                        const div = document.createElement('div');
-                        div.className = 'product-card';
-                        div.innerHTML = `
-                            <div class="product-image-container">
-                                <img src="${product.image || ''}" alt="${product.name}" style="cursor:pointer;" data-id="${product._id}">
-                            </div>
-                            <h3>${product.name}</h3>
-                            <p>₹${product.price}</p>
-                        `;
-                        div.querySelector('img').onclick = function(e) {
-                            // Save current page state before navigating
-                            history.pushState({ page: 'index', scrollPos: window.scrollY }, '', window.location.href);
-
-                            // Navigate to product details
-                            window.location.href = `product-details.html?id=${product._id}`;
-                        };
-                        grid.appendChild(div);
-                    } catch (err) {
-                        console.error('Error rendering product:', product, err);
-                    }
-                });
-            } catch (err) {
-                console.error('Error in renderProducts:', err);
-                document.getElementById('product-grid').innerHTML = '<div style="text-align:center; color:#888; font-size:1.2em; padding:32px 0;">Failed to render products.<br>' + err + '</div>';
+// --- AI-style Product Recommendations ---
+function getUserProductStats() {
+    // Track product views, searches, and likes in localStorage
+    let stats = JSON.parse(localStorage.getItem('userProductStats') || '{}');
+    return stats;
+}
+function saveUserProductStats(stats) {
+    localStorage.setItem('userProductStats', JSON.stringify(stats));
+}
+function recordProductView(productId) {
+    const stats = getUserProductStats();
+    stats.views = stats.views || {};
+    stats.views[productId] = (stats.views[productId] || 0) + 1;
+    saveUserProductStats(stats);
+}
+function recordProductLike(productId) {
+    const stats = getUserProductStats();
+    stats.likes = stats.likes || {};
+    stats.likes[productId] = (stats.likes[productId] || 0) + 1;
+    saveUserProductStats(stats);
+}
+function recordProductSearch(term) {
+    const stats = getUserProductStats();
+    stats.searches = stats.searches || {};
+    stats.searches[term] = (stats.searches[term] || 0) + 1;
+    saveUserProductStats(stats);
+}
+function getRecommendedProducts(allProducts) {
+    const stats = getUserProductStats();
+    // Score products by views, likes, and search matches
+    const scores = {};
+    allProducts.forEach(p => {
+        let score = 0;
+        if (stats.views && stats.views[p._id]) score += stats.views[p._id] * 2;
+        if (stats.likes && stats.likes[p._id]) score += stats.likes[p._id] * 3;
+        // Search term match bonus
+        if (stats.searches) {
+            for (const term in stats.searches) {
+                if (p.name && p.name.toLowerCase().includes(term)) score += stats.searches[term];
+                if (p.desc && p.desc.toLowerCase().includes(term)) score += stats.searches[term];
             }
         }
-        async function fetchAndRenderProducts(filter = "") {
-            try {
-                // Use the production server URL instead of localhost
-                const res = await fetch('https://tridex1.onrender.com/products');
-
-                // Log the response for debugging
-                console.log('Product fetch response status:', res.status);
-
-                let products = await res.json();
-                console.log('Products loaded:', products.length);
-
-                const filtered = products.filter(product =>
-                    !filter ||
-                    product.name.toLowerCase().includes(filter.toLowerCase()) ||
-                    (product.desc && product.desc.toLowerCase().includes(filter.toLowerCase()))
-                );
-
-                console.log('Filtered products:', filtered.length);
-                renderProducts(filtered);
-            } catch (e) {
-                console.error('Product fetch error:', e);
-
-                // Show a more user-friendly error message
-                document.getElementById('product-grid').innerHTML = `
-                    <div style="text-align:center; color:#888; font-size:1.2em; padding:32px 0;">
-                        <p>Unable to load products at this time.</p>
-                        <p style="font-size:0.9em; margin-top:10px;">Please try again later or contact support.</p>
-                        <button onclick="fetchAndRenderProducts()" style="margin-top:15px; padding:8px 16px; background:#007bff; color:#fff; border:none; border-radius:5px; cursor:pointer;">
-                            Try Again
-                        </button>
-                    </div>`;
-            } finally {
-                // --- Hide loading overlay after products are rendered ---
-                hideLoading();
-            }
-        }
-        // Fetch and render categories
-        async function fetchAndRenderCategories() {
-            try {
-                const res = await fetch('https://tridex1.onrender.com/categories');
-                const categories = await res.json();
-
-                const categoryContainer = document.getElementById('category-icons');
-
-                // Remove loading indicator
-                const loadingElement = document.querySelector('.category-loading');
-                if (loadingElement) {
-                    loadingElement.remove();
-                }
-
-                if (!categories || categories.length === 0) {
-                    categoryContainer.innerHTML = '<p style="text-align:center; color:#888; padding:10px;">No categories available.</p>';
-                    return;
-                }
-
-                // Render each category
-                categories.forEach(category => {
-                    const categoryItem = document.createElement('div');
-                    categoryItem.className = 'category-item';
-                    categoryItem.innerHTML = `
-                        <div class="category-icon">
-                            <img src="${category.icon || 'https://via.placeholder.com/80?text=' + category.name.charAt(0)}"
-                                 alt="${category.name}"
-                                 onerror="this.src='https://via.placeholder.com/80?text=${category.name.charAt(0)}'">
-                        </div>
-                        <div class="category-name">${category.name}</div>
-                    `;
-
-                    // Add click handler to redirect to category page
-                    categoryItem.addEventListener('click', () => {
-                        // Save current page state before navigating
-                        history.pushState({ page: 'index', scrollPos: window.scrollY }, '', window.location.href);
-
-                        // Navigate to category page
-                        window.location.href = `category.html?id=${category._id}`;
-                    });
-
-                    categoryContainer.appendChild(categoryItem);
-                });
-            } catch (error) {
-                console.error('Error fetching categories:', error);
-                const categoryContainer = document.getElementById('category-icons');
-                categoryContainer.innerHTML = '<p style="text-align:center; color:#888; padding:10px;">Failed to load categories.</p>';
-            }
-        }
-
-        // Initial render
-        fetchAndRenderProducts();
-        fetchAndRenderCategories();
-
-        // Handle browser back button navigation
-        window.addEventListener('popstate', function(event) {
-            if (event.state && event.state.page === 'index') {
-                // Restore scroll position if available
-                if (event.state.scrollPos) {
-                    setTimeout(() => {
-                        window.scrollTo(0, event.state.scrollPos);
-                    }, 100);
-                }
-            }
-        });
-
-        // Search form
-        document.getElementById('search-form').onsubmit = function(e) {
-            e.preventDefault();
-            const filter = document.getElementById('search-input').value.trim().toLowerCase();
-            fetchAndRenderProducts(filter);
+        scores[p._id] = score;
+    });
+    // Sort by score, descending
+    return allProducts
+        .map(p => ({ ...p, _score: scores[p._id] || 0 }))
+        .sort((a, b) => b._score - a._score)
+        .filter(p => p._score > 0)
+        .slice(0, 6); // Top 6 recommendations
+}
+// --- Render recommendations section ---
+function renderRecommendations(allProducts) {
+    const recommended = getRecommendedProducts(allProducts);
+    const container = document.getElementById('recommendations-section');
+    if (!container) return;
+    if (!recommended.length) {
+        container.innerHTML = '';
+        return;
+    }
+    container.innerHTML = '<h2 style="margin:24px 0 12px 0; color:#007bff;">Recommended for you</h2>';
+    const grid = document.createElement('div');
+    grid.className = 'product-grid';
+    recommended.forEach(product => {
+        const div = document.createElement('div');
+        div.className = 'product-card';
+        div.innerHTML = `
+            <div class="product-image-container">
+                <img src="${product.image || ''}" alt="${product.name}" style="cursor:pointer;" data-id="${product._id}">
+            </div>
+            <h3>${product.name}</h3>
+            <p>₹${product.price}</p>
+        `;
+        div.querySelector('img').onclick = function(e) {
+            recordProductView(product._id);
+            history.pushState({ page: 'index', scrollPos: window.scrollY }, '', window.location.href);
+            window.location.href = `product-details.html?id=${product._id}`;
         };
-
-        // Cart icon click
-        document.getElementById('cartIcon').onclick = withLoading(function(e) {
-            e.preventDefault();
-            window.location.href = 'cart.html';
-        });
-
-        // Mailbox open
-        document.getElementById('mailIcon').onclick = withLoading(async function(e) {
-            e.preventDefault();
-
-            const isLoggedIn = localStorage.getItem('isLoggedIn');
-            const hasToken = localStorage.getItem('token');
-            const username = localStorage.getItem('username') || localStorage.getItem('currentUser');
-
-            // If we have a token but no isLoggedIn flag, set it
-            if (hasToken && !isLoggedIn) {
-                localStorage.setItem('isLoggedIn', 'true');
-            }
-
-            // Check login status after potential update
-            const isActuallyLoggedIn = localStorage.getItem('isLoggedIn') || hasToken;
-
-            if (!isActuallyLoggedIn) {
-                alert('You must login to view your mailbox.');
-                window.location.href = 'login.html';
-                return;
-            }
-
-            // Fetch announcements from server including user-specific ones
-            let messages = [];
+        grid.appendChild(div);
+    });
+    container.appendChild(grid);
+}
+// --- Patch product rendering to record views/likes/searches ---
+function renderProducts(products) {
+    try {
+        const grid = document.getElementById('product-grid');
+        grid.innerHTML = '';
+        if (!products || products.length === 0) {
+            grid.innerHTML = '<div style="text-align:center; color:#888; font-size:1.2em; padding:32px 0;">No results found.</div>';
+            return;
+        }
+        products.forEach(product => {
             try {
-                const response = await fetch(`https://tridex1.onrender.com/announcements?username=${encodeURIComponent(username)}`);
-                if (response.ok) {
-                    messages = await response.json();
-                } else {
-                    console.error('Failed to fetch announcements:', response.status);
-                    // Fallback to local storage if server fetch fails
-                    messages = JSON.parse(localStorage.getItem('adminMessages')) || [];
-                }
-            } catch (e) {
-                console.error('Error fetching announcements:', e);
-                // Fallback to local storage
+                const div = document.createElement('div');
+                div.className = 'product-card';
+                div.innerHTML = `
+                    <div class="product-image-container">
+                        <img src="${product.image || ''}" alt="${product.name}" style="cursor:pointer;" data-id="${product._id}">
+                    </div>
+                    <h3>${product.name}</h3>
+                    <p>₹${product.price}</p>
+                `;
+                div.querySelector('img').onclick = function(e) {
+                    recordProductView(product._id);
+                    history.pushState({ page: 'index', scrollPos: window.scrollY }, '', window.location.href);
+                    window.location.href = `product-details.html?id=${product._id}`;
+                };
+                grid.appendChild(div);
+            } catch (err) {
+                console.error('Error rendering product:', product, err);
+            }
+        });
+    } catch (err) {
+        console.error('Error in renderProducts:', err);
+        document.getElementById('product-grid').innerHTML = '<div style="text-align:center; color:#888; font-size:1.2em; padding:32px 0;">Failed to render products.<br>' + err + '</div>';
+    }
+}
+// Patch search form to record searches
+const searchForm = document.getElementById('search-form');
+if (searchForm) {
+    searchForm.onsubmit = function(e) {
+        e.preventDefault();
+        const filter = document.getElementById('search-input').value.trim().toLowerCase();
+        if (filter) recordProductSearch(filter);
+        fetchAndRenderProducts(filter);
+    };
+}
+// --- Render recommendations on page load ---
+let allProductsCache = [];
+async function fetchAndRenderProducts(filter = "") {
+    try {
+        const res = await fetch('https://tridex1.onrender.com/products');
+        let products = await res.json();
+        allProductsCache = products;
+        const filtered = products.filter(product =>
+            !filter ||
+            product.name.toLowerCase().includes(filter.toLowerCase()) ||
+            (product.desc && product.desc.toLowerCase().includes(filter.toLowerCase()))
+        );
+        renderProducts(filtered);
+        renderRecommendations(products);
+    } catch (e) {
+        document.getElementById('product-grid').innerHTML = `<div style="text-align:center; color:#888; font-size:1.2em; padding:32px 0;">Unable to load products at this time.</div>`;
+    } finally {
+        hideLoading();
+    }
+}
+
+    // Add a recommendations section above the product grid
+    const recommendationsSection = document.createElement('section');
+    recommendationsSection.id = 'recommendations-section';
+    const productGrid = document.getElementById('product-grid');
+    productGrid.parentNode.insertBefore(recommendationsSection, productGrid);
+
+    // Initial render
+    fetchAndRenderProducts();
+
+    // Handle browser back button navigation
+    window.addEventListener('popstate', function(event) {
+        if (event.state && event.state.page === 'index') {
+            // Restore scroll position if available
+            if (event.state.scrollPos) {
+                setTimeout(() => {
+                    window.scrollTo(0, event.state.scrollPos);
+                }, 100);
+            }
+        }
+    });
+
+    // Cart icon click
+    document.getElementById('cartIcon').onclick = withLoading(function(e) {
+        e.preventDefault();
+        window.location.href = 'cart.html';
+    });
+
+    // Mailbox open
+    document.getElementById('mailIcon').onclick = withLoading(async function(e) {
+        e.preventDefault();
+
+        const isLoggedIn = localStorage.getItem('isLoggedIn');
+        const hasToken = localStorage.getItem('token');
+        const username = localStorage.getItem('username') || localStorage.getItem('currentUser');
+
+        // If we have a token but no isLoggedIn flag, set it
+        if (hasToken && !isLoggedIn) {
+            localStorage.setItem('isLoggedIn', 'true');
+        }
+
+        // Check login status after potential update
+        const isActuallyLoggedIn = localStorage.getItem('isLoggedIn') || hasToken;
+
+        if (!isActuallyLoggedIn) {
+            alert('You must login to view your mailbox.');
+            window.location.href = 'login.html';
+            return;
+        }
+
+        // Fetch announcements from server including user-specific ones
+        let messages = [];
+        try {
+            const response = await fetch(`https://tridex1.onrender.com/announcements?username=${encodeURIComponent(username)}`);
+            if (response.ok) {
+                messages = await response.json();
+            } else {
+                console.error('Failed to fetch announcements:', response.status);
+                // Fallback to local storage if server fetch fails
                 messages = JSON.parse(localStorage.getItem('adminMessages')) || [];
             }
+        } catch (e) {
+            console.error('Error fetching announcements:', e);
+            // Fallback to local storage
+            messages = JSON.parse(localStorage.getItem('adminMessages')) || [];
+        }
 
-            const lastSeenKey = username ? `mailLastSeen_${username}` : 'mailLastSeen_guest';
-            localStorage.setItem(lastSeenKey, messages.length);
-            updateMailCount();
+        const lastSeenKey = username ? `mailLastSeen_${username}` : 'mailLastSeen_guest';
+        localStorage.setItem(lastSeenKey, messages.length);
+        updateMailCount();
 
-            const mailbox = document.getElementById('mailbox-modal');
-            const messagesDiv = document.getElementById('mailbox-messages');
+        const mailbox = document.getElementById('mailbox-modal');
+        const messagesDiv = document.getElementById('mailbox-messages');
 
-            if (messages.length === 0) {
-                messagesDiv.innerHTML = '<p style="color:#888;">No messages.</p>';
-            } else {
-                messagesDiv.innerHTML = messages.map(msg => {
-                    // Check if it's a welcome message
-                    const isWelcomeMessage = msg.isWelcomeMessage;
-                    // Only show the special styling and "Mark as Read" button if it hasn't been read
-                    const isUnreadWelcome = isWelcomeMessage && !msg.isRead;
-                    const welcomeClass = isUnreadWelcome ? 'welcome-message' : '';
-                    const welcomeStyle = isUnreadWelcome ? 'background-color:#f8f9fa; border-left:4px solid #28a745; padding-left:12px;' : '';
+        if (messages.length === 0) {
+            messagesDiv.innerHTML = '<p style="color:#888;">No messages.</p>';
+        } else {
+            messagesDiv.innerHTML = messages.map(msg => {
+                // Check if it's a welcome message
+                const isWelcomeMessage = msg.isWelcomeMessage;
+                // Only show the special styling and "Mark as Read" button if it hasn't been read
+                const isUnreadWelcome = isWelcomeMessage && !msg.isRead;
+                const welcomeClass = isUnreadWelcome ? 'welcome-message' : '';
+                const welcomeStyle = isUnreadWelcome ? 'background-color:#f8f9fa; border-left:4px solid #28a745; padding-left:12px;' : '';
 
-                    return `
-                        <div class="message-item ${welcomeClass}" data-id="${msg._id}" style="border-bottom:1px solid #eee; padding:12px 0; ${welcomeStyle}">
-                            <strong>${msg.title || 'Announcement'}</strong>
-                            <div style="font-size:0.97em; margin-top:4px;">${msg.message || msg.body}</div>
-                            <div style="font-size:0.85em; color:#888; margin-top:2px; display:flex; justify-content:space-between;">
-                                <span>${new Date(msg.createdAt).toLocaleString() || msg.date || ''}</span>
-                                ${isUnreadWelcome ?
-                                    `<button class="mark-read-btn" data-id="${msg._id}" style="background:#28a745; color:white; border:none; border-radius:4px; padding:2px 8px; cursor:pointer; font-size:0.9em;">Mark as Read</button>`
-                                    : ''}
-                            </div>
+                return `
+                    <div class="message-item ${welcomeClass}" data-id="${msg._id}" style="border-bottom:1px solid #eee; padding:12px 0; ${welcomeStyle}">
+                        <strong>${msg.title || 'Announcement'}</strong>
+                        <div style="font-size:0.97em; margin-top:4px;">${msg.message || msg.body}</div>
+                        <div style="font-size:0.85em; color:#888; margin-top:2px; display:flex; justify-content:space-between;">
+                            <span>${new Date(msg.createdAt).toLocaleString() || msg.date || ''}</span>
+                            ${isUnreadWelcome ?
+                                `<button class="mark-read-btn" data-id="${msg._id}" style="background:#28a745; color:white; border:none; border-radius:4px; padding:2px 8px; cursor:pointer; font-size:0.9em;">Mark as Read</button>`
+                                : ''}
                         </div>
-                    `;
-                }).join('');
+                    </div>
+                `;
+            }).join('');
 
-                // Add event listeners to "Mark as Read" buttons
-                const markReadButtons = document.querySelectorAll('.mark-read-btn');
-                markReadButtons.forEach(button => {
-                    button.addEventListener('click', async function(e) {
-                        e.stopPropagation(); // Prevent event bubbling
+            // Add event listeners to "Mark as Read" buttons
+            const markReadButtons = document.querySelectorAll('.mark-read-btn');
+            markReadButtons.forEach(button => {
+                button.addEventListener('click', async function(e) {
+                    e.stopPropagation(); // Prevent event bubbling
 
-                        const messageId = this.getAttribute('data-id');
-                        try {
-                            const response = await fetch(`https://tridex1.onrender.com/announcements/${messageId}/read`, {
-                                method: 'PUT',
-                                headers: {
-                                    'Content-Type': 'application/json'
-                                }
-                            });
-
-                            if (response.ok) {
-                                // Remove the welcome message styling
-                                const messageItem = this.closest('.message-item');
-                                messageItem.classList.remove('welcome-message');
-                                messageItem.style.backgroundColor = '';
-                                messageItem.style.borderLeft = '';
-                                messageItem.style.paddingLeft = '';
-
-                                // Remove the button
-                                this.remove();
-
-                                // Update the count
-                                updateMailCount();
-                            } else {
-                                console.error('Failed to mark message as read:', response.status);
+                    const messageId = this.getAttribute('data-id');
+                    try {
+                        const response = await fetch(`https://tridex1.onrender.com/announcements/${messageId}/read`, {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json'
                             }
-                        } catch (error) {
-                            console.error('Error marking message as read:', error);
+                        });
+
+                        if (response.ok) {
+                            // Remove the welcome message styling
+                            const messageItem = this.closest('.message-item');
+                            messageItem.classList.remove('welcome-message');
+                            messageItem.style.backgroundColor = '';
+                            messageItem.style.borderLeft = '';
+                            messageItem.style.paddingLeft = '';
+
+                            // Remove the button
+                            this.remove();
+
+                            // Update the count
+                            updateMailCount();
+                        } else {
+                            console.error('Failed to mark message as read:', response.status);
                         }
-                    });
+                    } catch (error) {
+                        console.error('Error marking message as read:', error);
+                    }
                 });
-            }
+            });
+        }
 
-            mailbox.style.display = 'flex';
-        });
+        mailbox.style.display = 'flex';
+    });
 
-        // Close mailbox
-        document.getElementById('close-mailbox').onclick = withLoading(function() {
-            document.getElementById('mailbox-modal').style.display = 'none';
-        });
+    // Close mailbox
+    document.getElementById('close-mailbox').onclick = withLoading(function() {
+        document.getElementById('mailbox-modal').style.display = 'none';
+    });
 
 
 
-        // Mail notification count logic
+    // Mail notification count logic
     async function updateMailCount() {
         // Check login status with both methods
         const isLoggedIn = localStorage.getItem('isLoggedIn');
@@ -1156,9 +1179,6 @@ if (!isLoggedIn) {
         window.location.href = 'cart.html';
     };
 
-    // If you want to update cart count after adding to cart from product-details.html,
-    // you must call updateCartCount() after adding to cart, or reload the index page.
-
     // Simple hamburger menu implementation
     document.addEventListener('DOMContentLoaded', function() {
         const hamburger = document.getElementById('hamburger-menu');
@@ -1243,7 +1263,60 @@ if (!isLoggedIn) {
         });
     });
 
-    // This event listener is now handled in the DOMContentLoaded block above
+    // --- Category Navigation: Fetch and Render Categories ---
+document.addEventListener('DOMContentLoaded', function() {
+    const categoryIcons = document.getElementById('category-icons');
+    if (!categoryIcons) return;
+    // Show loading spinner
+    categoryIcons.innerHTML = `<div class="category-loading" style="text-align:center; padding:20px;">
+        <div style="display:inline-block; border:3px solid #f3f3f3; border-top:3px solid #007bff; border-radius:50%; width:30px; height:30px; animation:spin 1s linear infinite;"></div>
+        <p style="margin-top:10px; color:#666;">Loading categories...</p>
+    </div>`;
+    fetch('https://tridex1.onrender.com/categories')
+        .then(res => res.json())
+        .then(categories => {
+            if (!Array.isArray(categories) || categories.length === 0) {
+                categoryIcons.innerHTML = '<p style="color:#888;">No categories found.</p>';
+                return;
+            }
+            categoryIcons.innerHTML = '';
+            categories.forEach(cat => {
+                const div = document.createElement('div');
+                div.className = 'category-item';
+                div.title = cat.name;
+                div.innerHTML = `
+                    <div class="category-icon">
+                        <img src="${cat.icon || 'https://img.icons8.com/ios-filled/50/000000/category.png'}" alt="${cat.name}">
+                    </div>
+                    <span class="category-name">${cat.name}</span>
+                `;
+                div.onclick = function() {
+                    // Filter products by category
+                    fetchAndRenderProductsByCategory(cat.name);
+                };
+                categoryIcons.appendChild(div);
+            });
+        })
+        .catch(err => {
+            categoryIcons.innerHTML = '<p style="color:#d32f2f;">Failed to load categories.</p>';
+            console.error('Error loading categories:', err);
+        });
+});
+
+// Helper: fetch and render products by category
+function fetchAndRenderProductsByCategory(categoryName) {
+    showLoading();
+    fetch('https://tridex1.onrender.com/products?category=' + encodeURIComponent(categoryName))
+        .then(res => res.json())
+        .then(products => {
+            renderProducts(products);
+            renderRecommendations(products);
+        })
+        .catch(e => {
+            document.getElementById('product-grid').innerHTML = `<div style="text-align:center; color:#888; font-size:1.2em; padding:32px 0;">Unable to load products for this category.</div>`;
+        })
+        .finally(() => hideLoading());
+}
     </script>
 </body>
 </html>

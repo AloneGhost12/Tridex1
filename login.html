@@ -58,7 +58,11 @@
         <a href="signup.html"><button class="signup-btn" type="button">Sign Up</button></a>
     </div>
     <script>
-    // No need to prevent default on signup button - it should navigate to signup.html
+    // --- Prevent back navigation to login page after login ---
+    // If user is already logged in, redirect to index.html
+    if (localStorage.getItem('token') && (localStorage.getItem('isLoggedIn') === 'true')) {
+        window.location.replace('index.html');
+    }
 
     // Check if the server is running
     async function checkServerStatus() {
@@ -721,6 +725,23 @@
                         return;
                     }
 
+                    // After successful login, replaceState to remove login from history
+                    function handleSuccessfulLogin(userInput, isAdmin, verified) {
+                        const token = 'fake-jwt-token-' + Date.now();
+                        localStorage.setItem('token', token);
+                        localStorage.setItem('isAdmin', isAdmin ? 'true' : 'false');
+                        localStorage.setItem('username', userInput);
+                        localStorage.setItem('verified', verified ? 'true' : 'false');
+                        localStorage.setItem('isLoggedIn', 'true');
+                        localStorage.setItem('currentUser', userInput);
+                        // Replace login page in history
+                        window.location.replace('index.html');
+                    }
+
+                    // For local testing - bypass actual login
+                    // handleSuccessfulLogin(userInput, false, true);
+
+                    // Regular login flow
                     localStorage.setItem('token', result.token);
                     // Store isAdmin as a string for consistent checking
                     localStorage.setItem('isAdmin', result.isAdmin ? 'true' : 'false');
