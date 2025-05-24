@@ -491,6 +491,13 @@ window.addEventListener('load', function() {
 window.addEventListener('beforeunload', function() {
     showLoading();
 });
+// --- Always hide loading overlay on any page show (including bfcache/back-forward navigation) ---
+    window.addEventListener('pageshow', function() {
+        hideLoading();
+    });
+    // As a safety net, hide loading overlay immediately in case of script errors or early navigation
+    hideLoading();
+
 // Cart count update function
 function updateCartCount() {
     const cartCountElement = document.getElementById('cart-count');
