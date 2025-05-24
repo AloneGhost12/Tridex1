@@ -424,6 +424,81 @@
             line-height: 1.5;
         }
 
+        .review-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-top: 10px;
+        }
+
+        .review-actions button {
+            background: none;
+            border: none;
+            color: #2874f0;
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+        }
+
+        .review-actions button i {
+            margin-right: 5px;
+        }
+
+        .reply-form {
+            display: none;
+            margin-top: 10px;
+        }
+
+        .reply-form textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            resize: none;
+            margin-bottom: 10px;
+        }
+
+        .submit-reply-btn {
+            background-color: #2874f0;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 2px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .submit-reply-btn:hover {
+            background-color: #2264d1;
+        }
+
+        .cancel-reply-btn {
+            background: none;
+            border: none;
+            color: #dc3545;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .cancel-reply-btn:hover {
+            text-decoration: underline;
+        }
+
+        .replies-list {
+            margin-left: 30px;
+            margin-top: 10px;
+        }
+
+        .reply-item {
+            margin-bottom: 10px;
+        }
+
+        .reply-user {
+            font-weight: 500;
+            margin-right: 5px;
+        }
+
         /* Animation for loading spinner */
         @keyframes spin {
             0% { transform: rotate(0deg); }
@@ -546,6 +621,7 @@
 
                 // Initialize event listeners
                 initEventListeners();
+                initReviewActionListeners();
             } catch (error) {
                 console.error('Error initializing product page:', error);
                 document.getElementById('product-details-container').innerHTML = `
@@ -730,16 +806,43 @@
 
                     <div class="reviews-list" id="reviews-list">
                         ${reviews.length > 0 ? reviews.map(review => `
-                            <div class="review-item">
+                            <div class="review-item" data-review-id="${review._id}">
                                 <div class="review-header">
-                                    <span class="reviewer-name">${review.username}</span>
-                                    <span class="review-date">${formatDate(review.date)}</span>
+                                    <span class="reviewer-name">${review.username || review.user?.username || 'User'}</span>
+                                    <span class="review-date">${formatDate(review.date || review.createdAt)}</span>
                                 </div>
                                 <div class="review-rating">
                                     ${generateStarRating(review.rating)}
                                 </div>
                                 <div class="review-content">
                                     ${review.text}
+                                </div>
+                                <div class="review-actions" style="display: flex; gap: 10px; align-items: center;">
+                                    <button class="like-review-btn" data-review-id="${review._id}" style="display: flex; align-items: center;">
+                                        <i class="fas fa-thumbs-up"></i> <span class="like-count">${review.likes?.length || 0}</span>
+                                    </button>
+                                    <button class="dislike-review-btn" data-review-id="${review._id}" style="display: flex; align-items: center;">
+                                        <i class="fas fa-thumbs-down"></i> <span class="dislike-count">${review.dislikes?.length || 0}</span>
+                                    </button>
+                                    <button class="reply-review-btn" data-review-id="${review._id}" style="display: flex; align-items: center;">
+                                        <i class="fas fa-reply"></i> Reply
+                                    </button>
+                                </div>
+                                <div class="reply-form" id="reply-form-${review._id}" style="display:none; margin-top:10px;">
+                                    <textarea class="reply-text" placeholder="Write a reply..."></textarea>
+                                    <button class="submit-reply-btn" data-review-id="${review._id}">Submit</button>
+                                    <button class="cancel-reply-btn" data-review-id="${review._id}">Cancel</button>
+                                </div>
+                                <div class="replies-list" style="margin-left:30px; margin-top:10px;">
+                                    ${review.replies && review.replies.length > 0 ? review.replies.map(reply => `
+                                        <div class="reply-item" data-reply-id="${reply._id}">
+                                            <span class="reply-user">${reply.username || reply.user?.username || 'User'}</span>:
+                                            <span class="reply-text">${reply.text}</span>
+                                            <span class="reply-date">${formatDate(reply.createdAt)}</span>
+                                            <button class="like-reply-btn" data-review-id="${review._id}" data-reply-id="${reply._id}"><i class="fas fa-thumbs-up"></i> <span class="like-count">${reply.likes?.length || 0}</span></button>
+                                            <button class="dislike-reply-btn" data-review-id="${review._id}" data-reply-id="${reply._id}"><i class="fas fa-thumbs-down"></i> <span class="dislike-count">${reply.dislikes?.length || 0}</span></button>
+                                        </div>
+                                    `).join('') : ''}
                                 </div>
                             </div>
                         `).join('') : '<p>No reviews yet. Be the first to review this product!</p>'}
@@ -796,6 +899,124 @@
                     window.location.href = 'index.html';
                 }
             });
+        }
+
+        // Initialize review action listeners
+        function initReviewActionListeners() {
+            // Like/dislike review
+            document.querySelectorAll('.like-review-btn').forEach(btn => {
+                btn.onclick = async function() {
+                    const reviewId = this.getAttribute('data-review-id');
+                    await likeOrDislikeReview(reviewId, 'like');
+                };
+            });
+            document.querySelectorAll('.dislike-review-btn').forEach(btn => {
+                btn.onclick = async function() {
+                    const reviewId = this.getAttribute('data-review-id');
+                    await likeOrDislikeReview(reviewId, 'dislike');
+                };
+            });
+            // Reply button
+            document.querySelectorAll('.reply-review-btn').forEach(btn => {
+                btn.onclick = function() {
+                    const reviewId = this.getAttribute('data-review-id');
+                    const form = document.getElementById('reply-form-' + reviewId);
+                    if (form) form.style.display = 'block';
+                };
+            });
+            // Cancel reply
+            document.querySelectorAll('.cancel-reply-btn').forEach(btn => {
+                btn.onclick = function() {
+                    const reviewId = this.getAttribute('data-review-id');
+                    const form = document.getElementById('reply-form-' + reviewId);
+                    if (form) form.style.display = 'none';
+                };
+            });
+            // Submit reply
+            document.querySelectorAll('.submit-reply-btn').forEach(btn => {
+                btn.onclick = async function() {
+                    const reviewId = this.getAttribute('data-review-id');
+                    const form = document.getElementById('reply-form-' + reviewId);
+                    const textarea = form.querySelector('.reply-text');
+                    const text = textarea.value.trim();
+                    if (!text) return showActionMessage('Reply cannot be empty', 'error');
+                    await submitReply(reviewId, text);
+                    textarea.value = '';
+                    form.style.display = 'none';
+                };
+            });
+            // Like/dislike reply
+            document.querySelectorAll('.like-reply-btn').forEach(btn => {
+                btn.onclick = async function() {
+                    const reviewId = this.getAttribute('data-review-id');
+                    const replyId = this.getAttribute('data-reply-id');
+                    await likeOrDislikeReply(reviewId, replyId, 'like');
+                };
+            });
+            document.querySelectorAll('.dislike-reply-btn').forEach(btn => {
+                btn.onclick = async function() {
+                    const reviewId = this.getAttribute('data-review-id');
+                    const replyId = this.getAttribute('data-reply-id');
+                    await likeOrDislikeReply(reviewId, replyId, 'dislike');
+                };
+            });
+        }
+
+        // Call this after rendering reviews
+        function refreshReviewsUI() {
+            renderReviews();
+            initReviewActionListeners();
+        }
+
+        // Like/dislike review
+        async function likeOrDislikeReview(reviewId, action) {
+            try {
+                const username = localStorage.getItem('username') || localStorage.getItem('currentUser');
+                if (!username) return showActionMessage('Please log in to like/dislike', 'error');
+                const res = await fetch(`https://tridex1.onrender.com/reviews/${reviewId}/like`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action, username })
+                });
+                if (!res.ok) throw new Error('Failed to update like/dislike');
+                // Update the count in the DOM immediately
+                const reviewElem = document.querySelector(`.review-item[data-review-id="${reviewId}"]`);
+                if (reviewElem) {
+                    const data = await res.json();
+                    reviewElem.querySelector('.like-count').textContent = data.likes?.length || 0;
+                    reviewElem.querySelector('.dislike-count').textContent = data.dislikes?.length || 0;
+                }
+                await loadReviews();
+                refreshReviewsUI();
+            } catch (e) { showActionMessage('Error updating like/dislike', 'error'); }
+        }
+        // Like/dislike reply
+        async function likeOrDislikeReply(reviewId, replyId, action) {
+            try {
+                const username = localStorage.getItem('username') || localStorage.getItem('currentUser');
+                if (!username) return showActionMessage('Please log in to like/dislike', 'error');
+                await fetch(`https://tridex1.onrender.com/reviews/${reviewId}/replies/${replyId}/like`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action, username })
+                });
+                await loadReviews();
+                refreshReviewsUI();
+            } catch (e) { showActionMessage('Error updating like/dislike', 'error'); }
+        }
+        // Submit reply
+        async function submitReply(reviewId, text) {
+            try {
+                const username = localStorage.getItem('username') || localStorage.getItem('currentUser');
+                if (!username) return showActionMessage('Please log in to reply', 'error');
+                await fetch(`https://tridex1.onrender.com/reviews/${reviewId}/replies`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text, username })
+                });
+                await loadReviews();
+                refreshReviewsUI();
+            } catch (e) { showActionMessage('Error submitting reply', 'error'); }
         }
 
         // Initialize product gallery
@@ -1106,12 +1327,15 @@
             showActionMessage('Review submitted successfully');
         }
 
-        // Load reviews from localStorage
+        // Load reviews from backend API
         async function loadReviews() {
-            // In a real app, you would fetch reviews from a server
-            // For now, we'll use localStorage
-            const allReviews = JSON.parse(localStorage.getItem('productReviews')) || [];
-            reviews = allReviews.filter(review => review.productId === currentProduct._id);
+            try {
+                const response = await fetch(`https://tridex1.onrender.com/products/${currentProduct._id}/reviews`);
+                if (!response.ok) throw new Error('Failed to fetch reviews');
+                reviews = await response.json();
+            } catch (e) {
+                reviews = [];
+            }
         }
 
         // Load color variants for the current product
