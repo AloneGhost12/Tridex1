@@ -1,4 +1,6 @@
 const express = require('express');
+const Review = require('./models/Review');
+
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
 const cors = require('cors');
@@ -11,6 +13,7 @@ const Announcement = require('./models/Announcement');
 const ChatInteraction = require('./models/ChatInteraction');
 const ContactMessage = require('./models/ContactMessage');
 const Order = require('./models/Order');
+const Review = require('./models/Review');
 const { generateProductSummary } = require('./utils/aiSummaryGenerator');
 
 // Load environment variables
@@ -2292,8 +2295,7 @@ app.post('/contact/messages/:id/respond', async (req, res) => {
     try {
         // Add authentication check here in production
 
-        const { text, respondedBy } = req.body;
-
+        const { text, respondedBy
         // Validate response
         if (!text || !respondedBy) {
             return res.status(400).json({ message: 'Response text and responder name are required' });
