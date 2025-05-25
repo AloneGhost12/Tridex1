@@ -3,7 +3,12 @@
  *
  * This module provides functionality for managing product color variants
  * in the admin panel.
+ *
+ * Version: 2.0 - Native JavaScript Modal (No jQuery)
+ * Last Updated: 2024
  */
+
+console.log('ColorVariantManager v2.0 loaded - Native JavaScript Modal');
 
 class ColorVariantManager {
     /**
