@@ -86,7 +86,7 @@
 <body>
     <div class="details-container">
         <h2>Complete Your Profile</h2>
-        
+
         <div class="google-info">
             <img id="profile-picture" src="" alt="Profile Picture">
             <strong id="google-name"></strong>
@@ -156,7 +156,7 @@
         // Form submission
         document.getElementById('details-form').addEventListener('submit', async function(e) {
             e.preventDefault();
-            
+
             const age = document.getElementById('age').value;
             const gender = document.getElementById('gender').value;
             const phone = document.getElementById('phone').value;
@@ -211,8 +211,12 @@
                     // Clear temporary Google data
                     localStorage.removeItem('googleSignupData');
 
-                    // Show success and redirect
-                    alert('Account created successfully! Welcome to Tridex!');
+                    // Show success message with verification status
+                    if (data.verified) {
+                        alert('Account created successfully! Welcome to Tridex!');
+                    } else {
+                        alert('Account created successfully! Your account is pending admin verification. You can still browse products while waiting for approval.');
+                    }
                     window.location.href = 'index.html';
                 } else {
                     alert(data.message || 'Registration failed. Please try again.');

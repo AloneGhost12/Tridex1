@@ -364,7 +364,7 @@ app.post('/auth/google', async (req, res) => {
                 email: email,
                 googleId: googleId,
                 profilePicture: profilePicture,
-                verified: true, // Google users are automatically verified
+                verified: false, // Google users are NOT automatically verified - admin approval required
                 isGoogleUser: true,
                 // Additional details from form
                 age: additionalDetails.age || '',
@@ -374,10 +374,10 @@ app.post('/auth/google', async (req, res) => {
 
             await user.save();
 
-            // Create welcome message
+            // Create welcome message using full name
             const welcomeMessage = new Announcement({
                 title: `Welcome to Tridex, ${name}!`,
-                message: `Thank you for signing up with Google! We're excited to have you join our community. Feel free to explore our products and services. If you have any questions, please don't hesitate to contact us.`,
+                message: `Hello ${name}! Thank you for signing up with Google! We're excited to have you join our community. Your account is pending admin verification. Feel free to explore our products and services. If you have any questions, please don't hesitate to contact us.`,
                 forUser: username,
                 isWelcomeMessage: true
             });
@@ -386,11 +386,11 @@ app.post('/auth/google', async (req, res) => {
 
             return res.json({
                 success: true,
-                message: 'Google sign-up successful!',
+                message: 'Google sign-up successful! Your account is pending admin verification.',
                 token: 'google-jwt-token-' + Date.now(),
                 username: user.username,
                 isAdmin: user.isAdmin || false,
-                verified: true,
+                verified: false, // Google users need admin verification
                 isGoogleUser: true
             });
 
@@ -426,7 +426,7 @@ app.post('/auth/google', async (req, res) => {
                 token: 'google-jwt-token-' + Date.now(),
                 username: user.username,
                 isAdmin: user.isAdmin || false,
-                verified: user.verified || true,
+                verified: user.verified, // Use actual verification status from database
                 isBanned: false,
                 isGoogleUser: true
             });
@@ -449,6 +449,53 @@ app.post('/auth/google', async (req, res) => {
     }
 });
 
+
+// ========== PROFILE PICTURE UPLOAD ==========
+
+// Update user profile picture
+app.post('/users/:userId/profile-picture', async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const { profilePicture } = req.body;
+
+        if (!profilePicture) {
+            return res.status(400).json({
+                success: false,
+                message: 'Profile picture URL is required'
+            });
+        }
+
+        // Find and update user
+        const user = await User.findByIdAndUpdate(
+            userId,
+            {
+                profilePicture: profilePicture,
+                updatedAt: new Date()
+            },
+            { new: true }
+        );
+
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: 'User not found'
+            });
+        }
+
+        res.json({
+            success: true,
+            message: 'Profile picture updated successfully',
+            profilePicture: user.profilePicture
+        });
+
+    } catch (error) {
+        console.error('Profile picture update error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to update profile picture'
+        });
+    }
+});
 
 // ========== USER MANAGEMENT ==========
 

@@ -255,7 +255,12 @@
                    <li class="nav"><a href="about.html">About</a></li>
                    <li class="nav"><a href="more.html">More</a></li>
                    <li class="nav"><a href="contact.html">Contact Us</a></li>
-                   <li><a href="#" class="nav-icon" id="userIcon">👤</a></li>
+                   <li>
+                       <a href="#" class="nav-icon" id="userIcon" style="position: relative;">
+                           <img id="nav-profile-picture" src="" alt="Profile" style="width: 28px; height: 28px; border-radius: 50%; object-fit: cover; display: none; border: 2px solid #fff;">
+                           <span id="nav-profile-placeholder" style="font-size: 1.3em;">👤</span>
+                       </a>
+                   </li>
                    <li>
                        <a href="#" class="nav-icon" id="mailIcon" title="Mailbox">
                            &#9993;
@@ -690,6 +695,50 @@ if (isLoggedIn && username) {
 
     document.getElementById('username-display').innerHTML =
         `Welcome, <span style="text-transform:uppercase; letter-spacing:0.5px; font-weight:500;">${userName}</span> ${verifiedUsers.includes(username) ? '<span title="Verified" style="color:#1da1f2; font-size:1.1em;">&#10004;&#65039;</span>' : ''}`;
+
+    // Load and display profile picture in navigation
+    loadUserProfilePicture();
+}
+
+// Function to load user profile picture
+async function loadUserProfilePicture() {
+    try {
+        const username = localStorage.getItem('username') || localStorage.getItem('currentUser');
+        const token = localStorage.getItem('token');
+
+        if (!username || !token) return;
+
+        // Fetch user data from server to get profile picture
+        const response = await fetch(`https://tridex1.onrender.com/users/profile?username=${encodeURIComponent(username)}`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (response.ok) {
+            const userData = await response.json();
+            displayNavProfilePicture(userData.profilePicture);
+        }
+    } catch (error) {
+        console.log('Could not load profile picture:', error);
+    }
+}
+
+// Function to display profile picture in navigation
+function displayNavProfilePicture(profilePictureUrl) {
+    const navProfilePicture = document.getElementById('nav-profile-picture');
+    const navProfilePlaceholder = document.getElementById('nav-profile-placeholder');
+
+    if (profilePictureUrl && navProfilePicture && navProfilePlaceholder) {
+        navProfilePicture.src = profilePictureUrl;
+        navProfilePicture.style.display = 'inline-block';
+        navProfilePlaceholder.style.display = 'none';
+    } else if (navProfilePicture && navProfilePlaceholder) {
+        navProfilePicture.style.display = 'none';
+        navProfilePlaceholder.style.display = 'inline';
+    }
 }
 // Hide or show login/signup in dropdown and handle profile icon click
 document.addEventListener('DOMContentLoaded', function() {
