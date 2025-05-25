@@ -56,6 +56,98 @@
         </div>
         <a href="#" id="forgot-password-link" style="display:block; margin-top:10px; text-align:right; color:#007bff; text-decoration:underline; cursor:pointer;">Forgot Password?</a>
         <a href="signup.html"><button class="signup-btn" type="button">Sign Up</button></a>
+
+        <!-- Google Sign-In Section (Login) -->
+        <div style="text-align:center; margin: 20px 0;">
+            <div style="margin-bottom: 10px; color: #666; font-size: 0.9em;">Or continue with:</div>
+            <div id="g_id_onload"
+                 data-client_id="511326319939-431231ifhs4239598gc0d7ba2vc97lms.apps.googleusercontent.com"
+                 data-context="signin"
+                 data-ux_mode="popup"
+                 data-callback="onGoogleSignIn"
+                 data-auto_prompt="false">
+            </div>
+            <div class="g_id_signin"
+                 data-type="standard"
+                 data-shape="rectangular"
+                 data-theme="outline"
+                 data-text="signin_with"
+                 data-size="large"
+                 data-logo_alignment="left">
+            </div>
+        </div>
+        <script src="https://accounts.google.com/gsi/client" async defer></script>
+        <script>
+        function onGoogleSignIn(response) {
+            console.log('Google Sign-In response received');
+
+            // Show loading
+            const loadingOverlay = document.getElementById('loading-overlay');
+            if (loadingOverlay) {
+                loadingOverlay.style.display = 'flex';
+            }
+
+            // Send the Google token to your backend for verification and login
+            fetch('http://localhost:3000/auth/google', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ credential: response.credential, mode: 'login' })
+            })
+            .then(res => res.json())
+            .then(data => {
+                console.log('Google login response:', data);
+
+                // Hide loading
+                if (loadingOverlay) {
+                    loadingOverlay.style.display = 'none';
+                }
+
+                if (data.success) {
+                    // Save user data to localStorage
+                    localStorage.setItem('token', data.token);
+                    localStorage.setItem('username', data.username);
+                    localStorage.setItem('currentUser', data.username);
+                    localStorage.setItem('isLoggedIn', 'true');
+                    localStorage.setItem('isAdmin', data.isAdmin ? 'true' : 'false');
+                    localStorage.setItem('verified', data.verified ? 'true' : 'false');
+                    localStorage.setItem('isGoogleUser', 'true');
+
+                    // Clear any ban flags
+                    localStorage.removeItem('bannedUsername');
+                    sessionStorage.removeItem('userBanned');
+                    sessionStorage.removeItem('showBanMessage');
+
+                    // Redirect to home page
+                    window.location.href = 'index.html';
+                } else {
+                    // Handle different error cases
+                    if (data.isBanned) {
+                        // User is banned
+                        localStorage.setItem('bannedUsername', data.username);
+                        sessionStorage.setItem('userBanned', 'true');
+                        window.location.href = 'login.html?banned=true&bannedUser=' + encodeURIComponent(data.username);
+                    } else if (data.message && data.message.includes('No account found')) {
+                        // No account found, suggest sign up
+                        if (confirm('No account found with this Google email. Would you like to create a new account?')) {
+                            window.location.href = 'signup.html';
+                        }
+                    } else {
+                        alert(data.message || 'Google login failed. Please try again.');
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Google login error:', error);
+
+                // Hide loading
+                if (loadingOverlay) {
+                    loadingOverlay.style.display = 'none';
+                }
+
+                alert('Google login failed. Please check your internet connection and try again.');
+            });
+        }
+        </script>
     </div>
     <script>
     // --- Prevent back navigation to login page after login ---

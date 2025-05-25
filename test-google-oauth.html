@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Google OAuth - Tridex</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background: #f9f9f9;
+        }
+        .test-section h3 {
+            margin-top: 0;
+            color: #007bff;
+        }
+        .google-btn {
+            margin: 10px 0;
+        }
+        .status {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 Google OAuth Test Page</h1>
+        <p>This page is for testing the Google OAuth implementation for Tridex.</p>
+
+        <div class="test-section">
+            <h3>📝 Google Sign-Up Test</h3>
+            <p>Test creating a new account with Google:</p>
+            <div id="google-signup-container">
+                <div id="g_id_onload_signup"
+                     data-client_id="511326319939-431231ifhs4239598gc0d7ba2vc97lms.apps.googleusercontent.com"
+                     data-context="signup"
+                     data-ux_mode="popup"
+                     data-callback="onGoogleSignUp"
+                     data-auto_prompt="false">
+                </div>
+                <div class="g_id_signin google-btn"
+                     data-type="standard"
+                     data-shape="rectangular"
+                     data-theme="outline"
+                     data-text="signup_with"
+                     data-size="large"
+                     data-logo_alignment="left">
+                </div>
+            </div>
+            <div id="signup-status" class="status info" style="display:none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>🔑 Google Login Test</h3>
+            <p>Test logging in with an existing Google account:</p>
+            <div id="google-login-container">
+                <div id="g_id_onload_login"
+                     data-client_id="511326319939-431231ifhs4239598gc0d7ba2vc97lms.apps.googleusercontent.com"
+                     data-context="signin"
+                     data-ux_mode="popup"
+                     data-callback="onGoogleSignIn"
+                     data-auto_prompt="false">
+                </div>
+                <div class="g_id_signin google-btn"
+                     data-type="standard"
+                     data-shape="rectangular"
+                     data-theme="outline"
+                     data-text="signin_with"
+                     data-size="large"
+                     data-logo_alignment="left">
+                </div>
+            </div>
+            <div id="login-status" class="status info" style="display:none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>📊 Test Results</h3>
+            <div id="test-results">
+                <p>Click the Google buttons above to test the OAuth implementation.</p>
+                <ul>
+                    <li><strong>Sign-Up:</strong> Should create a new user account</li>
+                    <li><strong>Login:</strong> Should authenticate existing users</li>
+                    <li><strong>Error Handling:</strong> Should show appropriate messages for different scenarios</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>🔧 Setup Instructions</h3>
+            <ol>
+                <li>Replace the placeholder Google Client ID with your actual Client ID</li>
+                <li>Make sure your server is running on port 3000</li>
+                <li>Ensure the Google OAuth routes are properly configured</li>
+                <li>Test with different Google accounts</li>
+            </ol>
+        </div>
+    </div>
+
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script>
+        function showStatus(elementId, message, type) {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.className = `status ${type}`;
+            element.style.display = 'block';
+        }
+
+        function onGoogleSignUp(response) {
+            console.log('Google Sign-Up response received:', response);
+            showStatus('signup-status', 'Processing Google sign-up...', 'info');
+
+            fetch('http://localhost:3000/auth/google', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ credential: response.credential, mode: 'signup' })
+            })
+            .then(res => res.json())
+            .then(data => {
+                console.log('Google signup response:', data);
+
+                if (data.success) {
+                    showStatus('signup-status',
+                        `✅ Sign-up successful! Username: ${data.username}`,
+                        'success');
+                } else {
+                    showStatus('signup-status',
+                        `❌ Sign-up failed: ${data.message}`,
+                        'error');
+                }
+            })
+            .catch(error => {
+                console.error('Google signup error:', error);
+                showStatus('signup-status',
+                    `❌ Network error: ${error.message}`,
+                    'error');
+            });
+        }
+
+        function onGoogleSignIn(response) {
+            console.log('Google Sign-In response received:', response);
+            showStatus('login-status', 'Processing Google login...', 'info');
+
+            fetch('http://localhost:3000/auth/google', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ credential: response.credential, mode: 'login' })
+            })
+            .then(res => res.json())
+            .then(data => {
+                console.log('Google login response:', data);
+
+                if (data.success) {
+                    showStatus('login-status',
+                        `✅ Login successful! Username: ${data.username}`,
+                        'success');
+                } else {
+                    showStatus('login-status',
+                        `❌ Login failed: ${data.message}`,
+                        'error');
+                }
+            })
+            .catch(error => {
+                console.error('Google login error:', error);
+                showStatus('login-status',
+                    `❌ Network error: ${error.message}`,
+                    'error');
+            });
+        }
+    </script>
+</body>
+</html>

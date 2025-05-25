@@ -113,10 +113,12 @@
                 <thead>
                     <tr>
                         <th>Username</th>
+                        <th>Name</th>
                         <th>Email</th>
                         <th>Phone</th>
                         <th>Age</th>
-                        <th>Password</th>
+                        <th>Gender</th>
+                        <th>Type</th>
                         <th>Status</th>
                         <th>Actions</th>
                     </tr>
@@ -608,15 +610,34 @@
             tbody.innerHTML = '';
             users.forEach(user => {
                 const tr = document.createElement('tr');
+
+                // Determine user type and display appropriate info
+                const userType = user.isGoogleUser ?
+                    '<span style="color:#4285f4; font-weight:bold;">📧 Google</span>' :
+                    '<span style="color:#28a745; font-weight:bold;">🔐 Regular</span>';
+
+                // Format phone number display
+                const phoneDisplay = user.phone || '<span style="color:#999;">Not provided</span>';
+
+                // Format age display
+                const ageDisplay = user.age || '<span style="color:#999;">Not provided</span>';
+
+                // Format gender display
+                const genderDisplay = user.gender ?
+                    user.gender.charAt(0).toUpperCase() + user.gender.slice(1) :
+                    '<span style="color:#999;">Not provided</span>';
+
                 tr.innerHTML = `
                     <td class="username-link" style="color:#007bff; cursor:pointer; text-decoration:underline; text-transform:uppercase; letter-spacing:0.5px; font-weight:500;">
-                        ${user.username || ''} ${user.verified ? '<span title="Verified" style="color:#1da1f2; font-size:1.1em;vertical-align:middle;">&#10004;&#65039;</span>' : ''}
+                        ${user.username || ''} ${user.verified ? '<span title="Verified" style="color:#1da1f2; font-size:1.1em;vertical-align:middle;">✓</span>' : ''}
                     </td>
+                    <td style="font-weight:500;">${user.name || '<span style="color:#999;">Not provided</span>'}</td>
                     <td>${user.email || ''}</td>
-                    <td>${user.phone || ''}</td>
-                    <td>${user.age || ''}</td>
-                    <td>${user.password || ''}</td>
-                    <td>${user.banned ? '<span style="color:red;">Banned</span>' : 'Active'}</td>
+                    <td>${phoneDisplay}</td>
+                    <td>${ageDisplay}</td>
+                    <td>${genderDisplay}</td>
+                    <td>${userType}</td>
+                    <td>${user.banned ? '<span style="color:red; font-weight:bold;">❌ Banned</span>' : '<span style="color:green; font-weight:bold;">✅ Active</span>'}</td>
                     <td>
                         <button type="button" class="ban-btn"${user.banned ? ' style="display:none;"' : ''}>Ban</button>
                         <button type="button" class="unban-btn"${!user.banned ? ' style="display:none;"' : ''}>Unban</button>
@@ -1035,13 +1056,114 @@
         function showUserDetail(user) {
             const modal = document.getElementById('user-detail-modal');
             const content = document.getElementById('user-detail-content');
-            // Show all fields dynamically
-            let html = '';
-            for (const key in user) {
-                if (user.hasOwnProperty(key)) {
-                    html += `<p><strong>${key.charAt(0).toUpperCase() + key.slice(1)}:</strong> ${user[key]}</p>`;
-                }
-            }
+
+            // Format dates
+            const createdDate = user.createdAt ? new Date(user.createdAt).toLocaleDateString('en-US', {
+                year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'
+            }) : 'Not available';
+
+            const updatedDate = user.updatedAt ? new Date(user.updatedAt).toLocaleDateString('en-US', {
+                year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'
+            }) : 'Not available';
+
+            // Determine user type and create appropriate display
+            const isGoogleUser = user.isGoogleUser || false;
+            const userTypeDisplay = isGoogleUser ?
+                '<span style="color:#4285f4; font-weight:bold; background:#e8f0fe; padding:4px 8px; border-radius:12px;">📧 Google User</span>' :
+                '<span style="color:#28a745; font-weight:bold; background:#e8f5e8; padding:4px 8px; border-radius:12px;">🔐 Regular User</span>';
+
+            // Create comprehensive user details HTML
+            let html = `
+                <div style="max-height: 70vh; overflow-y: auto; padding-right: 10px;">
+                    <!-- User Type Badge -->
+                    <div style="text-align: center; margin-bottom: 20px;">
+                        ${userTypeDisplay}
+                    </div>
+
+                    <!-- Profile Picture (for Google users) -->
+                    ${user.profilePicture ? `
+                        <div style="text-align: center; margin-bottom: 20px;">
+                            <img src="${user.profilePicture}" alt="Profile Picture"
+                                 style="width: 80px; height: 80px; border-radius: 50%; border: 3px solid #4285f4;">
+                        </div>
+                    ` : ''}
+
+                    <!-- Basic Information -->
+                    <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                        <h4 style="margin-top: 0; color: #333; border-bottom: 2px solid #007bff; padding-bottom: 5px;">👤 Basic Information</h4>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                            <p><strong>Username:</strong> <span style="text-transform: uppercase; color: #007bff; font-weight: bold;">${user.username || 'Not provided'}</span></p>
+                            <p><strong>Full Name:</strong> ${user.name || '<span style="color: #999;">Not provided</span>'}</p>
+                            <p><strong>Email:</strong> ${user.email || '<span style="color: #999;">Not provided</span>'}</p>
+                            <p><strong>Phone:</strong> ${user.phone || '<span style="color: #999;">Not provided</span>'}</p>
+                            <p><strong>Age:</strong> ${user.age || '<span style="color: #999;">Not provided</span>'}</p>
+                            <p><strong>Gender:</strong> ${user.gender ? user.gender.charAt(0).toUpperCase() + user.gender.slice(1) : '<span style="color: #999;">Not provided</span>'}</p>
+                        </div>
+                    </div>
+
+                    <!-- Account Status -->
+                    <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                        <h4 style="margin-top: 0; color: #333; border-bottom: 2px solid #28a745; padding-bottom: 5px;">🔒 Account Status</h4>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                            <p><strong>Status:</strong> ${user.banned ? '<span style="color: red; font-weight: bold;">❌ Banned</span>' : '<span style="color: green; font-weight: bold;">✅ Active</span>'}</p>
+                            <p><strong>Verified:</strong> ${user.verified ? '<span style="color: #1da1f2; font-weight: bold;">✓ Verified</span>' : '<span style="color: #999;">Not verified</span>'}</p>
+                            <p><strong>Admin:</strong> ${user.isAdmin ? '<span style="color: #dc3545; font-weight: bold;">👑 Admin</span>' : '<span style="color: #999;">Regular User</span>'}</p>
+                            <p><strong>Account Type:</strong> ${isGoogleUser ? '<span style="color: #4285f4;">Google OAuth</span>' : '<span style="color: #28a745;">Email/Password</span>'}</p>
+                        </div>
+                    </div>
+
+                    <!-- Google-specific Information -->
+                    ${isGoogleUser ? `
+                        <div style="background: #e8f0fe; padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #4285f4;">
+                            <h4 style="margin-top: 0; color: #1a73e8; border-bottom: 2px solid #4285f4; padding-bottom: 5px;">📧 Google Account Details</h4>
+                            <p><strong>Google ID:</strong> <code style="background: #f1f3f4; padding: 2px 6px; border-radius: 4px; font-size: 0.9em;">${user.googleId || 'Not available'}</code></p>
+                            <p><strong>Profile Picture:</strong> ${user.profilePicture ? '<span style="color: #28a745;">✓ Available</span>' : '<span style="color: #999;">Not available</span>'}</p>
+                            <p><strong>Email Verified:</strong> <span style="color: #28a745; font-weight: bold;">✓ Verified by Google</span></p>
+                        </div>
+                    ` : `
+                        <div style="background: #e8f5e8; padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #28a745;">
+                            <h4 style="margin-top: 0; color: #155724; border-bottom: 2px solid #28a745; padding-bottom: 5px;">🔐 Regular Account Details</h4>
+                            <p><strong>Password:</strong> <code style="background: #f1f3f4; padding: 2px 6px; border-radius: 4px; font-size: 0.9em;">${user.password ? '••••••••' : 'Not set'}</code></p>
+                            <p><strong>Registration Method:</strong> Email & Password</p>
+                        </div>
+                    `}
+
+                    <!-- Saved Addresses -->
+                    ${user.addresses && user.addresses.length > 0 ? `
+                        <div style="background: #fff3cd; padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #ffc107;">
+                            <h4 style="margin-top: 0; color: #856404; border-bottom: 2px solid #ffc107; padding-bottom: 5px;">📍 Saved Addresses (${user.addresses.length})</h4>
+                            ${user.addresses.map((address, index) => `
+                                <div style="background: white; padding: 10px; border-radius: 4px; margin-bottom: 8px; border: 1px solid #ffeaa7;">
+                                    <strong>Address ${index + 1}:</strong><br>
+                                    ${address.street || ''}<br>
+                                    ${address.city || ''}, ${address.state || ''} ${address.zipCode || ''}<br>
+                                    ${address.country || ''}
+                                </div>
+                            `).join('')}
+                        </div>
+                    ` : ''}
+
+                    <!-- Account Timestamps -->
+                    <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                        <h4 style="margin-top: 0; color: #333; border-bottom: 2px solid #6c757d; padding-bottom: 5px;">📅 Account Timeline</h4>
+                        <p><strong>Created:</strong> ${createdDate}</p>
+                        <p><strong>Last Updated:</strong> ${updatedDate}</p>
+                        <p><strong>User ID:</strong> <code style="background: #f1f3f4; padding: 2px 6px; border-radius: 4px; font-size: 0.9em;">${user._id || 'Not available'}</code></p>
+                    </div>
+
+                    <!-- Additional Technical Details -->
+                    <details style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                        <summary style="cursor: pointer; font-weight: bold; color: #495057;">🔧 Technical Details</summary>
+                        <div style="margin-top: 10px; font-family: monospace; font-size: 0.9em; background: white; padding: 10px; border-radius: 4px; border: 1px solid #dee2e6;">
+                            ${Object.entries(user).map(([key, value]) => {
+                                if (['password', 'profilePicture', 'addresses'].includes(key)) return '';
+                                return `<div><strong>${key}:</strong> ${typeof value === 'object' ? JSON.stringify(value) : value || 'null'}</div>`;
+                            }).filter(item => item).join('')}
+                        </div>
+                    </details>
+                </div>
+            `;
+
             content.innerHTML = html;
             modal.style.display = 'flex';
         }
