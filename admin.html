@@ -92,6 +92,7 @@
         <button class="admin-nav-btn active" id="show-users-btn"><i class="fas fa-users"></i> Users</button>
         <button class="admin-nav-btn" id="show-products-btn"><i class="fas fa-box"></i> Products</button>
         <button class="admin-nav-btn" id="show-categories-btn"><i class="fas fa-tags"></i> Categories</button>
+        <button class="admin-nav-btn" id="show-reviews-btn" title="Review Management"><i class="fas fa-star"></i> Reviews</button>
         <button class="admin-nav-btn" id="show-orders-btn" title="Order Management"><i class="fas fa-shipping-fast"></i> Orders</button>
         <button class="admin-nav-btn" id="show-mail-btn" title="Send Announcement"><i class="fas fa-envelope"></i> Mail</button>
         <button class="admin-nav-btn" id="show-contact-btn" title="Contact Messages"><i class="fas fa-phone"></i> Messages</button>
@@ -2466,6 +2467,11 @@
             document.getElementById('category-section').style.display = '';
             document.querySelectorAll('.admin-nav-btn').forEach(btn => btn.classList.remove('active'));
             this.classList.add('active');
+        };
+
+        // Reviews button - redirect to admin-reviews.html
+        document.getElementById('show-reviews-btn').onclick = function() {
+            window.location.href = 'admin-reviews.html';
         };
 
         function showLoading() {
