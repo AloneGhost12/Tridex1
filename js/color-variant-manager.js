@@ -319,6 +319,21 @@ class ColorVariantManager {
      */
     async saveVariant() {
         try {
+            // Validate parent product ID first
+            if (!this.parentProductId) {
+                alert('No parent product selected. Please select a product first.');
+                return;
+            }
+
+            // Validate that parent product ID looks like a valid MongoDB ObjectId
+            if (!/^[0-9a-fA-F]{24}$/.test(this.parentProductId)) {
+                console.error('Invalid parent product ID format:', this.parentProductId);
+                alert('Invalid product ID. Please refresh the page and try again.');
+                return;
+            }
+
+            console.log('Validated parent product ID:', this.parentProductId);
+
             // Get form values
             const colorSelect = document.getElementById('variant-color');
             const customColorName = document.getElementById('custom-color-name');
@@ -326,6 +341,13 @@ class ColorVariantManager {
             const priceInput = document.getElementById('variant-price');
             const inventoryInput = document.getElementById('variant-inventory');
             const inStockCheckbox = document.getElementById('variant-in-stock');
+
+            // Validate that all form elements exist
+            if (!colorSelect || !customColorName || !customColorHex || !priceInput || !inventoryInput || !inStockCheckbox) {
+                console.error('Some form elements are missing');
+                alert('Form is not properly loaded. Please refresh the page and try again.');
+                return;
+            }
 
             // Validate color selection
             if (colorSelect.value === '') {
