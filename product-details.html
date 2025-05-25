@@ -639,6 +639,8 @@
 
         // Render product details section
         function renderProductDetails() {
+            // Use selectedVariant if set, else currentProduct
+            const product = selectedVariant || currentProduct;
             // Calculate average rating
             const avgRating = calculateAverageRating();
             const ratingDisplay = avgRating > 0
@@ -647,20 +649,20 @@
                 : '<span class="product-reviews">No reviews yet</span>';
 
             // Calculate discount (mock data for demonstration)
-            const originalPrice = Math.round(currentProduct.price * 1.2); // 20% higher for demo
-            const discountPercent = Math.round((originalPrice - currentProduct.price) / originalPrice * 100);
+            const originalPrice = Math.round(product.price * 1.2); // 20% higher for demo
+            const discountPercent = Math.round((originalPrice - product.price) / originalPrice * 100);
 
             // Check if product is in wishlist
             const wishlist = JSON.parse(localStorage.getItem('wishlist')) || [];
-            const isInWishlist = wishlist.some(p => p._id === currentProduct._id);
+            const isInWishlist = wishlist.some(p => p._id === product._id);
 
             // Generate highlights from description (for demo)
-            const highlights = generateHighlights(currentProduct.desc);
+            const highlights = generateHighlights(product.desc);
 
             document.getElementById('product-details-container').innerHTML = `
                 <div class="product-details-wrapper">
                     <div class="product-image-section">
-                        ${currentProduct.media && currentProduct.media.length > 0 ? `
+                        ${product.media && product.media.length > 0 ? `
                         <!-- Product Gallery -->
                         <div class="product-gallery">
                             <div class="gallery-main-image" id="gallery-main-container">
@@ -671,7 +673,7 @@
                                 <!-- Thumbnails will be displayed here -->
                             </div>
 
-                            ${currentProduct.media.length > 1 ? `
+                            ${product.media.length > 1 ? `
                             <div class="gallery-nav prev" id="gallery-prev">
                                 <i class="fas fa-chevron-left"></i>
                             </div>
@@ -686,7 +688,7 @@
                         </div>
                         ` : `
                         <!-- Legacy Image (for backward compatibility) -->
-                        <img class="legacy-image" src="${currentProduct.image}" alt="${currentProduct.name}">
+                        <img class="legacy-image" src="${product.image}" alt="${product.name}">
                         `}
 
                         <div class="wishlist-icon ${isInWishlist ? 'active' : ''}" id="wishlist-toggle">
@@ -695,13 +697,13 @@
                     </div>
 
                     <div class="product-info-section">
-                        <h1 class="product-title">${currentProduct.name}</h1>
+                        <h1 class="product-title">${product.name}</h1>
                         <div>
                             ${ratingDisplay}
                         </div>
 
                         <div class="product-price">
-                            ₹${currentProduct.price}
+                            ₹${product.price}
                             <span class="original-price">₹${originalPrice}</span>
                             <span class="discount">${discountPercent}% off</span>
                         </div>
@@ -711,18 +713,18 @@
                             <!-- Color variants will be loaded dynamically if available -->
                         </div>
 
-                        ${currentProduct.aiSummary ? `
+                        ${product.aiSummary ? `
                         <div class="product-summary">
                             <h3>Product Summary</h3>
                             <div class="ai-summary">
                                 <div class="ai-badge">AI</div>
-                                <p>${currentProduct.aiSummary}</p>
+                                <p>${product.aiSummary}</p>
                             </div>
                         </div>
                         ` : ''}
 
                         <div class="product-description">
-                            ${currentProduct.desc}
+                            ${product.desc}
                         </div>
 
                         <div class="product-highlights">
@@ -1347,7 +1349,9 @@
                     if (response.ok) {
                         const data = await response.json();
                         colorVariants = data.variants || [];
-                        selectedVariant = null; // No variant selected initially
+                        // Set selectedVariant based on URL id if it matches a variant
+                        const urlId = getProductId();
+                        selectedVariant = colorVariants.find(v => v._id === urlId) || null;
                     }
                 }
                 // If this is a variant, load its siblings
@@ -1360,9 +1364,9 @@
                     if (response.ok) {
                         const data = await response.json();
                         colorVariants = data.variants || [];
-
-                        // Set the current product as the selected variant
-                        selectedVariant = currentProduct;
+                        // Set selectedVariant based on URL id if it matches a variant, else currentProduct
+                        const urlId = getProductId();
+                        selectedVariant = colorVariants.find(v => v._id === urlId) || currentProduct;
                     }
                 }
 
@@ -1429,6 +1433,8 @@
             // Find the variant
             const variant = colorVariants.find(v => v._id === variantId);
             if (!variant) return;
+            // Prevent selecting out-of-stock variants
+            if (variant.inventory && !variant.inventory.inStock) return;
 
             // Update selected variant
             selectedVariant = variant;

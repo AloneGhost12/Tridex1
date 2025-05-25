@@ -8,7 +8,7 @@
  * Last Updated: 2024
  */
 
-console.log('ColorVariantManager v2.0 loaded - Native JavaScript Modal');
+// ColorVariantManager v2.0 - Native JavaScript Modal
 
 class ColorVariantManager {
     /**
@@ -52,7 +52,6 @@ class ColorVariantManager {
         ];
 
         // Initialize the UI
-        console.log('ColorVariantManager: Initializing UI with container:', this.container);
         this.initUI();
     }
 
@@ -60,12 +59,9 @@ class ColorVariantManager {
      * Initialize the user interface
      */
     initUI() {
-        console.log('ColorVariantManager: initUI called');
         if (!this.container) {
-            console.error('Color variant container not found');
             return;
         }
-        console.log('ColorVariantManager: Container found, creating UI elements');
 
         // Hide the container initially (will be shown when a product is selected)
         this.container.style.display = 'none';
@@ -210,8 +206,7 @@ class ColorVariantManager {
             form.reset();
         }
 
-        // Skip media gallery initialization for now to focus on basic variant functionality
-        console.log('Skipping variant media gallery initialization for now');
+        // Media gallery initialization skipped for now
 
         // If editing, populate the form with variant data
         if (variant) {
@@ -224,7 +219,6 @@ class ColorVariantManager {
             const customColorHex = document.getElementById('custom-color-hex');
 
             if (!colorSelect || !customColorName || !customColorHex) {
-                console.error('Color variant form elements not found');
                 return;
             }
 
@@ -264,18 +258,10 @@ class ColorVariantManager {
             this.editingVariantId = null;
         }
 
-        // Show the modal using native JavaScript
+        // Show the modal
         const modal = document.getElementById('colorVariantModal');
-        console.log('Looking for modal element:', modal);
-        console.log('All elements with colorVariantModal:', document.querySelectorAll('#colorVariantModal'));
-
         if (modal) {
-            console.log('Modal found, showing it');
             modal.style.display = 'flex';
-        } else {
-            console.error('Color variant modal not found - checking if UI was initialized');
-            console.log('Container exists:', !!this.container);
-            console.log('Container innerHTML length:', this.container ? this.container.innerHTML.length : 'N/A');
         }
     }
 
@@ -302,12 +288,9 @@ class ColorVariantManager {
 
             // Validate that parent product ID looks like a valid MongoDB ObjectId
             if (!/^[0-9a-fA-F]{24}$/.test(this.parentProductId)) {
-                console.error('Invalid parent product ID format:', this.parentProductId);
                 alert('Invalid product ID. Please refresh the page and try again.');
                 return;
             }
-
-            console.log('Validated parent product ID:', this.parentProductId);
 
             // Get form values
             const colorSelect = document.getElementById('variant-color');
@@ -319,7 +302,6 @@ class ColorVariantManager {
 
             // Validate that all form elements exist
             if (!colorSelect || !customColorName || !customColorHex || !priceInput || !inventoryInput || !inStockCheckbox) {
-                console.error('Some form elements are missing');
                 alert('Form is not properly loaded. Please refresh the page and try again.');
                 return;
             }
@@ -349,9 +331,8 @@ class ColorVariantManager {
                 inStock: inStockCheckbox.checked
             };
 
-            // Skip media data for now
+            // No media items for now
             let mediaItems = [];
-            console.log('Skipping media items for now');
 
             // Prepare variant data
             const variantData = {
@@ -388,12 +369,8 @@ class ColorVariantManager {
                 alert('Color variant updated successfully');
             } else {
                 // Create a new variant
-                console.log('Creating variant with data:', variantData);
-                console.log('Parent product ID:', this.parentProductId);
-
                 const apiUrl = 'https://tridex1.onrender.com';
                 const fullUrl = `${apiUrl}/products/${this.parentProductId}/variants`;
-                console.log('Making request to:', fullUrl);
 
                 const response = await fetch(fullUrl, {
                     method: 'POST',
@@ -401,12 +378,8 @@ class ColorVariantManager {
                     body: JSON.stringify(variantData)
                 });
 
-                console.log('Response status:', response.status);
-                console.log('Response headers:', response.headers);
-
                 if (!response.ok) {
                     const errorText = await response.text();
-                    console.error('Server error response:', errorText);
                     throw new Error(`Failed to create variant: ${response.status} ${response.statusText} - ${errorText}`);
                 }
 
@@ -427,7 +400,6 @@ class ColorVariantManager {
             // Notify of changes
             this.onVariantsChange(this.variants);
         } catch (error) {
-            console.error('Error saving variant:', error);
             alert(`Error: ${error.message}`);
         }
     }
@@ -437,17 +409,14 @@ class ColorVariantManager {
      * @param {string} productId The parent product ID
      */
     setParentProductId(productId) {
-        console.log('ColorVariantManager: Setting parent product ID to:', productId);
         this.parentProductId = productId;
 
         // Show/hide the variant manager based on whether we have a product
         if (this.container) {
             if (productId) {
                 this.container.style.display = 'block';
-                console.log('ColorVariantManager: Showing variant manager for product:', productId);
             } else {
                 this.container.style.display = 'none';
-                console.log('ColorVariantManager: Hiding variant manager (no product selected)');
             }
         }
 
@@ -465,7 +434,6 @@ class ColorVariantManager {
      */
     async loadVariants() {
         if (!this.parentProductId) {
-            console.error('No parent product ID set');
             return;
         }
 
@@ -489,7 +457,6 @@ class ColorVariantManager {
             // Notify of changes
             this.onVariantsChange(this.variants);
         } catch (error) {
-            console.error('Error loading variants:', error);
             this.variants = [];
             this.renderVariantsList();
         }
@@ -502,7 +469,6 @@ class ColorVariantManager {
         const listContainer = document.getElementById('color-variants-list');
 
         if (!listContainer) {
-            console.error('Variants list container not found');
             return;
         }
 
@@ -569,7 +535,6 @@ class ColorVariantManager {
      */
     async deleteVariant(variantId) {
         if (!this.parentProductId || !variantId) {
-            console.error('Missing parent product ID or variant ID');
             return;
         }
 
@@ -597,7 +562,6 @@ class ColorVariantManager {
 
             alert('Color variant deleted successfully');
         } catch (error) {
-            console.error('Error deleting variant:', error);
             alert(`Error: ${error.message}`);
         }
     }
