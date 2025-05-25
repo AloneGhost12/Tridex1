@@ -74,16 +74,15 @@ class ColorVariantManager {
             </div>
 
             <!-- Color Variant Modal -->
-            <div class="modal fade" id="colorVariantModal" tabindex="-1" role="dialog" aria-labelledby="colorVariantModalLabel" aria-hidden="true">
-                <div class="modal-dialog modal-lg" role="document">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title" id="colorVariantModalLabel">Add Color Variant</h5>
-                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                <span aria-hidden="true">&times;</span>
-                            </button>
-                        </div>
-                        <div class="modal-body">
+            <div id="colorVariantModal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.3); z-index:3000; align-items:center; justify-content:center;">
+                <div style="background:#fff; padding:32px 24px; border-radius:8px; box-shadow:0 2px 12px rgba(0,0,0,0.15); min-width:600px; max-width:90vw; max-height:90vh; overflow-y:auto;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; border-bottom:1px solid #eee; padding-bottom:15px;">
+                        <h2 id="colorVariantModalLabel" style="margin:0; color:#333;">Add Color Variant</h2>
+                        <button type="button" id="close-variant-modal" style="background:none; border:none; font-size:24px; cursor:pointer; color:#999; padding:0; width:30px; height:30px; display:flex; align-items:center; justify-content:center;">
+                            &times;
+                        </button>
+                    </div>
+                    <div>
                             <form id="color-variant-form">
                                 <div class="form-group">
                                     <label for="variant-color">Color</label>
@@ -130,9 +129,9 @@ class ColorVariantManager {
                                 </div>
                             </form>
                         </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-                            <button type="button" class="btn btn-primary" id="save-variant-btn">Save Color Variant</button>
+                        <div style="margin-top:20px; padding-top:15px; border-top:1px solid #eee; display:flex; justify-content:flex-end; gap:10px;">
+                            <button type="button" id="cancel-variant-btn" style="padding:8px 18px; background:#6c757d; color:#fff; border:none; border-radius:5px; font-size:1rem; cursor:pointer;">Cancel</button>
+                            <button type="button" id="save-variant-btn" style="padding:8px 18px; background:#007bff; color:#fff; border:none; border-radius:5px; font-size:1rem; cursor:pointer;">Save Color Variant</button>
                         </div>
                     </div>
                 </div>
@@ -143,6 +142,10 @@ class ColorVariantManager {
         document.getElementById('add-variant-btn').addEventListener('click', () => this.openVariantModal());
         document.getElementById('variant-color').addEventListener('change', this.handleColorSelectChange.bind(this));
         document.getElementById('save-variant-btn').addEventListener('click', this.saveVariant.bind(this));
+
+        // Add modal close event listeners
+        document.getElementById('close-variant-modal').addEventListener('click', this.closeVariantModal.bind(this));
+        document.getElementById('cancel-variant-btn').addEventListener('click', this.closeVariantModal.bind(this));
 
         // Initialize the media gallery for variants
         this.initVariantMediaGallery();
@@ -262,11 +265,22 @@ class ColorVariantManager {
             this.editingVariantId = null;
         }
 
-        // Show the modal (check if jQuery and modal exist)
-        if (typeof $ !== 'undefined' && document.getElementById('colorVariantModal')) {
-            $('#colorVariantModal').modal('show');
+        // Show the modal using native JavaScript
+        const modal = document.getElementById('colorVariantModal');
+        if (modal) {
+            modal.style.display = 'flex';
         } else {
-            console.error('Modal or jQuery not available');
+            console.error('Color variant modal not found');
+        }
+    }
+
+    /**
+     * Close the variant modal
+     */
+    closeVariantModal() {
+        const modal = document.getElementById('colorVariantModal');
+        if (modal) {
+            modal.style.display = 'none';
         }
     }
 
@@ -362,7 +376,7 @@ class ColorVariantManager {
             }
 
             // Close the modal
-            $('#colorVariantModal').modal('hide');
+            this.closeVariantModal();
 
             // Refresh the variants list
             this.renderVariantsList();
