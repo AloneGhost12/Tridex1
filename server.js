@@ -1,11 +1,10 @@
 const express = require('express');
-const Review = require('./models/Review');
-
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const fileUpload = require('express-fileupload');
+const { OAuth2Client } = require('google-auth-library');
 const User = require('./models/User'); // Make sure the path is correct
 const Product = require('./models/Product');
 const Category = require('./models/Category');
@@ -21,6 +20,11 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Initialize Google OAuth client
+const googleClient = new OAuth2Client(
+    process.env.GOOGLE_CLIENT_ID || 'your-google-client-id'
+);
 
 // Define allowed origins
 const allowedOrigins = [
@@ -267,6 +271,180 @@ app.post('/login', async (req, res) => {
             message: 'Server error',
             error: err.message,
             stack: process.env.NODE_ENV === 'production' ? null : err.stack
+        });
+    }
+});
+
+// ========== GOOGLE OAUTH ROUTES ==========
+
+// Google OAuth Sign-up/Login
+app.post('/auth/google', async (req, res) => {
+    try {
+        const { credential, mode } = req.body; // mode can be 'signup' or 'login'
+
+        if (!credential) {
+            return res.status(400).json({
+                success: false,
+                message: 'Google credential is required'
+            });
+        }
+
+        // Verify the Google token
+        const ticket = await googleClient.verifyIdToken({
+            idToken: credential,
+            audience: process.env.GOOGLE_CLIENT_ID
+        });
+
+        const payload = ticket.getPayload();
+        const {
+            sub: googleId,
+            email,
+            name,
+            picture: profilePicture,
+            email_verified
+        } = payload;
+
+        if (!email_verified) {
+            return res.status(400).json({
+                success: false,
+                message: 'Google email not verified'
+            });
+        }
+
+        // Check if user already exists
+        let user = await User.findOne({
+            $or: [
+                { email: email },
+                { googleId: googleId }
+            ]
+        });
+
+        if (mode === 'signup') {
+            // Sign-up mode
+            if (user) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'User already exists with this email. Please try logging in instead.'
+                });
+            }
+
+            // Check if additional details are provided
+            const { additionalDetails } = req.body;
+
+            if (!additionalDetails) {
+                // First step: return success but indicate additional details needed
+                return res.json({
+                    success: true,
+                    needsAdditionalDetails: true,
+                    message: 'Google authentication successful. Please provide additional details.',
+                    googleData: {
+                        email: email,
+                        name: name,
+                        googleId: googleId,
+                        profilePicture: profilePicture
+                    }
+                });
+            }
+
+            // Generate a unique username from email
+            let username = email.split('@')[0];
+            let usernameExists = await User.findOne({ username });
+            let counter = 1;
+
+            while (usernameExists) {
+                username = `${email.split('@')[0]}${counter}`;
+                usernameExists = await User.findOne({ username });
+                counter++;
+            }
+
+            // Create new user with additional details
+            user = new User({
+                name: name,
+                username: username,
+                email: email,
+                googleId: googleId,
+                profilePicture: profilePicture,
+                verified: true, // Google users are automatically verified
+                isGoogleUser: true,
+                // Additional details from form
+                age: additionalDetails.age || '',
+                gender: additionalDetails.gender || 'other',
+                phone: additionalDetails.phone || ''
+            });
+
+            await user.save();
+
+            // Create welcome message
+            const welcomeMessage = new Announcement({
+                title: `Welcome to Tridex, ${name}!`,
+                message: `Thank you for signing up with Google! We're excited to have you join our community. Feel free to explore our products and services. If you have any questions, please don't hesitate to contact us.`,
+                forUser: username,
+                isWelcomeMessage: true
+            });
+
+            await welcomeMessage.save();
+
+            return res.json({
+                success: true,
+                message: 'Google sign-up successful!',
+                token: 'google-jwt-token-' + Date.now(),
+                username: user.username,
+                isAdmin: user.isAdmin || false,
+                verified: true,
+                isGoogleUser: true
+            });
+
+        } else {
+            // Login mode
+            if (!user) {
+                return res.status(401).json({
+                    success: false,
+                    message: 'No account found with this Google email. Please sign up first.'
+                });
+            }
+
+            // Check if user is banned
+            if (user.banned) {
+                return res.status(403).json({
+                    success: false,
+                    message: 'Your account has been banned by the administrator',
+                    isBanned: true,
+                    username: user.username
+                });
+            }
+
+            // Update user's Google info if needed
+            if (!user.googleId) {
+                user.googleId = googleId;
+                user.isGoogleUser = true;
+                await user.save();
+            }
+
+            return res.json({
+                success: true,
+                message: 'Google login successful!',
+                token: 'google-jwt-token-' + Date.now(),
+                username: user.username,
+                isAdmin: user.isAdmin || false,
+                verified: user.verified || true,
+                isBanned: false,
+                isGoogleUser: true
+            });
+        }
+
+    } catch (error) {
+        console.error('Google OAuth error:', error);
+
+        if (error.message && error.message.includes('Token used too early')) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid Google token. Please try again.'
+            });
+        }
+
+        return res.status(500).json({
+            success: false,
+            message: 'Google authentication failed. Please try again.'
         });
     }
 });
@@ -2295,7 +2473,8 @@ app.post('/contact/messages/:id/respond', async (req, res) => {
     try {
         // Add authentication check here in production
 
-        const { text, respondedBy
+        const { text, respondedBy } = req.body;
+
         // Validate response
         if (!text || !respondedBy) {
             return res.status(400).json({ message: 'Response text and responder name are required' });

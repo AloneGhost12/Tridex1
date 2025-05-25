@@ -171,6 +171,100 @@
         </form>
         <div id="signup-success" style="color:green; margin-top:10px; display:none;">Account created! <a href="login.html">Go to Login</a></div>
         <a href="login.html" style="display:block;text-align:center;margin-top:12px;">Already have an account? Login</a>
+
+        <!-- Google Sign-Up Section -->
+        <div style="text-align:center; margin: 20px 0;">
+            <div style="margin-bottom: 10px; color: #666; font-size: 0.9em;">Or sign up with:</div>
+            <div id="g_id_onload"
+                 data-client_id="511326319939-431231ifhs4239598gc0d7ba2vc97lms.apps.googleusercontent.com"
+                 data-context="signup"
+                 data-ux_mode="popup"
+                 data-callback="onGoogleSignUp"
+                 data-auto_prompt="false">
+            </div>
+            <div class="g_id_signin"
+                 data-type="standard"
+                 data-shape="rectangular"
+                 data-theme="outline"
+                 data-text="signup_with"
+                 data-size="large"
+                 data-logo_alignment="left">
+            </div>
+        </div>
+        <script src="https://accounts.google.com/gsi/client" async defer></script>
+        <script>
+        function onGoogleSignUp(response) {
+            console.log('Google Sign-Up response received');
+
+            // Show loading
+            const loadingOverlay = document.getElementById('loading-overlay');
+            if (loadingOverlay) {
+                loadingOverlay.style.display = 'flex';
+            }
+
+            // Send the Google token to your backend for verification (first step)
+            fetch('http://localhost:3000/auth/google', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ credential: response.credential, mode: 'signup' })
+            })
+            .then(res => res.json())
+            .then(data => {
+                console.log('Google signup response:', data);
+
+                // Hide loading
+                if (loadingOverlay) {
+                    loadingOverlay.style.display = 'none';
+                }
+
+                if (data.success) {
+                    if (data.needsAdditionalDetails) {
+                        // Store Google data and redirect to details form
+                        const googleData = {
+                            ...data.googleData,
+                            credential: response.credential
+                        };
+                        localStorage.setItem('googleSignupData', JSON.stringify(googleData));
+
+                        // Redirect to details form
+                        window.location.href = 'google-signup-details.html';
+                    } else {
+                        // Complete signup (shouldn't happen in new flow, but kept for compatibility)
+                        localStorage.setItem('token', data.token);
+                        localStorage.setItem('username', data.username);
+                        localStorage.setItem('currentUser', data.username);
+                        localStorage.setItem('isLoggedIn', 'true');
+                        localStorage.setItem('isAdmin', data.isAdmin ? 'true' : 'false');
+                        localStorage.setItem('verified', data.verified ? 'true' : 'false');
+                        localStorage.setItem('isGoogleUser', 'true');
+
+                        alert('Google sign-up successful! Welcome to Tridex!');
+                        window.location.href = 'index.html';
+                    }
+                } else {
+                    // Handle different error cases
+                    if (data.message && data.message.includes('User already exists')) {
+                        // User already exists, suggest login
+                        if (confirm('An account with this Google email already exists. Would you like to login instead?')) {
+                            window.location.href = 'login.html';
+                        }
+                    } else {
+                        alert(data.message || 'Google sign-up failed. Please try again.');
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Google signup error:', error);
+
+                // Hide loading
+                if (loadingOverlay) {
+                    loadingOverlay.style.display = 'none';
+                }
+
+                alert('Google sign-up failed. Please check your internet connection and try again.');
+            });
+        }
+        </script>
     </div>
     <script>
         document.getElementById('signup-form').onsubmit = async function(e) {
