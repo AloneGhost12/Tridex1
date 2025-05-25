@@ -21,6 +21,119 @@
             margin: 0;
             padding: 0;
             color: #212121;
+            padding-top: 60px; /* Account for fixed header */
+        }
+
+        /* Header styles */
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: #333;
+            color: white;
+            z-index: 1000;
+            height: 60px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .logo h1 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .logo a {
+            color: white;
+            text-decoration: none;
+        }
+
+        /* Hamburger menu */
+        .hamburger-menu {
+            display: none;
+            flex-direction: column;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 5px;
+            gap: 3px;
+        }
+
+        .hamburger-menu span {
+            width: 25px;
+            height: 3px;
+            background: white;
+            transition: all 0.3s ease;
+        }
+
+        .hamburger-menu.active span:nth-child(1) {
+            transform: rotate(45deg) translate(6px, 6px);
+        }
+
+        .hamburger-menu.active span:nth-child(2) {
+            opacity: 0;
+        }
+
+        .hamburger-menu.active span:nth-child(3) {
+            transform: rotate(-45deg) translate(6px, -6px);
+        }
+
+        /* Navigation */
+        .nav {
+            display: flex;
+        }
+
+        .main-nav {
+            display: flex;
+            gap: 20px;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: white;
+            text-decoration: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+            position: relative;
+        }
+
+        .nav-link:hover {
+            background-color: rgba(255,255,255,0.1);
+        }
+
+        .notification-badge {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: #ff4444;
+            color: white;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
         }
 
         .container {
@@ -506,6 +619,41 @@
         }
 
         /* Responsive styles */
+        @media (max-width: 992px) {
+            .hamburger-menu {
+                display: flex;
+            }
+
+            .nav {
+                display: none;
+                position: absolute;
+                top: 60px;
+                left: 0;
+                width: 100%;
+                background: #333;
+                flex-direction: column;
+                box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            }
+
+            .nav.show {
+                display: flex;
+            }
+
+            .main-nav {
+                flex-direction: column;
+                gap: 0;
+            }
+
+            .nav-link {
+                padding: 15px 20px;
+                border-bottom: 1px solid rgba(255,255,255,0.1);
+            }
+
+            .nav-link:last-child {
+                border-bottom: none;
+            }
+        }
+
         @media (max-width: 768px) {
             .product-details-wrapper {
                 flex-direction: column;
@@ -527,6 +675,14 @@
             .similar-products-grid {
                 grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
             }
+
+            .header-container {
+                padding: 0 15px;
+            }
+
+            .logo h1 {
+                font-size: 20px;
+            }
         }
 
         /* Action message */
@@ -545,6 +701,47 @@
     </style>
 </head>
 <body>
+    <!-- Navigation Header -->
+    <header class="header">
+        <div class="header-container">
+            <div class="header-left">
+                <button id="hamburger-menu" class="hamburger-menu">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+                <div class="logo">
+                    <a href="index.html">
+                        <h1>TRIDEX</h1>
+                    </a>
+                </div>
+            </div>
+
+            <nav id="nav" class="nav">
+                <div id="main-nav" class="main-nav">
+                    <a href="index.html" class="nav-link">
+                        <i class="fas fa-home"></i>
+                        <span>Home</span>
+                    </a>
+                    <a href="profile.html" class="nav-link" id="profile-link">
+                        <i class="fas fa-user"></i>
+                        <span>Profile</span>
+                    </a>
+                    <a href="mailbox.html" class="nav-link" id="mailbox-link">
+                        <i class="fas fa-envelope"></i>
+                        <span>Messages</span>
+                        <span id="mail-count" class="notification-badge" style="display: none;"></span>
+                    </a>
+                    <a href="cart.html" class="nav-link" id="cart-link">
+                        <i class="fas fa-shopping-cart"></i>
+                        <span>Cart</span>
+                        <span id="cart-count" class="notification-badge" style="display: none;"></span>
+                    </a>
+                </div>
+            </nav>
+        </div>
+    </header>
+
     <div class="container">
         <div id="product-details-container">
             <!-- Product details will be rendered here -->
@@ -858,6 +1055,22 @@
             `;
         }
 
+        // Cart count update function
+        function updateCartCount() {
+            const cartCountElement = document.getElementById('cart-count');
+            if (cartCountElement) {
+                const username = localStorage.getItem('username') || localStorage.getItem('currentUser');
+                let cart = [];
+                try {
+                    cart = JSON.parse(localStorage.getItem('cart')) || [];
+                } catch (e) {
+                    cart = [];
+                }
+                cartCountElement.textContent = cart.length || '';
+                cartCountElement.style.display = cart.length ? 'inline-flex' : 'none';
+            }
+        }
+
         // Initialize all event listeners
         function initEventListeners() {
             // Wishlist toggle
@@ -868,6 +1081,9 @@
 
             // Buy now button
             document.getElementById('buy-now-btn').addEventListener('click', buyNow);
+
+            // Update cart count on page load
+            updateCartCount();
 
             // Star rating selection
             const stars = document.querySelectorAll('#star-rating i');
@@ -1367,10 +1583,33 @@
         // Load reviews from backend API
         async function loadReviews() {
             try {
+                // Try to load from API first
                 const response = await fetch(`https://tridex1.onrender.com/products/${currentProduct._id}/reviews`);
-                if (!response.ok) throw new Error('Failed to fetch reviews');
-                reviews = await response.json();
-            } catch (e) {
+                if (response.ok) {
+                    reviews = await response.json();
+                } else {
+                    console.warn('Reviews API returned:', response.status);
+                    // Fallback to localStorage
+                    loadReviewsFromLocalStorage();
+                }
+            } catch (error) {
+                console.error('Error loading reviews from API:', error);
+                // Fallback to localStorage if API fails
+                loadReviewsFromLocalStorage();
+            }
+        }
+
+        // Load reviews from localStorage as fallback
+        function loadReviewsFromLocalStorage() {
+            const savedReviews = localStorage.getItem('reviews_' + currentProduct._id);
+            if (savedReviews) {
+                try {
+                    reviews = JSON.parse(savedReviews);
+                } catch (e) {
+                    console.error('Error parsing saved reviews:', e);
+                    reviews = [];
+                }
+            } else {
                 reviews = [];
             }
         }
