@@ -836,106 +836,38 @@
                 const profileInfo = document.getElementById('profile-info');
                 let html = '';
 
-                // Add verification badge if user is verified
-                const verificationBadge = user.verified ?
-                    `<span class="verification-badge" title="Verified Account" style="display:inline-block; margin-left:8px; color:#1da1f2; font-size:1.2em; vertical-align:middle;">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="#1da1f2">
-                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-                        </svg>
-                    </span>` : '';
-
-                // Display username with verification badge
+                // Simple profile display with only essential fields
                 html += `
-                    <div style="margin-bottom:15px;">
-                        <h2 style="display:flex; align-items:center; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:5px;">
-                            <span style="color:#555; font-size:0.8em; font-weight:normal; margin-right:5px;">Username:</span>
-                            ${user.username || ''}${verificationBadge}
-                        </h2>
+                    <div style="margin-bottom:20px;">
+                        <h2 style="text-align:center; margin-bottom:30px; color:#333; font-size:1.8em;">Profile Information</h2>
                     </div>
                 `;
 
-                // Show verification status message if verified
-                if (user.verified) {
-                    html += `
-                        <div style="background:#e8f5fd; border-left:4px solid #1da1f2; padding:10px; margin:10px 0; border-radius:4px;">
-                            <p style="margin:0; color:#1da1f2; font-weight:500;">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="#1da1f2" style="vertical-align:middle; margin-right:5px;">
-                                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-                                </svg>
-                                This account is verified
-                            </p>
-                        </div>
-                    `;
-                }
-
-                // Enhanced profile information display with Google-specific details
-                const isGoogleUser = user.isGoogleUser || false;
-                const accountTypeDisplay = isGoogleUser ?
-                    '<span style="color:#4285f4; font-weight:bold; background:#e8f0fe; padding:4px 8px; border-radius:12px;">📧 Google Account</span>' :
-                    '<span style="color:#28a745; font-weight:bold; background:#e8f5e8; padding:4px 8px; border-radius:12px;">🔐 Regular Account</span>';
-
+                // Display only the 4 essential fields in a clean, simple format
                 html += `
-                    <!-- Account Type Badge -->
-                    <div style="text-align: center; margin-bottom: 20px;">
-                        ${accountTypeDisplay}
-                    </div>
-
-                    <!-- Personal Information Card -->
-                    <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; margin-bottom: 20px; border-left: 4px solid #007bff;">
-                        <h3 style="margin-top: 0; color: #333; border-bottom: 2px solid #007bff; padding-bottom: 8px;">👤 Personal Information</h3>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px;">
-                            <p><strong>Full Name:</strong> <span style="color: #007bff; font-weight: 500; font-size: 1.1em;">${user.name || 'Not provided'}</span></p>
-                            <p><strong>Username:</strong> <span style="text-transform: uppercase; color: #6c757d; font-weight: 500;">${user.username || 'Not provided'}</span></p>
-                            <p><strong>Email:</strong> <span style="color: #28a745;">${user.email || 'Not provided'}</span></p>
-                            <p><strong>Phone:</strong> ${user.phone || '<span style="color: #999;">Not provided</span>'}</p>
-                            <p><strong>Age:</strong> ${user.age || '<span style="color: #999;">Not provided</span>'}</p>
-                            <p><strong>Gender:</strong> ${user.gender ? user.gender.charAt(0).toUpperCase() + user.gender.slice(1) : '<span style="color: #999;">Not provided</span>'}</p>
-                        </div>
-                    </div>
-
-                    <!-- Account Status Card -->
-                    <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; margin-bottom: 20px; border-left: 4px solid #28a745;">
-                        <h3 style="margin-top: 0; color: #333; border-bottom: 2px solid #28a745; padding-bottom: 8px;">🔒 Account Status</h3>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px;">
-                            <p><strong>Verification Status:</strong> ${user.verified ? '<span style="color: #28a745; font-weight: bold;">✅ Verified</span>' : '<span style="color: #dc3545; font-weight: bold;">❌ Not Verified</span>'}</p>
-                            <p><strong>Account Type:</strong> ${isGoogleUser ? '<span style="color: #4285f4;">Google OAuth</span>' : '<span style="color: #28a745;">Email/Password</span>'}</p>
-                            <p><strong>Admin Status:</strong> ${user.isAdmin ? '<span style="color: #dc3545; font-weight: bold;">👑 Administrator</span>' : '<span style="color: #6c757d;">Regular User</span>'}</p>
-                            <p><strong>Account Status:</strong> ${user.banned ? '<span style="color: #dc3545; font-weight: bold;">❌ Banned</span>' : '<span style="color: #28a745; font-weight: bold;">✅ Active</span>'}</p>
-                        </div>
-                    </div>
-                `;
-
-                // Add Google-specific information if user is a Google user
-                if (isGoogleUser) {
-                    html += `
-                        <!-- Google Account Details -->
-                        <div style="background: #e8f0fe; padding: 20px; border-radius: 10px; margin-bottom: 20px; border-left: 4px solid #4285f4;">
-                            <h3 style="margin-top: 0; color: #1a73e8; border-bottom: 2px solid #4285f4; padding-bottom: 8px;">📧 Google Account Details</h3>
-                            <div style="margin-top: 15px;">
-                                <p><strong>Google ID:</strong> <code style="background: #f1f3f4; padding: 4px 8px; border-radius: 4px; font-size: 0.9em;">${user.googleId || 'Not available'}</code></p>
-                                <p><strong>Profile Picture:</strong> ${user.profilePicture ? '<span style="color: #28a745;">✅ Available</span>' : '<span style="color: #999;">Not available</span>'}</p>
-                                <p><strong>Email Verification:</strong> <span style="color: #28a745; font-weight: bold;">✅ Verified by Google</span></p>
-                                <p><strong>Authentication Method:</strong> <span style="color: #4285f4;">Google OAuth 2.0</span></p>
+                    <div style="background: #f8f9fa; padding: 30px; border-radius: 10px; margin-bottom: 20px; border-left: 4px solid #007bff;">
+                        <div style="display: grid; grid-template-columns: 1fr; gap: 20px; max-width: 600px; margin: 0 auto;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px; background: white; border-radius: 8px; border: 1px solid #e0e0e0;">
+                                <strong style="color: #555; font-size: 1.1em;">Username:</strong>
+                                <span style="color: #333; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px;">${user.username || 'Not provided'}</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px; background: white; border-radius: 8px; border: 1px solid #e0e0e0;">
+                                <strong style="color: #555; font-size: 1.1em;">Full Name:</strong>
+                                <span style="color: #007bff; font-weight: 500; font-size: 1.1em;">${user.name || 'Not provided'}</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px; background: white; border-radius: 8px; border: 1px solid #e0e0e0;">
+                                <strong style="color: #555; font-size: 1.1em;">Phone Number:</strong>
+                                <span style="color: #333; font-weight: 500;">${user.phone || '<span style="color: #999;">Not provided</span>'}</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px; background: white; border-radius: 8px; border: 1px solid #e0e0e0;">
+                                <strong style="color: #555; font-size: 1.1em;">Email:</strong>
+                                <span style="color: #28a745; font-weight: 500;">${user.email || 'Not provided'}</span>
                             </div>
                         </div>
-                    `;
-                }
-
-                // Add account timeline
-                html += `
-                    <!-- Account Timeline -->
-                    <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; border-left: 4px solid #6c757d;">
-                        <h3 style="margin-top: 0; color: #333; border-bottom: 2px solid #6c757d; padding-bottom: 8px;">📅 Account Timeline</h3>
-                        <div style="margin-top: 15px;">
-                            <p><strong>Account Created:</strong> ${user.createdAt ? new Date(user.createdAt).toLocaleDateString('en-US', {
-                                year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'
-                            }) : 'Not available'}</p>
-                            <p><strong>Last Updated:</strong> ${user.updatedAt ? new Date(user.updatedAt).toLocaleDateString('en-US', {
-                                year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'
-                            }) : 'Not available'}</p>
-                        </div>
                     </div>
                 `;
+
+
 
                 profileInfo.innerHTML = html;
 
