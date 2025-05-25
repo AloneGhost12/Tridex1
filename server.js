@@ -2873,6 +2873,85 @@ app.post('/reviews/:reviewId/replies/:replyId/like', async (req, res) => {
     }
 });
 
+// Delete a review (Admin only)
+app.delete('/reviews/:id', async (req, res) => {
+    try {
+        const { username } = req.body;
+        const reviewId = req.params.id;
+
+        // Find the user and verify admin status
+        const user = await User.findOne({ username });
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        if (!user.isAdmin) {
+            return res.status(403).json({ message: 'Access denied. Admin privileges required.' });
+        }
+
+        // Find and delete the review
+        const review = await Review.findById(reviewId);
+        if (!review) {
+            return res.status(404).json({ message: 'Review not found' });
+        }
+
+        // Store review data for audit trail
+        const deletedReviewData = {
+            reviewId: review._id,
+            productId: review.product,
+            userId: review.user,
+            rating: review.rating,
+            text: review.text,
+            deletedBy: user._id,
+            deletedAt: new Date(),
+            originalCreatedAt: review.createdAt
+        };
+
+        // Delete the review
+        await Review.findByIdAndDelete(reviewId);
+
+        // Log the deletion for audit trail
+        console.log('Review deleted by admin:', {
+            adminUsername: username,
+            reviewId: reviewId,
+            productId: review.product,
+            deletedAt: new Date()
+        });
+
+        res.json({
+            message: 'Review deleted successfully',
+            deletedReview: deletedReviewData
+        });
+    } catch (err) {
+        console.error('Error deleting review:', err);
+        res.status(500).json({ message: 'Error deleting review' });
+    }
+});
+
+// Get all reviews for admin management
+app.get('/admin/reviews', async (req, res) => {
+    try {
+        const { username } = req.query;
+
+        // Find the user and verify admin status
+        const user = await User.findOne({ username });
+        if (!user || !user.isAdmin) {
+            return res.status(403).json({ message: 'Access denied. Admin privileges required.' });
+        }
+
+        // Get all reviews with product and user information
+        const reviews = await Review.find({})
+            .populate('user', 'username name')
+            .populate('product', 'name images')
+            .sort({ createdAt: -1 });
+
+        res.json(reviews);
+    } catch (err) {
+        console.error('Error fetching admin reviews:', err);
+        res.status(500).json({ message: 'Error fetching reviews' });
+    }
+});
+
 // ========== ORDER ROUTES ==========
 
 // Create a new order
