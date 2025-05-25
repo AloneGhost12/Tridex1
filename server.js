@@ -78,6 +78,10 @@ app.use((req, res, next) => {
     // Allow specific headers
     res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, X-Username');
 
+    // Add headers for Google OAuth compatibility
+    res.header('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
+    res.header('Cross-Origin-Embedder-Policy', 'unsafe-none');
+
     // Don't use credentials with wildcard origin
     // res.header('Access-Control-Allow-Credentials', 'true');
 

@@ -136,6 +136,7 @@
         </div>
     </div>
 
+    <script src="js/config.js"></script>
     <script>
         // Get Google data from URL parameters or localStorage
         const urlParams = new URLSearchParams(window.location.search);
@@ -181,10 +182,18 @@
             document.getElementById('submit-btn').disabled = true;
 
             try {
+                // Get the correct API URL based on environment
+                const apiUrl = window.CONFIG ? window.CONFIG.getApiUrl('auth') : 'http://localhost:3000/auth/google';
+                console.log('Using API URL:', apiUrl);
+
                 // Send complete signup request
-                const response = await fetch('http://localhost:3000/auth/google', {
+                const response = await fetch(apiUrl, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    mode: 'cors',
                     body: JSON.stringify({
                         credential: googleData.credential,
                         mode: 'signup',
