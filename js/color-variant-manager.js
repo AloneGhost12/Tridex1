@@ -67,6 +67,9 @@ class ColorVariantManager {
         }
         console.log('ColorVariantManager: Container found, creating UI elements');
 
+        // Hide the container initially (will be shown when a product is selected)
+        this.container.style.display = 'none';
+
         // Create the UI elements
         this.container.innerHTML = `
             <div class="color-variant-manager">
@@ -472,7 +475,19 @@ class ColorVariantManager {
      * @param {string} productId The parent product ID
      */
     setParentProductId(productId) {
+        console.log('ColorVariantManager: Setting parent product ID to:', productId);
         this.parentProductId = productId;
+
+        // Show/hide the variant manager based on whether we have a product
+        if (this.container) {
+            if (productId) {
+                this.container.style.display = 'block';
+                console.log('ColorVariantManager: Showing variant manager for product:', productId);
+            } else {
+                this.container.style.display = 'none';
+                console.log('ColorVariantManager: Hiding variant manager (no product selected)');
+            }
+        }
 
         // Load variants for this product
         if (productId) {

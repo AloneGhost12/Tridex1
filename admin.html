@@ -3272,6 +3272,11 @@
                     mediaGallery.setMediaItems([]);
                 }
 
+                // Reset color variant manager
+                if (colorVariantManager) {
+                    colorVariantManager.setParentProductId(null);
+                }
+
                 // Refresh product list
                 fetchProducts();
             } catch (e) {
