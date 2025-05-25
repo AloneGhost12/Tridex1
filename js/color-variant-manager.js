@@ -401,7 +401,7 @@ class ColorVariantManager {
 
             // If editing, update the variant
             if (this.editingVariantId) {
-                const apiUrl = window.CONFIG ? window.CONFIG.getApiUrl('base') : 'http://localhost:3000';
+                const apiUrl = 'https://tridex1.onrender.com';
                 const fullUrl = `${apiUrl}/products/${this.parentProductId}/variants/${this.editingVariantId}`;
 
                 const response = await fetch(fullUrl, {
@@ -429,7 +429,7 @@ class ColorVariantManager {
                 console.log('Creating variant with data:', variantData);
                 console.log('Parent product ID:', this.parentProductId);
 
-                const apiUrl = window.CONFIG ? window.CONFIG.getApiUrl('base') : 'http://localhost:3000';
+                const apiUrl = 'https://tridex1.onrender.com';
                 const fullUrl = `${apiUrl}/products/${this.parentProductId}/variants`;
                 console.log('Making request to:', fullUrl);
 
@@ -508,7 +508,7 @@ class ColorVariantManager {
         }
 
         try {
-            const apiUrl = window.CONFIG ? window.CONFIG.getApiUrl('base') : 'http://localhost:3000';
+            const apiUrl = 'https://tridex1.onrender.com';
             const fullUrl = `${apiUrl}/products/${this.parentProductId}/variants`;
 
             const response = await fetch(fullUrl);
@@ -612,7 +612,7 @@ class ColorVariantManager {
         }
 
         try {
-            const apiUrl = window.CONFIG ? window.CONFIG.getApiUrl('base') : 'http://localhost:3000';
+            const apiUrl = 'https://tridex1.onrender.com';
             const fullUrl = `${apiUrl}/products/${this.parentProductId}/variants/${variantId}`;
 
             const response = await fetch(fullUrl, {

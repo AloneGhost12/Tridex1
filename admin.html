@@ -1256,6 +1256,43 @@
                 document.getElementById('product-image-preview').style.display = 'none';
             }
             document.getElementById('product-image-file').value = '';
+
+            // Set category if it exists
+            if (product.category) {
+                document.getElementById('product-category').value =
+                    typeof product.category === 'object' ? product.category._id : product.category;
+            } else {
+                document.getElementById('product-category').value = '';
+            }
+
+            // Set media items if they exist
+            if (mediaGallery) {
+                if (product.media && product.media.length > 0) {
+                    // Use the media array from the product
+                    mediaGallery.setMediaItems(product.media);
+                } else if (product.image) {
+                    // Create a media item from the legacy image field
+                    mediaGallery.setMediaItems([{
+                        type: 'image',
+                        url: product.image,
+                        isPrimary: true,
+                        order: 0,
+                        altText: product.name || '',
+                        caption: ''
+                    }]);
+                } else {
+                    // No media
+                    mediaGallery.setMediaItems([]);
+                }
+            }
+
+            // Set the parent product ID for the color variant manager
+            if (colorVariantManager) {
+                console.log('Setting parent product ID for color variant manager:', product._id);
+                colorVariantManager.setParentProductId(product._id);
+            } else {
+                console.warn('Color variant manager not initialized yet');
+            }
         }
         // Handle image file upload and processing
         const productImageFileInput = document.getElementById('product-image-file');
@@ -3067,46 +3104,6 @@
                 select.appendChild(option);
             });
         }
-
-        // Update product form to include category, media gallery, and color variants
-        const originalSetProductForm = window.setProductForm;
-        window.setProductForm = function(product) {
-            originalSetProductForm(product);
-
-            // Set category if it exists
-            if (product.category) {
-                document.getElementById('product-category').value =
-                    typeof product.category === 'object' ? product.category._id : product.category;
-            } else {
-                document.getElementById('product-category').value = '';
-            }
-
-            // Set media items if they exist
-            if (mediaGallery) {
-                if (product.media && product.media.length > 0) {
-                    // Use the media array from the product
-                    mediaGallery.setMediaItems(product.media);
-                } else if (product.image) {
-                    // Create a media item from the legacy image field
-                    mediaGallery.setMediaItems([{
-                        type: 'image',
-                        url: product.image,
-                        isPrimary: true,
-                        order: 0,
-                        altText: product.name || '',
-                        caption: ''
-                    }]);
-                } else {
-                    // No media
-                    mediaGallery.setMediaItems([]);
-                }
-            }
-
-            // Set the parent product ID for the color variant manager
-            if (colorVariantManager) {
-                colorVariantManager.setParentProductId(product._id);
-            }
-        };
 
         // We already have a renderProducts function, so we don't need to override it
 
