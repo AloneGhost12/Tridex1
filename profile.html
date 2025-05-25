@@ -799,12 +799,11 @@
                 // Display profile picture
                 displayProfilePicture();
 
-                // Update username in header - use FULL NAME for personalized display
+                // Update username in header - use USERNAME for identification
                 const usernameDisplay = document.getElementById('username-display');
                 if (usernameDisplay) {
-                    // Display FULL NAME in the header for personalization (Google users show their real name)
-                    const displayName = user.name || user.username;
-                    usernameDisplay.textContent = displayName;
+                    // Display USERNAME in the header for identification (not full name)
+                    usernameDisplay.textContent = user.username;
                 }
 
                 // Display greeting using FULL NAME for personalization (not Google ID or username)
