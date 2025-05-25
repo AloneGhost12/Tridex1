@@ -765,11 +765,34 @@
         let currentRating = 0;
         let colorVariants = [];
         let selectedVariant = null;
+        let isCurrentUserAdmin = false;
 
         // Get product id from URL
         function getProductId() {
             const params = new URLSearchParams(window.location.search);
             return params.get('id');
+        }
+
+        // Check if current user is admin
+        async function checkAdminStatus() {
+            const username = localStorage.getItem('username') || localStorage.getItem('currentUser');
+            if (!username) {
+                isCurrentUserAdmin = false;
+                return;
+            }
+
+            try {
+                const response = await fetch(`https://tridex1.onrender.com/users/${username}`);
+                if (response.ok) {
+                    const userData = await response.json();
+                    isCurrentUserAdmin = userData.isAdmin || false;
+                } else {
+                    isCurrentUserAdmin = false;
+                }
+            } catch (error) {
+                console.error('Error checking admin status:', error);
+                isCurrentUserAdmin = false;
+            }
         }
 
         // Main function to initialize the page
@@ -782,6 +805,9 @@
                         <p style="margin-top:20px; color:#666;">Loading product details...</p>
                     </div>
                 `;
+
+                // Check admin status first
+                await checkAdminStatus();
 
                 // Fetch products
                 const res = await fetch('https://tridex1.onrender.com/products');
@@ -1031,6 +1057,11 @@
                                     <button class="reply-review-btn" data-review-id="${review._id}" style="display: flex; align-items: center;">
                                         <i class="fas fa-reply"></i> Reply
                                     </button>
+                                    ${isCurrentUserAdmin ? `
+                                    <button class="delete-review-btn" data-review-id="${review._id}" style="display: flex; align-items: center; background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;" title="Delete Review (Admin Only)">
+                                        <i class="fas fa-trash"></i> Delete
+                                    </button>
+                                    ` : ''}
                                 </div>
                                 <div class="reply-form" id="reply-form-${review._id}" style="display:none; margin-top:10px;">
                                     <textarea class="reply-text" placeholder="Write a reply..."></textarea>
@@ -1181,6 +1212,14 @@
                     const reviewId = this.getAttribute('data-review-id');
                     const replyId = this.getAttribute('data-reply-id');
                     await likeOrDislikeReply(reviewId, replyId, 'dislike');
+                };
+            });
+
+            // Delete review (Admin only)
+            document.querySelectorAll('.delete-review-btn').forEach(btn => {
+                btn.onclick = async function() {
+                    const reviewId = this.getAttribute('data-review-id');
+                    await deleteReview(reviewId);
                 };
             });
         }
@@ -1622,6 +1661,89 @@
             saveReviews();
 
             showActionMessage('Review saved locally');
+        }
+
+        // Delete review function (Admin only)
+        async function deleteReview(reviewId) {
+            // Check if user is admin
+            if (!isCurrentUserAdmin) {
+                showActionMessage('Access denied. Admin privileges required.', 'error');
+                return;
+            }
+
+            // Show confirmation dialog
+            const confirmDelete = confirm('Are you sure you want to delete this review? This action cannot be undone.');
+            if (!confirmDelete) {
+                return;
+            }
+
+            const username = localStorage.getItem('username') || localStorage.getItem('currentUser');
+            if (!username) {
+                showActionMessage('Please log in to delete reviews', 'error');
+                return;
+            }
+
+            try {
+                // Try to delete via API first
+                const response = await fetch(`https://tridex1.onrender.com/reviews/${reviewId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        username: username
+                    })
+                });
+
+                if (response.ok) {
+                    // API deletion successful
+                    showActionMessage('Review deleted successfully');
+
+                    // Remove from local reviews array
+                    reviews = reviews.filter(review => review._id !== reviewId);
+
+                    // Update localStorage
+                    saveReviews();
+
+                    // Re-render reviews and update rating
+                    renderReviews();
+                    renderProductDetails();
+
+                    // Re-initialize event listeners
+                    initReviewActionListeners();
+                } else {
+                    const errorData = await response.json();
+                    if (response.status === 403) {
+                        showActionMessage('Access denied. Admin privileges required.', 'error');
+                    } else if (response.status === 404) {
+                        // Review not found in API, try localStorage fallback
+                        deleteReviewFromLocalStorage(reviewId);
+                    } else {
+                        showActionMessage(errorData.message || 'Failed to delete review', 'error');
+                    }
+                }
+            } catch (error) {
+                console.error('Error deleting review via API:', error);
+                // Fallback to localStorage deletion
+                deleteReviewFromLocalStorage(reviewId);
+            }
+        }
+
+        // Fallback function to delete review from localStorage
+        function deleteReviewFromLocalStorage(reviewId) {
+            const originalLength = reviews.length;
+            reviews = reviews.filter(review => review._id !== reviewId);
+
+            if (reviews.length < originalLength) {
+                // Review was found and removed
+                saveReviews();
+                renderReviews();
+                renderProductDetails();
+                initReviewActionListeners();
+                showActionMessage('Review deleted locally');
+            } else {
+                showActionMessage('Review not found', 'error');
+            }
         }
 
         // Load reviews from backend API
