@@ -47,6 +47,7 @@ class ColorVariantManager {
         ];
 
         // Initialize the UI
+        console.log('ColorVariantManager: Initializing UI with container:', this.container);
         this.initUI();
     }
 
@@ -54,10 +55,12 @@ class ColorVariantManager {
      * Initialize the user interface
      */
     initUI() {
+        console.log('ColorVariantManager: initUI called');
         if (!this.container) {
             console.error('Color variant container not found');
             return;
         }
+        console.log('ColorVariantManager: Container found, creating UI elements');
 
         // Create the UI elements
         this.container.innerHTML = `
@@ -267,10 +270,16 @@ class ColorVariantManager {
 
         // Show the modal using native JavaScript
         const modal = document.getElementById('colorVariantModal');
+        console.log('Looking for modal element:', modal);
+        console.log('All elements with colorVariantModal:', document.querySelectorAll('#colorVariantModal'));
+
         if (modal) {
+            console.log('Modal found, showing it');
             modal.style.display = 'flex';
         } else {
-            console.error('Color variant modal not found');
+            console.error('Color variant modal not found - checking if UI was initialized');
+            console.log('Container exists:', !!this.container);
+            console.log('Container innerHTML length:', this.container ? this.container.innerHTML.length : 'N/A');
         }
     }
 
