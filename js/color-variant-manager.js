@@ -209,16 +209,32 @@ class ColorVariantManager {
         // Initialize the media gallery if not already done
         if (!this.variantMediaGallery) {
             // Get Cloudinary configuration
-            getCloudinaryConfig().then(cloudinaryConfig => {
-                this.variantMediaGallery = new ProductMediaGallery({
-                    container: document.getElementById('variant-media-gallery'),
-                    cloudName: cloudinaryConfig.cloudName,
-                    apiKey: cloudinaryConfig.apiKey,
-                    initialMedia: variant && variant.media ? variant.media : []
+            try {
+                getCloudinaryConfig().then(cloudinaryConfig => {
+                    console.log('Initializing variant media gallery with config:', cloudinaryConfig);
+                    const galleryContainer = document.getElementById('variant-media-gallery');
+
+                    if (!galleryContainer) {
+                        console.error('Variant media gallery container not found');
+                        return;
+                    }
+
+                    this.variantMediaGallery = new ProductMediaGallery({
+                        container: galleryContainer,
+                        cloudName: cloudinaryConfig.cloudName,
+                        apiKey: cloudinaryConfig.apiKey,
+                        initialMedia: variant && variant.media ? variant.media : []
+                    });
+                    console.log('Variant media gallery initialized successfully');
+                }).catch(error => {
+                    console.error('Failed to get Cloudinary config for variant gallery:', error);
                 });
-            });
+            } catch (error) {
+                console.error('Error initializing variant media gallery:', error);
+            }
         } else {
             // Reset the media gallery with variant media if editing
+            console.log('Resetting variant media gallery with media:', variant && variant.media ? variant.media : []);
             this.variantMediaGallery.setMediaItems(variant && variant.media ? variant.media : []);
         }
 
@@ -337,8 +353,18 @@ class ColorVariantManager {
             };
 
             // Prepare media data
-            const mediaItems = this.variantMediaGallery ?
-                this.variantMediaGallery.getMediaItems() : [];
+            let mediaItems = [];
+            if (this.variantMediaGallery) {
+                try {
+                    mediaItems = this.variantMediaGallery.getMediaItems() || [];
+                    console.log('Retrieved media items from gallery:', mediaItems);
+                } catch (error) {
+                    console.error('Error getting media items from gallery:', error);
+                    mediaItems = [];
+                }
+            } else {
+                console.log('Variant media gallery not initialized, no media items');
+            }
 
             // Prepare variant data
             const variantData = {
@@ -350,14 +376,18 @@ class ColorVariantManager {
 
             // If editing, update the variant
             if (this.editingVariantId) {
-                const response = await fetch(`https://tridex1.onrender.com/products/${this.parentProductId}/variants/${this.editingVariantId}`, {
+                const apiUrl = window.CONFIG ? window.CONFIG.getApiUrl('base') : 'http://localhost:3000';
+                const fullUrl = `${apiUrl}/products/${this.parentProductId}/variants/${this.editingVariantId}`;
+
+                const response = await fetch(fullUrl, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(variantData)
                 });
 
                 if (!response.ok) {
-                    throw new Error(`Failed to update variant: ${response.statusText}`);
+                    const errorText = await response.text();
+                    throw new Error(`Failed to update variant: ${response.status} ${response.statusText} - ${errorText}`);
                 }
 
                 const result = await response.json();
@@ -371,14 +401,26 @@ class ColorVariantManager {
                 alert('Color variant updated successfully');
             } else {
                 // Create a new variant
-                const response = await fetch(`https://tridex1.onrender.com/products/${this.parentProductId}/variants`, {
+                console.log('Creating variant with data:', variantData);
+                console.log('Parent product ID:', this.parentProductId);
+
+                const apiUrl = window.CONFIG ? window.CONFIG.getApiUrl('base') : 'http://localhost:3000';
+                const fullUrl = `${apiUrl}/products/${this.parentProductId}/variants`;
+                console.log('Making request to:', fullUrl);
+
+                const response = await fetch(fullUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(variantData)
                 });
 
+                console.log('Response status:', response.status);
+                console.log('Response headers:', response.headers);
+
                 if (!response.ok) {
-                    throw new Error(`Failed to create variant: ${response.statusText}`);
+                    const errorText = await response.text();
+                    console.error('Server error response:', errorText);
+                    throw new Error(`Failed to create variant: ${response.status} ${response.statusText} - ${errorText}`);
                 }
 
                 const result = await response.json();
@@ -429,10 +471,14 @@ class ColorVariantManager {
         }
 
         try {
-            const response = await fetch(`https://tridex1.onrender.com/products/${this.parentProductId}/variants`);
+            const apiUrl = window.CONFIG ? window.CONFIG.getApiUrl('base') : 'http://localhost:3000';
+            const fullUrl = `${apiUrl}/products/${this.parentProductId}/variants`;
+
+            const response = await fetch(fullUrl);
 
             if (!response.ok) {
-                throw new Error(`Failed to load variants: ${response.statusText}`);
+                const errorText = await response.text();
+                throw new Error(`Failed to load variants: ${response.status} ${response.statusText} - ${errorText}`);
             }
 
             const data = await response.json();
@@ -529,12 +575,16 @@ class ColorVariantManager {
         }
 
         try {
-            const response = await fetch(`https://tridex1.onrender.com/products/${this.parentProductId}/variants/${variantId}`, {
+            const apiUrl = window.CONFIG ? window.CONFIG.getApiUrl('base') : 'http://localhost:3000';
+            const fullUrl = `${apiUrl}/products/${this.parentProductId}/variants/${variantId}`;
+
+            const response = await fetch(fullUrl, {
                 method: 'DELETE'
             });
 
             if (!response.ok) {
-                throw new Error(`Failed to delete variant: ${response.statusText}`);
+                const errorText = await response.text();
+                throw new Error(`Failed to delete variant: ${response.status} ${response.statusText} - ${errorText}`);
             }
 
             // Remove the variant from the local array
