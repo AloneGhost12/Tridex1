@@ -2677,6 +2677,204 @@ app.get('/contact/messages/:id/attachment', async (req, res) => {
 
 // ========== ORDER ROUTES ==========
 
+// ========== REVIEW ROUTES ==========
+
+// Get reviews for a specific product
+app.get('/products/:id/reviews', async (req, res) => {
+    try {
+        const productId = req.params.id;
+
+        // Find all reviews for this product
+        const reviews = await Review.find({ product: productId })
+            .populate('user', 'username name')
+            .populate('replies.user', 'username name')
+            .sort({ createdAt: -1 });
+
+        res.json(reviews);
+    } catch (err) {
+        console.error('Error fetching reviews:', err);
+        res.status(500).json({ message: 'Error fetching reviews' });
+    }
+});
+
+// Create a new review for a product
+app.post('/products/:id/reviews', async (req, res) => {
+    try {
+        const { rating, text, username } = req.body;
+        const productId = req.params.id;
+
+        // Validate input
+        if (!rating || !text || !username) {
+            return res.status(400).json({ message: 'Rating, text, and username are required' });
+        }
+
+        if (rating < 1 || rating > 5) {
+            return res.status(400).json({ message: 'Rating must be between 1 and 5' });
+        }
+
+        // Find the user
+        const user = await User.findOne({ username });
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Check if product exists
+        const product = await Product.findById(productId);
+        if (!product) {
+            return res.status(404).json({ message: 'Product not found' });
+        }
+
+        // Create new review
+        const review = new Review({
+            product: productId,
+            user: user._id,
+            rating,
+            text,
+            likes: [],
+            dislikes: [],
+            replies: []
+        });
+
+        await review.save();
+
+        // Populate user data for response
+        await review.populate('user', 'username name');
+
+        res.status(201).json(review);
+    } catch (err) {
+        console.error('Error creating review:', err);
+        res.status(500).json({ message: 'Error creating review' });
+    }
+});
+
+// Like or dislike a review
+app.post('/reviews/:id/like', async (req, res) => {
+    try {
+        const { action, username } = req.body;
+        const reviewId = req.params.id;
+
+        // Find the user
+        const user = await User.findOne({ username });
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Find the review
+        const review = await Review.findById(reviewId);
+        if (!review) {
+            return res.status(404).json({ message: 'Review not found' });
+        }
+
+        // Remove user from both arrays first
+        review.likes = review.likes.filter(id => !id.equals(user._id));
+        review.dislikes = review.dislikes.filter(id => !id.equals(user._id));
+
+        // Add to appropriate array based on action
+        if (action === 'like') {
+            review.likes.push(user._id);
+        } else if (action === 'dislike') {
+            review.dislikes.push(user._id);
+        }
+
+        await review.save();
+
+        res.json({
+            likes: review.likes,
+            dislikes: review.dislikes
+        });
+    } catch (err) {
+        console.error('Error updating review like/dislike:', err);
+        res.status(500).json({ message: 'Error updating review like/dislike' });
+    }
+});
+
+// Add a reply to a review
+app.post('/reviews/:id/replies', async (req, res) => {
+    try {
+        const { text, username } = req.body;
+        const reviewId = req.params.id;
+
+        // Find the user
+        const user = await User.findOne({ username });
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Find the review
+        const review = await Review.findById(reviewId);
+        if (!review) {
+            return res.status(404).json({ message: 'Review not found' });
+        }
+
+        // Create reply object
+        const reply = {
+            user: user._id,
+            username: user.username,
+            text,
+            likes: [],
+            dislikes: [],
+            createdAt: new Date()
+        };
+
+        review.replies.push(reply);
+        await review.save();
+
+        res.status(201).json(reply);
+    } catch (err) {
+        console.error('Error adding reply:', err);
+        res.status(500).json({ message: 'Error adding reply' });
+    }
+});
+
+// Like or dislike a reply
+app.post('/reviews/:reviewId/replies/:replyId/like', async (req, res) => {
+    try {
+        const { action, username } = req.body;
+        const { reviewId, replyId } = req.params;
+
+        // Find the user
+        const user = await User.findOne({ username });
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Find the review
+        const review = await Review.findById(reviewId);
+        if (!review) {
+            return res.status(404).json({ message: 'Review not found' });
+        }
+
+        // Find the reply
+        const reply = review.replies.id(replyId);
+        if (!reply) {
+            return res.status(404).json({ message: 'Reply not found' });
+        }
+
+        // Remove user from both arrays first
+        reply.likes = reply.likes.filter(id => !id.equals(user._id));
+        reply.dislikes = reply.dislikes.filter(id => !id.equals(user._id));
+
+        // Add to appropriate array based on action
+        if (action === 'like') {
+            reply.likes.push(user._id);
+        } else if (action === 'dislike') {
+            reply.dislikes.push(user._id);
+        }
+
+        await review.save();
+
+        res.json({
+            likes: reply.likes,
+            dislikes: reply.dislikes
+        });
+    } catch (err) {
+        console.error('Error updating reply like/dislike:', err);
+        res.status(500).json({ message: 'Error updating reply like/dislike' });
+    }
+});
+
+// ========== ORDER ROUTES ==========
+
 // Create a new order
 app.post('/orders/create', async (req, res) => {
     try {
