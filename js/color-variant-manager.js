@@ -134,7 +134,8 @@ class ColorVariantManager {
                                     </div>
                                 </div>
 
-                                <div class="form-group">
+                                <!-- Media gallery temporarily disabled -->
+                                <div class="form-group" style="display: none;">
                                     <label>Color-specific Images</label>
                                     <div id="variant-media-gallery"></div>
                                 </div>
@@ -209,37 +210,8 @@ class ColorVariantManager {
             form.reset();
         }
 
-        // Initialize the media gallery if not already done
-        if (!this.variantMediaGallery) {
-            // Get Cloudinary configuration
-            try {
-                getCloudinaryConfig().then(cloudinaryConfig => {
-                    console.log('Initializing variant media gallery with config:', cloudinaryConfig);
-                    const galleryContainer = document.getElementById('variant-media-gallery');
-
-                    if (!galleryContainer) {
-                        console.error('Variant media gallery container not found');
-                        return;
-                    }
-
-                    this.variantMediaGallery = new ProductMediaGallery({
-                        container: galleryContainer,
-                        cloudName: cloudinaryConfig.cloudName,
-                        apiKey: cloudinaryConfig.apiKey,
-                        initialMedia: variant && variant.media ? variant.media : []
-                    });
-                    console.log('Variant media gallery initialized successfully');
-                }).catch(error => {
-                    console.error('Failed to get Cloudinary config for variant gallery:', error);
-                });
-            } catch (error) {
-                console.error('Error initializing variant media gallery:', error);
-            }
-        } else {
-            // Reset the media gallery with variant media if editing
-            console.log('Resetting variant media gallery with media:', variant && variant.media ? variant.media : []);
-            this.variantMediaGallery.setMediaItems(variant && variant.media ? variant.media : []);
-        }
+        // Skip media gallery initialization for now to focus on basic variant functionality
+        console.log('Skipping variant media gallery initialization for now');
 
         // If editing, populate the form with variant data
         if (variant) {
@@ -377,19 +349,9 @@ class ColorVariantManager {
                 inStock: inStockCheckbox.checked
             };
 
-            // Prepare media data
+            // Skip media data for now
             let mediaItems = [];
-            if (this.variantMediaGallery) {
-                try {
-                    mediaItems = this.variantMediaGallery.getMediaItems() || [];
-                    console.log('Retrieved media items from gallery:', mediaItems);
-                } catch (error) {
-                    console.error('Error getting media items from gallery:', error);
-                    mediaItems = [];
-                }
-            } else {
-                console.log('Variant media gallery not initialized, no media items');
-            }
+            console.log('Skipping media items for now');
 
             // Prepare variant data
             const variantData = {
