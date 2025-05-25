@@ -185,10 +185,15 @@ class ColorVariantManager {
     openVariantModal(variant = null) {
         // Set modal title based on whether we're adding or editing
         const modalTitle = document.getElementById('colorVariantModalLabel');
-        modalTitle.textContent = variant ? 'Edit Color Variant' : 'Add Color Variant';
+        if (modalTitle) {
+            modalTitle.textContent = variant ? 'Edit Color Variant' : 'Add Color Variant';
+        }
 
-        // Reset the form
-        document.getElementById('color-variant-form').reset();
+        // Reset the form (check if it exists first)
+        const form = document.getElementById('color-variant-form');
+        if (form) {
+            form.reset();
+        }
 
         // Initialize the media gallery if not already done
         if (!this.variantMediaGallery) {
@@ -211,10 +216,15 @@ class ColorVariantManager {
             // Store the variant ID for updating
             this.editingVariantId = variant._id;
 
-            // Set color
+            // Set color (check if elements exist)
             const colorSelect = document.getElementById('variant-color');
             const customColorName = document.getElementById('custom-color-name');
             const customColorHex = document.getElementById('custom-color-hex');
+
+            if (!colorSelect || !customColorName || !customColorHex) {
+                console.error('Color variant form elements not found');
+                return;
+            }
 
             // Check if the color is in our standard colors
             const standardColor = this.standardColors.find(c =>
@@ -232,20 +242,32 @@ class ColorVariantManager {
                 document.getElementById('custom-color-fields').style.display = 'block';
             }
 
-            // Set price and inventory
-            document.getElementById('variant-price').value = variant.price || '';
-            document.getElementById('variant-inventory').value =
-                variant.inventory && variant.inventory.quantity !== undefined ?
-                variant.inventory.quantity : 0;
-            document.getElementById('variant-in-stock').checked =
-                variant.inventory ? variant.inventory.inStock : true;
+            // Set price and inventory (check if elements exist)
+            const priceInput = document.getElementById('variant-price');
+            const inventoryInput = document.getElementById('variant-inventory');
+            const inStockCheckbox = document.getElementById('variant-in-stock');
+
+            if (priceInput) {
+                priceInput.value = variant.price || '';
+            }
+            if (inventoryInput) {
+                inventoryInput.value = variant.inventory && variant.inventory.quantity !== undefined ?
+                    variant.inventory.quantity : 0;
+            }
+            if (inStockCheckbox) {
+                inStockCheckbox.checked = variant.inventory ? variant.inventory.inStock : true;
+            }
         } else {
             // Clear editing variant ID
             this.editingVariantId = null;
         }
 
-        // Show the modal
-        $('#colorVariantModal').modal('show');
+        // Show the modal (check if jQuery and modal exist)
+        if (typeof $ !== 'undefined' && document.getElementById('colorVariantModal')) {
+            $('#colorVariantModal').modal('show');
+        } else {
+            console.error('Modal or jQuery not available');
+        }
     }
 
     /**
