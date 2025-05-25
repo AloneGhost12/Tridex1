@@ -261,7 +261,14 @@
                     loadingOverlay.style.display = 'none';
                 }
 
-                alert('Google sign-up failed. Please check your internet connection and try again.');
+                // Show more specific error messages
+                if (error.message && error.message.includes('fetch')) {
+                    alert('Network error: Please check your internet connection and try again.');
+                } else if (error.message && error.message.includes('CORS')) {
+                    alert('Authentication error: Please try refreshing the page and signing up again.');
+                } else {
+                    alert('Google sign-up failed: ' + (error.message || 'Unknown error. Please try again.'));
+                }
             });
         }
         </script>

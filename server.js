@@ -280,19 +280,33 @@ app.post('/login', async (req, res) => {
 // Google OAuth Sign-up/Login
 app.post('/auth/google', async (req, res) => {
     try {
+        console.log('Google OAuth request received:', { mode: req.body.mode, hasCredential: !!req.body.credential });
+
         const { credential, mode } = req.body; // mode can be 'signup' or 'login'
 
         if (!credential) {
+            console.log('No credential provided');
             return res.status(400).json({
                 success: false,
                 message: 'Google credential is required'
             });
         }
 
+        // Check if Google Client ID is configured
+        const googleClientId = process.env.GOOGLE_CLIENT_ID;
+        if (!googleClientId || googleClientId === 'your-google-client-id') {
+            console.log('Google Client ID not configured properly');
+            return res.status(500).json({
+                success: false,
+                message: 'Google authentication not configured on server'
+            });
+        }
+
+        console.log('Verifying Google token...');
         // Verify the Google token
         const ticket = await googleClient.verifyIdToken({
             idToken: credential,
-            audience: process.env.GOOGLE_CLIENT_ID
+            audience: googleClientId
         });
 
         const payload = ticket.getPayload();
@@ -434,6 +448,11 @@ app.post('/auth/google', async (req, res) => {
 
     } catch (error) {
         console.error('Google OAuth error:', error);
+        console.error('Error details:', {
+            message: error.message,
+            stack: error.stack,
+            name: error.name
+        });
 
         if (error.message && error.message.includes('Token used too early')) {
             return res.status(400).json({
@@ -442,9 +461,24 @@ app.post('/auth/google', async (req, res) => {
             });
         }
 
+        if (error.message && error.message.includes('Invalid token')) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid Google token. Please try signing in again.'
+            });
+        }
+
+        if (error.message && error.message.includes('audience')) {
+            return res.status(400).json({
+                success: false,
+                message: 'Google authentication configuration error. Please contact support.'
+            });
+        }
+
         return res.status(500).json({
             success: false,
-            message: 'Google authentication failed. Please try again.'
+            message: 'Google authentication failed. Please try again.',
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
         });
     }
 });
