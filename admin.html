@@ -1288,16 +1288,7 @@
 
             // Set the parent product ID for the color variant manager
             if (colorVariantManager) {
-                console.log('Setting parent product ID for color variant manager:', product._id);
-                console.log('Color variant manager instance:', colorVariantManager);
                 colorVariantManager.setParentProductId(product._id);
-            } else {
-                console.warn('Color variant manager not initialized yet');
-                console.log('Available global variables:', {
-                    colorVariantManager: typeof colorVariantManager,
-                    mediaGallery: typeof mediaGallery,
-                    getCloudinaryConfig: typeof getCloudinaryConfig
-                });
             }
         }
         // Handle image file upload and processing
@@ -3148,20 +3139,14 @@
 
         // Initialize the color variant manager
         function initColorVariantManager() {
-            // Get Cloudinary configuration
-            getCloudinaryConfig().then(cloudinaryConfig => {
-                // Initialize the color variant manager
-                colorVariantManager = new ColorVariantManager({
-                    container: document.getElementById('color-variant-container'),
-                    cloudName: cloudinaryConfig.cloudName,
-                    apiKey: cloudinaryConfig.apiKey,
-                    onVariantsChange: function(variants) {
-                        console.log('Variants changed:', variants);
-                    }
-                });
-            }).catch(error => {
-                console.error('Error initializing color variant manager:', error);
-                alert('Failed to initialize color variant manager.');
+            // Initialize the color variant manager immediately without waiting for Cloudinary config
+            colorVariantManager = new ColorVariantManager({
+                container: document.getElementById('color-variant-container'),
+                cloudName: 'dtzhskby3', // Use fallback values for now
+                apiKey: 'fallback',
+                onVariantsChange: function(variants) {
+                    // Variants changed
+                }
             });
         }
 
