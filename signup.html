@@ -192,6 +192,7 @@
             </div>
         </div>
         <script src="https://accounts.google.com/gsi/client" async defer></script>
+        <script src="js/config.js"></script>
         <script>
         function onGoogleSignUp(response) {
             console.log('Google Sign-Up response received');
@@ -202,10 +203,18 @@
                 loadingOverlay.style.display = 'flex';
             }
 
+            // Get the correct API URL based on environment
+            const apiUrl = window.CONFIG ? window.CONFIG.getApiUrl('auth') : 'http://localhost:3000/auth/google';
+            console.log('Using API URL:', apiUrl);
+
             // Send the Google token to your backend for verification (first step)
-            fetch('http://localhost:3000/auth/google', {
+            fetch(apiUrl, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                mode: 'cors',
                 body: JSON.stringify({ credential: response.credential, mode: 'signup' })
             })
             .then(res => res.json())

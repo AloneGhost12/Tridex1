@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google OAuth Test - Fixed</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        .warning { background-color: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .google-signin {
+            margin: 20px 0;
+            text-align: center;
+        }
+        pre {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+        button {
+            background: #4285f4;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #3367d6;
+        }
+        .disabled {
+            background: #ccc !important;
+            cursor: not-allowed !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Google OAuth Integration Test - Fixed Version</h1>
+        
+        <div class="status info">
+            <strong>Status:</strong> Testing fixed Google OAuth integration with proper CORS headers and API URL configuration
+        </div>
+
+        <div class="test-section">
+            <h3>1. Configuration Test</h3>
+            <button onclick="testConfiguration()">Test Configuration</button>
+            <div id="config-result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>2. Server Connection Test</h3>
+            <button onclick="testServerConnection()">Test Server Connection</button>
+            <div id="server-result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>3. Google OAuth Test</h3>
+            <div class="google-signin">
+                <div id="g_id_onload"
+                     data-client_id="511326319939-431231ifhs4239598gc0d7ba2vc97lms.apps.googleusercontent.com"
+                     data-context="signin"
+                     data-ux_mode="popup"
+                     data-callback="handleGoogleSignIn"
+                     data-auto_prompt="false">
+                </div>
+                <div class="g_id_signin"
+                     data-type="standard"
+                     data-shape="rectangular"
+                     data-theme="outline"
+                     data-text="signin_with"
+                     data-size="large"
+                     data-logo_alignment="left">
+                </div>
+            </div>
+            <div id="google-result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>4. Debug Information</h3>
+            <button onclick="showDebugInfo()">Show Debug Info</button>
+            <div id="debug-info"></div>
+        </div>
+    </div>
+
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script src="js/config.js"></script>
+    <script>
+        // Test configuration
+        function testConfiguration() {
+            const result = document.getElementById('config-result');
+            result.innerHTML = '<div class="status info">Testing configuration...</div>';
+            
+            try {
+                const hasConfig = typeof window.CONFIG !== 'undefined';
+                const apiUrl = hasConfig ? window.CONFIG.getApiUrl('auth') : 'http://localhost:3000/auth/google';
+                const googleClientId = '511326319939-431231ifhs4239598gc0d7ba2vc97lms.apps.googleusercontent.com';
+                
+                result.innerHTML = `
+                    <div class="status success">✅ Configuration Test Passed</div>
+                    <pre>
+Config Object Available: ${hasConfig}
+API URL: ${apiUrl}
+Google Client ID: ${googleClientId}
+Environment: ${hasConfig ? window.CONFIG.environment : 'fallback'}
+                    </pre>
+                `;
+            } catch (error) {
+                result.innerHTML = `
+                    <div class="status error">❌ Configuration Test Failed</div>
+                    <pre>Error: ${error.message}</pre>
+                `;
+            }
+        }
+
+        // Test server connection
+        async function testServerConnection() {
+            const result = document.getElementById('server-result');
+            result.innerHTML = '<div class="status info">Testing server connection...</div>';
+            
+            try {
+                const apiUrl = window.CONFIG ? window.CONFIG.getApiUrl('base') : 'http://localhost:3000';
+                console.log('Testing connection to:', apiUrl);
+                
+                const response = await fetch(apiUrl, {
+                    method: 'GET',
+                    mode: 'cors'
+                });
+                
+                if (response.ok) {
+                    const text = await response.text();
+                    result.innerHTML = `
+                        <div class="status success">✅ Server Connection Successful</div>
+                        <pre>
+Response: ${text}
+Status: ${response.status}
+URL: ${apiUrl}
+                        </pre>
+                    `;
+                } else {
+                    result.innerHTML = `
+                        <div class="status error">❌ Server Connection Failed</div>
+                        <pre>
+Status: ${response.status}
+Status Text: ${response.statusText}
+URL: ${apiUrl}
+                        </pre>
+                    `;
+                }
+            } catch (error) {
+                result.innerHTML = `
+                    <div class="status error">❌ Server Connection Failed</div>
+                    <pre>
+Error: ${error.message}
+Type: ${error.name}
+                    </pre>
+                `;
+            }
+        }
+
+        // Handle Google Sign-In
+        async function handleGoogleSignIn(response) {
+            const result = document.getElementById('google-result');
+            result.innerHTML = '<div class="status info">Processing Google Sign-In...</div>';
+            
+            try {
+                console.log('Google Sign-In response received:', response);
+                
+                const apiUrl = window.CONFIG ? window.CONFIG.getApiUrl('auth') : 'http://localhost:3000/auth/google';
+                console.log('Sending to API URL:', apiUrl);
+                
+                const authResponse = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    mode: 'cors',
+                    body: JSON.stringify({
+                        credential: response.credential,
+                        mode: 'login'
+                    })
+                });
+                
+                const data = await authResponse.json();
+                console.log('Server response:', data);
+                
+                if (data.success) {
+                    result.innerHTML = `
+                        <div class="status success">✅ Google OAuth Test Successful!</div>
+                        <pre>
+Response: ${JSON.stringify(data, null, 2)}
+                        </pre>
+                    `;
+                } else {
+                    result.innerHTML = `
+                        <div class="status warning">⚠️ Google OAuth Response (Expected for test)</div>
+                        <pre>
+Response: ${JSON.stringify(data, null, 2)}
+                        </pre>
+                    `;
+                }
+            } catch (error) {
+                console.error('Google OAuth error:', error);
+                result.innerHTML = `
+                    <div class="status error">❌ Google OAuth Test Failed</div>
+                    <pre>
+Error: ${error.message}
+Type: ${error.name}
+Stack: ${error.stack}
+                    </pre>
+                `;
+            }
+        }
+
+        // Show debug information
+        function showDebugInfo() {
+            const result = document.getElementById('debug-info');
+            
+            const debugInfo = {
+                userAgent: navigator.userAgent,
+                location: window.location.href,
+                origin: window.location.origin,
+                configAvailable: typeof window.CONFIG !== 'undefined',
+                googleApiLoaded: typeof google !== 'undefined',
+                timestamp: new Date().toISOString(),
+                cookies: document.cookie,
+                localStorage: Object.keys(localStorage),
+                sessionStorage: Object.keys(sessionStorage)
+            };
+            
+            result.innerHTML = `
+                <div class="status info">Debug Information</div>
+                <pre>${JSON.stringify(debugInfo, null, 2)}</pre>
+            `;
+        }
+
+        // Auto-run basic tests on page load
+        window.addEventListener('load', function() {
+            console.log('Page loaded, running basic tests...');
+            setTimeout(() => {
+                testConfiguration();
+                testServerConnection();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>
