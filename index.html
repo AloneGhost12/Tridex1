@@ -715,31 +715,28 @@ async function loadUserDataForNavigation() {
         if (response.ok) {
             const userData = await response.json();
 
-            // Display full name in welcome message (Google users show their real name)
-            const displayName = userData.name || username;
+            // Display username for identification, not full name
             const verifiedUsers = JSON.parse(localStorage.getItem('verifiedUsers') || '[]');
 
             document.getElementById('username-display').innerHTML =
-                `Welcome, <span style="text-transform:uppercase; letter-spacing:0.5px; font-weight:500;">${displayName}</span> ${verifiedUsers.includes(username) ? '<span title="Verified" style="color:#1da1f2; font-size:1.1em;">✓</span>' : ''}`;
+                `Welcome, <span style="text-transform:uppercase; letter-spacing:0.5px; font-weight:500;">${username}</span> ${verifiedUsers.includes(username) ? '<span title="Verified" style="color:#1da1f2; font-size:1.1em;">✓</span>' : ''}`;
 
             // Display profile picture in navigation
             displayNavProfilePicture(userData.profilePicture);
         } else {
-            // Fallback to localStorage data
-            const userName = localStorage.getItem('name') || username;
+            // Fallback to localStorage data - use username, not full name
             const verifiedUsers = JSON.parse(localStorage.getItem('verifiedUsers') || '[]');
 
             document.getElementById('username-display').innerHTML =
-                `Welcome, <span style="text-transform:uppercase; letter-spacing:0.5px; font-weight:500;">${userName}</span> ${verifiedUsers.includes(username) ? '<span title="Verified" style="color:#1da1f2; font-size:1.1em;">✓</span>' : ''}`;
+                `Welcome, <span style="text-transform:uppercase; letter-spacing:0.5px; font-weight:500;">${username}</span> ${verifiedUsers.includes(username) ? '<span title="Verified" style="color:#1da1f2; font-size:1.1em;">✓</span>' : ''}`;
         }
     } catch (error) {
         console.log('Could not load user data:', error);
-        // Fallback to localStorage data
-        const userName = localStorage.getItem('name') || username;
+        // Fallback to localStorage data - use username, not full name
         const verifiedUsers = JSON.parse(localStorage.getItem('verifiedUsers') || '[]');
 
         document.getElementById('username-display').innerHTML =
-            `Welcome, <span style="text-transform:uppercase; letter-spacing:0.5px; font-weight:500;">${userName}</span> ${verifiedUsers.includes(username) ? '<span title="Verified" style="color:#1da1f2; font-size:1.1em;">✓</span>' : ''}`;
+            `Welcome, <span style="text-transform:uppercase; letter-spacing:0.5px; font-weight:500;">${username}</span> ${verifiedUsers.includes(username) ? '<span title="Verified" style="color:#1da1f2; font-size:1.1em;">✓</span>' : ''}`;
     }
 }
 
