@@ -352,6 +352,15 @@
     <div class="message" id="message"></div>
 
     <script>
+        // --- Simple login protection: redirect to login.html if not logged in ---
+        if (!localStorage.getItem('token')) {
+            window.location.href = 'login.html';
+        }
+        // Enforce admin-only access
+        if (localStorage.getItem('isAdmin') !== 'true') {
+            window.location.href = 'index.html';
+        }
+
         let allReviews = [];
         let filteredReviews = [];
         let isAdmin = false;
@@ -378,17 +387,31 @@
 
         // Check if user is admin
         async function checkAdminAuth() {
+            // First check if user is logged in
+            const token = localStorage.getItem('token');
             const username = localStorage.getItem('username') || localStorage.getItem('currentUser');
-            if (!username) {
+
+            if (!token || !username) {
                 isAdmin = false;
                 return;
             }
 
+            // Check localStorage isAdmin flag first (same as admin.html)
+            const isAdminLocal = localStorage.getItem('isAdmin') === 'true';
+
+            if (isAdminLocal) {
+                isAdmin = true;
+                return;
+            }
+
+            // Fallback: check with server if localStorage doesn't have admin flag
             try {
                 const response = await fetch(`https://tridex1.onrender.com/users/${username}`);
                 if (response.ok) {
                     const userData = await response.json();
                     isAdmin = userData.isAdmin || false;
+                    // Update localStorage with the correct admin status
+                    localStorage.setItem('isAdmin', isAdmin ? 'true' : 'false');
                 } else {
                     isAdmin = false;
                 }
