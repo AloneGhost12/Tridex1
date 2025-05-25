@@ -1631,7 +1631,29 @@ app.post('/products/:id/variants', async (req, res) => {
         });
     } catch (err) {
         console.error('Error creating color variant:', err);
-        res.status(500).json({ message: 'Error creating color variant' });
+        console.error('Error details:', {
+            message: err.message,
+            stack: err.stack,
+            name: err.name
+        });
+        console.error('Request body:', req.body);
+        console.error('Parent product ID:', req.params.id);
+
+        // Provide more specific error message
+        let errorMessage = 'Error creating color variant';
+        if (err.name === 'ValidationError') {
+            errorMessage = `Validation error: ${err.message}`;
+        } else if (err.name === 'CastError') {
+            errorMessage = `Invalid ID format: ${err.message}`;
+        } else if (err.code === 11000) {
+            errorMessage = 'Duplicate variant detected';
+        }
+
+        res.status(500).json({
+            message: errorMessage,
+            error: err.message,
+            details: process.env.NODE_ENV === 'development' ? err.stack : undefined
+        });
     }
 });
 
