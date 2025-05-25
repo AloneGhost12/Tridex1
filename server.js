@@ -30,7 +30,10 @@ const googleClient = new OAuth2Client(
 const allowedOrigins = [
     'https://aloneghost12.github.io',
     'http://localhost:3000',
-    'http://127.0.0.1:5500'
+    'http://127.0.0.1:5500',
+    'http://localhost:5500',
+    'http://127.0.0.1:3000',
+    null // Allow file:// origins for local development
 ];
 
 // CORS configuration
@@ -78,9 +81,9 @@ app.use((req, res, next) => {
     // Allow specific headers
     res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, X-Username');
 
-    // Add headers for Google OAuth compatibility
-    res.header('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
-    res.header('Cross-Origin-Embedder-Policy', 'unsafe-none');
+    // Remove problematic CORS headers that block Google OAuth
+    // res.header('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
+    // res.header('Cross-Origin-Embedder-Policy', 'unsafe-none');
 
     // Don't use credentials with wildcard origin
     // res.header('Access-Control-Allow-Credentials', 'true');
@@ -326,6 +329,16 @@ app.post('/auth/google', async (req, res) => {
             return res.status(400).json({
                 success: false,
                 message: 'Google email not verified'
+            });
+        }
+
+        // Check if MongoDB is connected before database operations
+        if (mongoose.connection.readyState !== 1) {
+            console.log('MongoDB not connected, cannot process Google OAuth');
+            return res.status(503).json({
+                success: false,
+                message: 'Database service temporarily unavailable. Please try again later.',
+                error: 'MongoDB connection not available'
             });
         }
 
