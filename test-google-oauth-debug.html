@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google OAuth Debug Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .debug-info {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            border-left: 4px solid #007bff;
+        }
+        .error {
+            background: #f8d7da;
+            border-left-color: #dc3545;
+            color: #721c24;
+        }
+        .success {
+            background: #d4edda;
+            border-left-color: #28a745;
+            color: #155724;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        pre {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Google OAuth Debug Test</h1>
+        
+        <div class="debug-info">
+            <h3>Environment Check</h3>
+            <p><strong>Current URL:</strong> <span id="current-url"></span></p>
+            <p><strong>Protocol:</strong> <span id="protocol"></span></p>
+            <p><strong>Host:</strong> <span id="host"></span></p>
+        </div>
+
+        <div class="debug-info">
+            <h3>Google OAuth Configuration</h3>
+            <p><strong>Client ID:</strong> 511326319939-431231ifhs4239598gc0d7ba2vc97lms.apps.googleusercontent.com</p>
+            <p><strong>Server URL:</strong> http://localhost:3000</p>
+        </div>
+
+        <div class="debug-info">
+            <h3>Test Actions</h3>
+            <button onclick="testServerConnection()">Test Server Connection</button>
+            <button onclick="testGoogleAuth()">Test Google Auth</button>
+            <button onclick="clearLogs()">Clear Logs</button>
+        </div>
+
+        <div id="google-signin-container">
+            <h3>Google Sign-In Test</h3>
+            <div id="g_id_onload"
+                 data-client_id="511326319939-431231ifhs4239598gc0d7ba2vc97lms.apps.googleusercontent.com"
+                 data-context="signin"
+                 data-ux_mode="popup"
+                 data-callback="handleGoogleResponse"
+                 data-auto_prompt="false">
+            </div>
+            <div class="g_id_signin"
+                 data-type="standard"
+                 data-shape="rectangular"
+                 data-theme="outline"
+                 data-text="signin_with"
+                 data-size="large">
+            </div>
+        </div>
+
+        <div id="logs">
+            <h3>Debug Logs</h3>
+            <div id="log-container"></div>
+        </div>
+    </div>
+
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script>
+        // Initialize page info
+        document.getElementById('current-url').textContent = window.location.href;
+        document.getElementById('protocol').textContent = window.location.protocol;
+        document.getElementById('host').textContent = window.location.host;
+
+        // Logging function
+        function log(message, type = 'info') {
+            const logContainer = document.getElementById('log-container');
+            const logEntry = document.createElement('div');
+            logEntry.className = `debug-info ${type}`;
+            logEntry.innerHTML = `
+                <strong>[${new Date().toLocaleTimeString()}]</strong> ${message}
+            `;
+            logContainer.appendChild(logEntry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+            console.log(`[${type.toUpperCase()}]`, message);
+        }
+
+        // Test server connection
+        async function testServerConnection() {
+            log('Testing server connection...');
+            try {
+                const response = await fetch('http://localhost:3000/', {
+                    method: 'GET',
+                    mode: 'cors'
+                });
+                
+                if (response.ok) {
+                    const text = await response.text();
+                    log(`Server connection successful: ${text}`, 'success');
+                } else {
+                    log(`Server responded with status: ${response.status}`, 'error');
+                }
+            } catch (error) {
+                log(`Server connection failed: ${error.message}`, 'error');
+            }
+        }
+
+        // Test Google Auth endpoint
+        async function testGoogleAuth() {
+            log('Testing Google Auth endpoint...');
+            try {
+                const response = await fetch('http://localhost:3000/auth/google', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        credential: 'test-token',
+                        mode: 'signup'
+                    })
+                });
+                
+                const data = await response.json();
+                log(`Auth endpoint response: ${JSON.stringify(data, null, 2)}`);
+                
+                if (response.ok) {
+                    log('Auth endpoint is accessible', 'success');
+                } else {
+                    log(`Auth endpoint returned error: ${response.status}`, 'error');
+                }
+            } catch (error) {
+                log(`Auth endpoint test failed: ${error.message}`, 'error');
+            }
+        }
+
+        // Handle Google response
+        function handleGoogleResponse(response) {
+            log('Google OAuth response received');
+            log(`Credential length: ${response.credential ? response.credential.length : 'No credential'}`);
+            
+            // Test sending to server
+            sendToServer(response.credential);
+        }
+
+        // Send credential to server
+        async function sendToServer(credential) {
+            log('Sending credential to server...');
+            try {
+                const response = await fetch('http://localhost:3000/auth/google', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        credential: credential,
+                        mode: 'signup'
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    log(`Server response: ${JSON.stringify(data, null, 2)}`, 'success');
+                } else {
+                    log(`Server error: ${JSON.stringify(data, null, 2)}`, 'error');
+                }
+            } catch (error) {
+                log(`Network error: ${error.message}`, 'error');
+            }
+        }
+
+        // Clear logs
+        function clearLogs() {
+            document.getElementById('log-container').innerHTML = '';
+        }
+
+        // Initial log
+        log('Debug page loaded successfully');
+        
+        // Test server connection on load
+        setTimeout(testServerConnection, 1000);
+    </script>
+</body>
+</html>
