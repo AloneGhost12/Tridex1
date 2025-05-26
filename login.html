@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta http-equiv="Cross-Origin-Opener-Policy" content="same-origin-allow-popups">
     <title>Login Page</title>
     <link rel="stylesheet" href="auth.css">
     <link rel="stylesheet" href="css/responsive.css">
@@ -88,8 +89,8 @@
                 loadingOverlay.style.display = 'flex';
             }
 
-            // Get the correct API URL based on environment
-            const apiUrl = window.CONFIG ? window.CONFIG.getApiUrl('auth') : 'http://localhost:3000/auth/google';
+            // Try production server first, then fallback to localhost
+            let apiUrl = 'https://tridex1.onrender.com/auth/google';
             console.log('Using API URL:', apiUrl);
 
             // Send the Google token to your backend for verification and login
@@ -101,6 +102,19 @@
                 },
                 mode: 'cors',
                 body: JSON.stringify({ credential: response.credential, mode: 'login' })
+            }).catch(error => {
+                console.log('Production server failed, trying localhost...');
+                // If production fails, try localhost
+                apiUrl = 'http://localhost:3000/auth/google';
+                return fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    mode: 'cors',
+                    body: JSON.stringify({ credential: response.credential, mode: 'login' })
+                });
             })
             .then(res => res.json())
             .then(data => {
@@ -153,7 +167,55 @@
                     loadingOverlay.style.display = 'none';
                 }
 
-                alert('Google login failed. Please check your internet connection and try again.');
+                // Provide more specific error handling
+                if (error.message && error.message.includes('Failed to fetch')) {
+                    // Server is offline, provide fallback option
+                    const useLocalStorage = confirm(
+                        'Server is currently offline. Would you like to continue with local storage mode?\n\n' +
+                        'Note: Your login will only work on this device until the server comes back online.'
+                    );
+
+                    if (useLocalStorage) {
+                        // Decode the Google credential to get user info
+                        try {
+                            const payload = JSON.parse(atob(response.credential.split('.')[1]));
+                            const googleUser = {
+                                email: payload.email,
+                                name: payload.name,
+                                picture: payload.picture,
+                                sub: payload.sub
+                            };
+
+                            // Check if user exists in local storage
+                            const users = JSON.parse(localStorage.getItem('users') || '[]');
+                            const existingUser = users.find(u => u.email === googleUser.email);
+
+                            if (existingUser) {
+                                // User exists, log them in
+                                localStorage.setItem('token', 'google_' + googleUser.sub);
+                                localStorage.setItem('username', existingUser.username || googleUser.email);
+                                localStorage.setItem('currentUser', existingUser.username || googleUser.email);
+                                localStorage.setItem('isLoggedIn', 'true');
+                                localStorage.setItem('isAdmin', 'false');
+                                localStorage.setItem('verified', 'false');
+                                localStorage.setItem('isGoogleUser', 'true');
+
+                                alert('Google login successful! (Local storage mode)');
+                                window.location.href = 'index.html';
+                            } else {
+                                // User doesn't exist, suggest signup
+                                if (confirm('No account found with this Google email. Would you like to create a new account?')) {
+                                    window.location.href = 'signup.html';
+                                }
+                            }
+                        } catch (decodeError) {
+                            console.error('Error decoding Google credential:', decodeError);
+                            alert('Google login failed: Unable to process Google account information.');
+                        }
+                    }
+                } else {
+                    alert('Google login failed. Please check your internet connection and try again.');
+                }
             });
         }
         </script>
@@ -213,12 +275,92 @@
         }
     }
 
-    // Check server status on page load
+    // Check server status on page load with 60-second countdown timer
     checkServerStatus().then(isRunning => {
         if (!isRunning) {
-            document.getElementById('login-error').textContent =
-                'Server appears to be offline. The application will use local storage instead.';
+            // Show enhanced server startup message with 60-second countdown timer
+            document.getElementById('login-error').innerHTML = `
+                <div style="text-align: center; padding: 20px; background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%); border: 2px solid #ffc107; border-radius: 12px; margin: 15px 0; box-shadow: 0 4px 12px rgba(255, 193, 7, 0.3);">
+                    <div style="font-size: 2em; margin-bottom: 12px; animation: bounce 2s infinite;">🚀</div>
+                    <div style="font-weight: bold; color: #856404; margin-bottom: 10px; font-size: 1.2em;">Server Starting Up</div>
+                    <div style="color: #856404; font-size: 0.95em; margin-bottom: 15px; line-height: 1.4;">
+                        Our free server takes about 60 seconds to wake up from sleep mode.<br>
+                        <span style="font-size: 0.85em; opacity: 0.8;">Please wait while we bring the server online...</span>
+                    </div>
+                    <div style="background: #ff6b35; color: white; padding: 12px 20px; border-radius: 25px; display: inline-block; font-weight: bold; font-size: 1.3em; box-shadow: 0 2px 8px rgba(255, 107, 53, 0.4); min-width: 80px;" id="login-server-countdown">
+                        60s
+                    </div>
+                    <div style="color: #856404; font-size: 0.85em; margin-top: 12px; font-style: italic;">
+                        ⏱️ Server will be ready soon! Thank you for your patience.
+                    </div>
+                </div>
+            `;
             document.getElementById('login-error').style.display = 'block';
+
+            // Add bounce animation for the rocket emoji
+            if (!document.getElementById('bounce-animation')) {
+                const style = document.createElement('style');
+                style.id = 'bounce-animation';
+                style.textContent = `
+                    @keyframes bounce {
+                        0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+                        40% { transform: translateY(-10px); }
+                        60% { transform: translateY(-5px); }
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+
+            // Start 60-second countdown timer
+            let countdown = 60;
+            const countdownElement = document.getElementById('login-server-countdown');
+            const countdownInterval = setInterval(() => {
+                countdown--;
+                if (countdownElement) {
+                    countdownElement.textContent = countdown + 's';
+
+                    // Change colors as time decreases
+                    if (countdown <= 10) {
+                        countdownElement.style.background = '#dc3545'; // Red for final 10 seconds
+                        countdownElement.style.boxShadow = '0 2px 8px rgba(220, 53, 69, 0.5)';
+                    } else if (countdown <= 20) {
+                        countdownElement.style.background = '#ffc107'; // Yellow for 20-11 seconds
+                        countdownElement.style.color = '#000';
+                        countdownElement.style.boxShadow = '0 2px 8px rgba(255, 193, 7, 0.5)';
+                    } else if (countdown <= 40) {
+                        countdownElement.style.background = '#fd7e14'; // Orange for 40-21 seconds
+                        countdownElement.style.boxShadow = '0 2px 8px rgba(253, 126, 20, 0.5)';
+                    }
+                }
+
+                if (countdown <= 0) {
+                    clearInterval(countdownInterval);
+                    if (countdownElement) {
+                        countdownElement.textContent = 'Ready!';
+                        countdownElement.style.background = '#28a745'; // Green when complete
+                        countdownElement.style.color = '#fff';
+                        countdownElement.style.boxShadow = '0 2px 8px rgba(40, 167, 69, 0.5)';
+                    }
+
+                    // Show "Server should be ready!" message briefly
+                    setTimeout(() => {
+                        if (document.getElementById('login-error')) {
+                            document.getElementById('login-error').innerHTML = `
+                                <div style="text-align: center; padding: 15px; background: #d4edda; border: 2px solid #28a745; border-radius: 8px; margin: 10px 0;">
+                                    <div style="font-size: 1.5em; margin-bottom: 8px;">✅</div>
+                                    <div style="font-weight: bold; color: #155724; margin-bottom: 5px;">Server Should Be Ready!</div>
+                                    <div style="color: #155724; font-size: 0.9em;">You can now try logging in.</div>
+                                </div>
+                            `;
+
+                            // Hide the message completely after 5 seconds
+                            setTimeout(() => {
+                                document.getElementById('login-error').style.display = 'none';
+                            }, 5000);
+                        }
+                    }, 2000);
+                }
+            }, 1000);
         }
     });
 
