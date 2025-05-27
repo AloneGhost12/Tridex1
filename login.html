@@ -8,6 +8,9 @@
     <link rel="stylesheet" href="auth.css">
     <link rel="stylesheet" href="css/responsive.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <!-- Custom Popup System -->
+    <link rel="stylesheet" href="css/custom-popups.css">
+    <script src="js/custom-popups.js"></script>
     <!-- Include the ban system script -->
     <script src="ban-system.js"></script>
     <!-- Include responsive behavior script -->
@@ -126,7 +129,7 @@
                 });
             })
             .then(res => res.json())
-            .then(data => {
+            .then(async (data) => {
                 console.log('Google login response:', data);
 
                 // Hide loading
@@ -160,15 +163,19 @@
                         window.location.href = 'login.html?banned=true&bannedUser=' + encodeURIComponent(data.username);
                     } else if (data.message && data.message.includes('No account found')) {
                         // No account found, suggest sign up
-                        if (confirm('No account found with this Google email. Would you like to create a new account?')) {
+                        const createAccount = await tridexConfirm(
+                            'No account found with this Google email. Would you like to create a new account?',
+                            'Account Not Found'
+                        );
+                        if (createAccount) {
                             window.location.href = 'signup.html';
                         }
                     } else {
-                        alert(data.message || 'Google login failed. Please try again.');
+                        await tridexError(data.message || 'Google login failed. Please try again.', 'Login Failed');
                     }
                 }
             })
-            .catch(error => {
+            .catch(async (error) => {
                 console.error('Google login error:', error);
 
                 // Hide loading
@@ -179,9 +186,9 @@
                 // Provide more specific error handling
                 if (error.message && error.message.includes('Failed to fetch')) {
                     // Server is offline, provide fallback option
-                    const useLocalStorage = confirm(
-                        'Server is currently offline. Would you like to continue with local storage mode?\n\n' +
-                        'Note: Your login will only work on this device until the server comes back online.'
+                    const useLocalStorage = await tridexConfirm(
+                        'Server is currently offline. Would you like to continue with local storage mode?\n\nNote: Your login will only work on this device until the server comes back online.',
+                        'Server Offline'
                     );
 
                     if (useLocalStorage) {
@@ -209,21 +216,25 @@
                                 localStorage.setItem('verified', 'false');
                                 localStorage.setItem('isGoogleUser', 'true');
 
-                                alert('Google login successful! (Local storage mode)');
+                                await tridexSuccess('Google login successful! (Local storage mode)', 'Login Successful');
                                 window.location.href = 'index.html';
                             } else {
                                 // User doesn't exist, suggest signup
-                                if (confirm('No account found with this Google email. Would you like to create a new account?')) {
+                                const createAccount = await tridexConfirm(
+                                    'No account found with this Google email. Would you like to create a new account?',
+                                    'Account Not Found'
+                                );
+                                if (createAccount) {
                                     window.location.href = 'signup.html';
                                 }
                             }
                         } catch (decodeError) {
                             console.error('Error decoding Google credential:', decodeError);
-                            alert('Google login failed: Unable to process Google account information.');
+                            await tridexError('Google login failed: Unable to process Google account information.', 'Login Failed');
                         }
                     }
                 } else {
-                    alert('Google login failed. Please check your internet connection and try again.');
+                    await tridexError('Google login failed. Please check your internet connection and try again.', 'Connection Error');
                 }
             });
         }
