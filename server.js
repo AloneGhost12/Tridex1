@@ -23,7 +23,7 @@ const PORT = process.env.PORT || 3000;
 
 // Initialize Google OAuth client
 const googleClient = new OAuth2Client(
-    process.env.GOOGLE_CLIENT_ID || 'your-google-client-id'
+    process.env.GOOGLE_CLIENT_ID || '511326319939-431231ifhs4239598gc0d7ba2vc97lms.apps.googleusercontent.com'
 );
 
 // Define allowed origins
@@ -33,7 +33,8 @@ const allowedOrigins = [
     'http://127.0.0.1:5500',
     'http://localhost:5500',
     'http://127.0.0.1:3000',
-    null // Allow file:// origins for local development
+    'file://', // Allow file:// origins for local development
+    null // Allow null origin for local file access
 ];
 
 // CORS configuration
@@ -81,12 +82,12 @@ app.use((req, res, next) => {
     // Allow specific headers
     res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, X-Username');
 
-    // Remove problematic CORS headers that block Google OAuth
-    // res.header('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
-    // res.header('Cross-Origin-Embedder-Policy', 'unsafe-none');
+    // Fix COOP policy for Google OAuth
+    res.header('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
+    res.header('Cross-Origin-Embedder-Policy', 'unsafe-none');
 
-    // Don't use credentials with wildcard origin
-    // res.header('Access-Control-Allow-Credentials', 'true');
+    // Allow credentials for authenticated requests
+    res.header('Access-Control-Allow-Credentials', 'true');
 
     // Handle preflight OPTIONS requests
     if (req.method === 'OPTIONS') {
@@ -300,7 +301,7 @@ app.post('/auth/google', async (req, res) => {
         }
 
         // Check if Google Client ID is configured
-        const googleClientId = process.env.GOOGLE_CLIENT_ID;
+        const googleClientId = process.env.GOOGLE_CLIENT_ID || '511326319939-431231ifhs4239598gc0d7ba2vc97lms.apps.googleusercontent.com';
         if (!googleClientId || googleClientId === 'your-google-client-id') {
             console.log('Google Client ID not configured properly');
             return res.status(500).json({
@@ -2676,6 +2677,137 @@ app.get('/contact/messages/:id/attachment', async (req, res) => {
 });
 
 // ========== ORDER ROUTES ==========
+
+// ========== ANALYTICS ROUTES ==========
+
+// Get sales analytics data
+app.get('/analytics/sales', async (req, res) => {
+    try {
+        const { year = new Date().getFullYear() } = req.query;
+
+        // Create date range for the year
+        const startDate = new Date(year, 0, 1); // January 1st
+        const endDate = new Date(year, 11, 31, 23, 59, 59); // December 31st
+
+        // Get monthly sales data
+        const monthlyData = await Order.aggregate([
+            {
+                $match: {
+                    createdAt: { $gte: startDate, $lte: endDate },
+                    status: { $ne: 'cancelled' }
+                }
+            },
+            {
+                $group: {
+                    _id: {
+                        month: { $month: '$createdAt' },
+                        year: { $year: '$createdAt' }
+                    },
+                    orderCount: { $sum: 1 },
+                    revenue: { $sum: '$totalAmount' }
+                }
+            },
+            {
+                $sort: { '_id.month': 1 }
+            }
+        ]);
+
+        // Get order status distribution
+        const statusDistribution = await Order.aggregate([
+            {
+                $match: {
+                    createdAt: { $gte: startDate, $lte: endDate }
+                }
+            },
+            {
+                $group: {
+                    _id: '$status',
+                    count: { $sum: 1 }
+                }
+            }
+        ]);
+
+        // Get top selling products
+        const topProducts = await Order.aggregate([
+            {
+                $match: {
+                    createdAt: { $gte: startDate, $lte: endDate },
+                    status: { $ne: 'cancelled' }
+                }
+            },
+            { $unwind: '$items' },
+            {
+                $group: {
+                    _id: '$items.productId',
+                    name: { $first: '$items.name' },
+                    totalSold: { $sum: '$items.quantity' },
+                    revenue: { $sum: { $multiply: ['$items.price', '$items.quantity'] } }
+                }
+            },
+            { $sort: { totalSold: -1 } },
+            { $limit: 10 }
+        ]);
+
+        // Calculate total statistics
+        const totalStats = await Order.aggregate([
+            {
+                $match: {
+                    createdAt: { $gte: startDate, $lte: endDate },
+                    status: { $ne: 'cancelled' }
+                }
+            },
+            {
+                $group: {
+                    _id: null,
+                    totalOrders: { $sum: 1 },
+                    totalRevenue: { $sum: '$totalAmount' },
+                    averageOrderValue: { $avg: '$totalAmount' }
+                }
+            }
+        ]);
+
+        // Calculate growth rate (compare with previous year)
+        const previousYear = parseInt(year) - 1;
+        const previousYearStart = new Date(previousYear, 0, 1);
+        const previousYearEnd = new Date(previousYear, 11, 31, 23, 59, 59);
+
+        const previousYearStats = await Order.aggregate([
+            {
+                $match: {
+                    createdAt: { $gte: previousYearStart, $lte: previousYearEnd },
+                    status: { $ne: 'cancelled' }
+                }
+            },
+            {
+                $group: {
+                    _id: null,
+                    totalRevenue: { $sum: '$totalAmount' }
+                }
+            }
+        ]);
+
+        const currentRevenue = totalStats[0]?.totalRevenue || 0;
+        const previousRevenue = previousYearStats[0]?.totalRevenue || 0;
+        const growthRate = previousRevenue > 0 ? ((currentRevenue - previousRevenue) / previousRevenue) * 100 : 0;
+
+        // Prepare response
+        const analyticsData = {
+            year: parseInt(year),
+            totalOrders: totalStats[0]?.totalOrders || 0,
+            totalRevenue: totalStats[0]?.totalRevenue || 0,
+            averageOrderValue: totalStats[0]?.averageOrderValue || 0,
+            growthRate: growthRate,
+            monthlyData: monthlyData,
+            statusDistribution: statusDistribution,
+            topProducts: topProducts
+        };
+
+        res.json(analyticsData);
+    } catch (err) {
+        console.error('Error fetching analytics data:', err);
+        res.status(500).json({ error: 'Error fetching analytics data' });
+    }
+});
 
 // ========== REVIEW ROUTES ==========
 
