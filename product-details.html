@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="css/product-media-gallery.css">
     <link rel="stylesheet" href="css/color-variant-selector.css">
     <link rel="stylesheet" href="css/responsive.css">
+    <link rel="stylesheet" href="css/custom-popups.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
     <!-- Include responsive behavior script -->
     <script src="js/responsive.js" defer></script>
@@ -251,6 +252,43 @@
             color: #388e3c;
             font-size: 16px;
             margin-left: 10px;
+        }
+
+        /* Monthly Sales Counter */
+        .monthly-sales-counter {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 15px 0;
+            padding: 10px 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .monthly-sales-counter:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .monthly-sales-counter i {
+            font-size: 16px;
+            color: #fff;
+        }
+
+        .monthly-sales-counter.loading {
+            background: linear-gradient(135deg, #e0e0e0 0%, #bdbdbd 100%);
+            color: #666;
+        }
+
+        .monthly-sales-counter.no-sales {
+            background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%);
+            color: #666;
+            border: 1px solid #ddd;
         }
 
         .product-description {
@@ -837,6 +875,9 @@
                 // Load color variants if this is a parent product or a variant
                 await loadColorVariants();
 
+                // Load monthly sales data
+                await loadMonthlySales();
+
                 // Render all sections
                 renderProductDetails();
                 renderSimilarProducts();
@@ -862,6 +903,55 @@
                         </button>
                     </div>
                 `;
+            }
+        }
+
+        // Load monthly sales data for the current product
+        async function loadMonthlySales() {
+            try {
+                const productId = getProductId();
+                if (!productId) return;
+
+                const response = await fetch(`https://tridex1.onrender.com/products/${productId}/monthly-sales`);
+                if (!response.ok) {
+                    throw new Error('Failed to fetch sales data');
+                }
+
+                const salesData = await response.json();
+                updateMonthlySalesDisplay(salesData);
+
+            } catch (error) {
+                console.error('Error loading monthly sales:', error);
+                updateMonthlySalesDisplay(null);
+            }
+        }
+
+        // Update the monthly sales display
+        function updateMonthlySalesDisplay(salesData) {
+            const counter = document.getElementById('monthly-sales-counter');
+            const textElement = document.getElementById('monthly-sales-text');
+
+            if (!counter || !textElement) return;
+
+            // Remove loading class
+            counter.classList.remove('loading');
+
+            if (!salesData || salesData.totalSold === 0) {
+                counter.classList.add('no-sales');
+                textElement.textContent = 'No sales this month';
+            } else {
+                counter.classList.remove('no-sales');
+                const monthNames = [
+                    'January', 'February', 'March', 'April', 'May', 'June',
+                    'July', 'August', 'September', 'October', 'November', 'December'
+                ];
+                const monthName = monthNames[salesData.month - 1];
+
+                if (salesData.totalSold === 1) {
+                    textElement.textContent = `${salesData.totalSold} sold this month (${monthName})`;
+                } else {
+                    textElement.textContent = `${salesData.totalSold} sold this month (${monthName})`;
+                }
             }
         }
 
@@ -934,6 +1024,12 @@
                             ₹${product.price}
                             <span class="original-price">₹${originalPrice}</span>
                             <span class="discount">${discountPercent}% off</span>
+                        </div>
+
+                        <!-- Monthly Sales Counter -->
+                        <div class="monthly-sales-counter loading" id="monthly-sales-counter">
+                            <i class="fas fa-chart-line"></i>
+                            <span id="monthly-sales-text">Loading sales data...</span>
                         </div>
 
                         <!-- Color Variants Section -->
@@ -2046,5 +2142,8 @@
             history.replaceState({ page: 'product-details', id: getProductId() }, '', window.location.href);
         }
     </script>
+
+    <!-- Include custom popup system -->
+    <script src="js/custom-popups.js"></script>
 </body>
 </html>
