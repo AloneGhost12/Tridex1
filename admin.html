@@ -14,6 +14,14 @@
     <!-- Custom Popup System -->
     <link rel="stylesheet" href="css/custom-popups.css">
     <script src="js/custom-popups.js"></script>
+    <script>
+        // Fallback functions in case custom popups don't load
+        window.tridexConfirm = window.tridexConfirm || function(message) { return Promise.resolve(confirm(message)); };
+        window.tridexSuccess = window.tridexSuccess || function(message) { alert(message); return Promise.resolve(); };
+        window.tridexError = window.tridexError || function(message) { alert(message); return Promise.resolve(); };
+        window.tridexWarning = window.tridexWarning || function(message) { alert(message); return Promise.resolve(); };
+        window.tridexInfo = window.tridexInfo || function(message) { alert(message); return Promise.resolve(); };
+    </script>
     <!-- Include the ban system script -->
     <script src="ban-system.js"></script>
     <style>
@@ -731,14 +739,20 @@
                 };
                 // Ban user (update DB in real app)
                 tr.querySelector('.ban-btn').onclick = async function() {
-                    const confirmed = await tridexConfirm(
-                        `Are you sure you want to ban user "${user.username}"? This action will prevent them from accessing the website.`,
-                        'Ban User Confirmation'
-                    );
-                    if (confirmed) {
-                        try {
-                            // Show loading indicator
-                            showLoading();
+                    // Ensure popup system is loaded
+                    if (typeof tridexConfirm === 'undefined') {
+                        if (!confirm(`Ban ${user.username}?`)) return;
+                    } else {
+                        const confirmed = await tridexConfirm(
+                            `Are you sure you want to ban user "${user.username}"? This action will prevent them from accessing the website.`,
+                            'Ban User Confirmation'
+                        );
+                        if (!confirmed) return;
+                    }
+
+                    try {
+                        // Show loading indicator
+                        showLoading();
 
                             // Call the server to ban the user
                             const response = await fetch(`https://tridex1.onrender.com/users/${user._id}/ban`, { method: 'PUT' });
@@ -899,14 +913,20 @@
                 };
                 // Unban user (update DB in real app)
                 tr.querySelector('.unban-btn').onclick = async function() {
-                    const confirmed = await tridexConfirm(
-                        `Are you sure you want to unban user "${user.username}"? This will restore their access to the website.`,
-                        'Unban User Confirmation'
-                    );
-                    if (confirmed) {
-                        try {
-                            // Show loading indicator
-                            showLoading();
+                    // Ensure popup system is loaded
+                    if (typeof tridexConfirm === 'undefined') {
+                        if (!confirm(`Unban ${user.username}?`)) return;
+                    } else {
+                        const confirmed = await tridexConfirm(
+                            `Are you sure you want to unban user "${user.username}"? This will restore their access to the website.`,
+                            'Unban User Confirmation'
+                        );
+                        if (!confirmed) return;
+                    }
+
+                    try {
+                        // Show loading indicator
+                        showLoading();
 
                             // Call the server to unban the user
                             const response = await fetch(`https://tridex1.onrender.com/users/${user._id}/unban`, { method: 'PUT' });
@@ -1075,7 +1095,11 @@
                                 // Refresh the user list
                                 fetchUsers();
                             } else {
-                                await tridexError('Failed to unban user. Please try again.', 'Unban Failed');
+                                if (typeof tridexError !== 'undefined') {
+                                    await tridexError('Failed to unban user. Please try again.', 'Unban Failed');
+                                } else {
+                                    alert('Failed to unban user.');
+                                }
                             }
                         } finally {
                             // Hide loading indicator
@@ -1085,21 +1109,33 @@
                 };
                 // Delete user (update DB in real app)
                 tr.querySelector('.delete-btn').onclick = async function() {
-                    const confirmed = await tridexConfirm(
-                        `Are you sure you want to permanently delete user "${user.username}"? This action cannot be undone.`,
-                        'Delete User Confirmation'
-                    );
-                    if (confirmed) {
-                        try {
-                            showLoading();
-                            await fetch(`https://tridex1.onrender.com/users/${user._id}`, { method: 'DELETE' });
+                    // Ensure popup system is loaded
+                    if (typeof tridexConfirm === 'undefined') {
+                        if (!confirm(`Delete ${user.username}?`)) return;
+                    } else {
+                        const confirmed = await tridexConfirm(
+                            `Are you sure you want to permanently delete user "${user.username}"? This action cannot be undone.`,
+                            'Delete User Confirmation'
+                        );
+                        if (!confirmed) return;
+                    }
+
+                    try {
+                        showLoading();
+                        await fetch(`https://tridex1.onrender.com/users/${user._id}`, { method: 'DELETE' });
+
+                        if (typeof tridexSuccess !== 'undefined') {
                             await tridexSuccess(`User "${user.username}" has been deleted successfully.`, 'User Deleted');
-                            fetchUsers();
-                        } catch (e) {
-                            await tridexError('Failed to delete user. Please try again.', 'Delete Failed');
-                        } finally {
-                            hideLoading();
                         }
+                        fetchUsers();
+                    } catch (e) {
+                        if (typeof tridexError !== 'undefined') {
+                            await tridexError('Failed to delete user. Please try again.', 'Delete Failed');
+                        } else {
+                            alert('Failed to delete user. Please try again.');
+                        }
+                    } finally {
+                        hideLoading();
                     }
                 };
                 // Verify user

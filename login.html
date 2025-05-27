@@ -11,6 +11,14 @@
     <!-- Custom Popup System -->
     <link rel="stylesheet" href="css/custom-popups.css">
     <script src="js/custom-popups.js"></script>
+    <script>
+        // Fallback functions in case custom popups don't load
+        window.tridexConfirm = window.tridexConfirm || function(message) { return Promise.resolve(confirm(message)); };
+        window.tridexSuccess = window.tridexSuccess || function(message) { alert(message); return Promise.resolve(); };
+        window.tridexError = window.tridexError || function(message) { alert(message); return Promise.resolve(); };
+        window.tridexWarning = window.tridexWarning || function(message) { alert(message); return Promise.resolve(); };
+        window.tridexInfo = window.tridexInfo || function(message) { alert(message); return Promise.resolve(); };
+    </script>
     <!-- Include the ban system script -->
     <script src="ban-system.js"></script>
     <!-- Include responsive behavior script -->
