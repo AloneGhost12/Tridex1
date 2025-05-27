@@ -847,9 +847,24 @@
                 // Check admin status first
                 await checkAdminStatus();
 
-                // Fetch products
-                const res = await fetch('https://tridex1.onrender.com/products');
+                // Fetch products (try local server first)
+                let res;
+                try {
+                    console.log('Fetching products from local server...');
+                    res = await fetch('http://localhost:3000/products');
+                    console.log('Local server products response status:', res.status);
+                } catch (fetchError) {
+                    console.warn('Could not reach local server for products, trying production server...', fetchError);
+                    res = await fetch('https://tridex1.onrender.com/products');
+                    console.log('Production server products response status:', res.status);
+                }
+
+                if (!res.ok) {
+                    throw new Error(`Failed to fetch products: ${res.status} ${res.statusText}`);
+                }
+
                 allProducts = await res.json();
+                console.log('Successfully fetched products:', allProducts.length);
 
                 // Find current product
                 const id = getProductId();
@@ -875,13 +890,13 @@
                 // Load color variants if this is a parent product or a variant
                 await loadColorVariants();
 
-                // Load monthly sales data
-                await loadMonthlySales();
-
-                // Render all sections
+                // Render all sections first to create the HTML elements
                 renderProductDetails();
                 renderSimilarProducts();
                 renderReviews();
+
+                // Load monthly sales data after HTML elements are created
+                await loadMonthlySales();
 
                 // Initialize event listeners
                 initEventListeners();
@@ -910,14 +925,43 @@
         async function loadMonthlySales() {
             try {
                 const productId = getProductId();
-                if (!productId) return;
+                if (!productId) {
+                    console.log('No product ID found, skipping monthly sales');
+                    return;
+                }
 
-                const response = await fetch(`https://tridex1.onrender.com/products/${productId}/monthly-sales`);
+                console.log('Loading monthly sales for product:', productId);
+
+                // Check if elements exist before making the request
+                const counter = document.getElementById('monthly-sales-counter');
+                const textElement = document.getElementById('monthly-sales-text');
+
+                if (!counter || !textElement) {
+                    console.error('Monthly sales elements not found in DOM yet, retrying in 100ms...');
+                    setTimeout(() => loadMonthlySales(), 100);
+                    return;
+                }
+
+                console.log('Monthly sales elements found, proceeding with API call');
+
+                // Try local server first, then fallback to production
+                let response;
+                try {
+                    console.log('Fetching monthly sales from local server...');
+                    response = await fetch(`http://localhost:3000/products/${productId}/monthly-sales`);
+                    console.log('Local server monthly sales response status:', response.status);
+                } catch (fetchError) {
+                    console.warn('Could not reach local server for monthly sales, trying production server...', fetchError);
+                    response = await fetch(`https://tridex1.onrender.com/products/${productId}/monthly-sales`);
+                    console.log('Production server monthly sales response status:', response.status);
+                }
+
                 if (!response.ok) {
-                    throw new Error('Failed to fetch sales data');
+                    throw new Error(`Failed to fetch sales data: ${response.status} ${response.statusText}`);
                 }
 
                 const salesData = await response.json();
+                console.log('Monthly sales data received:', salesData);
                 updateMonthlySalesDisplay(salesData);
 
             } catch (error) {
@@ -931,27 +975,34 @@
             const counter = document.getElementById('monthly-sales-counter');
             const textElement = document.getElementById('monthly-sales-text');
 
-            if (!counter || !textElement) return;
+            console.log('Updating monthly sales display with data:', salesData);
+
+            if (!counter || !textElement) {
+                console.error('Monthly sales counter elements not found');
+                return;
+            }
 
             // Remove loading class
             counter.classList.remove('loading');
 
-            if (!salesData || salesData.totalSold === 0) {
+            if (!salesData || salesData.totalSold === 0 || salesData.totalSold === undefined) {
                 counter.classList.add('no-sales');
                 textElement.textContent = 'No sales this month';
+                console.log('No sales data to display');
             } else {
                 counter.classList.remove('no-sales');
                 const monthNames = [
                     'January', 'February', 'March', 'April', 'May', 'June',
                     'July', 'August', 'September', 'October', 'November', 'December'
                 ];
-                const monthName = monthNames[salesData.month - 1];
+                const monthName = monthNames[salesData.month - 1] || 'Unknown';
 
-                if (salesData.totalSold === 1) {
-                    textElement.textContent = `${salesData.totalSold} sold this month (${monthName})`;
-                } else {
-                    textElement.textContent = `${salesData.totalSold} sold this month (${monthName})`;
-                }
+                const salesText = salesData.totalSold === 1
+                    ? `${salesData.totalSold} sold this month (${monthName})`
+                    : `${salesData.totalSold} sold this month (${monthName})`;
+
+                textElement.textContent = salesText;
+                console.log('Sales data displayed:', salesText);
             }
         }
 

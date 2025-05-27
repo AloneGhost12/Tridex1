@@ -146,6 +146,7 @@ mongoose.connection.on('reconnected', () => {
 
 // Root Route
 app.get('/', (req, res) => {
+    console.log('Root endpoint accessed from:', req.headers.origin || 'no origin');
     res.send('Welcome to Tridex API!');
 });
 
@@ -553,7 +554,9 @@ app.post('/users/:userId/profile-picture', async (req, res) => {
 
 app.get('/users', async (req, res) => {
     try {
+        console.log('Users endpoint accessed from:', req.headers.origin || 'no origin');
         const users = await User.find({}, '-password');
+        console.log('Returning', users.length, 'users');
         res.json(users);
     } catch (err) {
         console.error('Error fetching users:', err);
@@ -1501,6 +1504,9 @@ app.post('/products/:id/regenerate-summary', async (req, res) => {
 // Get monthly sales count for a specific product
 app.get('/products/:id/monthly-sales', async (req, res) => {
     try {
+        console.log('Monthly sales endpoint accessed for product:', req.params.id);
+        console.log('Request origin:', req.headers.origin || 'no origin');
+
         const productId = req.params.id;
         const { month, year } = req.query;
 
@@ -1539,14 +1545,17 @@ app.get('/products/:id/monthly-sales', async (req, res) => {
 
         const result = salesData[0] || { totalSold: 0, totalRevenue: 0, orderCount: 0 };
 
-        res.json({
+        const responseData = {
             productId,
             month: targetMonth,
             year: targetYear,
             totalSold: result.totalSold,
             totalRevenue: result.totalRevenue,
             orderCount: result.orderCount
-        });
+        };
+
+        console.log('Returning monthly sales data:', responseData);
+        res.json(responseData);
     } catch (err) {
         console.error('Error fetching monthly sales:', err);
         res.status(500).json({ message: 'Error fetching monthly sales data' });
