@@ -887,23 +887,43 @@
         // Fetch saved addresses
         async function fetchSavedAddresses() {
             try {
+                // Debug logging
+                console.log('Fetching addresses with:', {
+                    token: token ? token.substring(0, 20) + '...' : 'null',
+                    username: username
+                });
+
                 const response = await fetch('https://tridex1.onrender.com/users/addresses', {
                     headers: {
                         'Authorization': `Bearer ${token}`,
-                        'X-Username': username
+                        'X-Username': username,
+                        'Content-Type': 'application/json'
                     }
                 });
 
+                console.log('Response status:', response.status);
+
                 if (!response.ok) {
-                    throw new Error('Failed to fetch addresses');
+                    const errorText = await response.text();
+                    console.error('Server response:', errorText);
+                    throw new Error(`Failed to fetch addresses: ${response.status} ${response.statusText}`);
                 }
 
                 const addresses = await response.json();
                 renderSavedAddresses(addresses);
             } catch (error) {
                 console.error('Error fetching addresses:', error);
+
+                // Show more specific error message
+                let errorMessage = 'Error loading addresses. ';
+                if (error.message.includes('401')) {
+                    errorMessage += 'Please try logging in again.';
+                } else {
+                    errorMessage += 'Please try again later.';
+                }
+
                 document.getElementById('saved-addresses').innerHTML =
-                    '<p style="text-align:center; color:red; padding:15px;">Error loading addresses. Please try again later.</p>';
+                    `<p style="text-align:center; color:red; padding:15px;">${errorMessage}</p>`;
             }
         }
 

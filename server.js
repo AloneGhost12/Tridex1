@@ -789,7 +789,7 @@ app.post('/users/addresses', async (req, res) => {
             username = 'admin';
         } else if (token === 'dev-user-token') {
             username = 'user';
-        } else if (token.startsWith('fake-jwt-token-')) {
+        } else if (token.startsWith('fake-jwt-token-') || token.startsWith('google-jwt-token-')) {
             username = req.headers['x-username'] || req.body.username;
         }
 
@@ -855,9 +855,15 @@ app.post('/users/addresses', async (req, res) => {
 // Get all addresses for a user
 app.get('/users/addresses', async (req, res) => {
     try {
+        console.log('GET /users/addresses - Headers:', {
+            authorization: req.headers.authorization ? req.headers.authorization.substring(0, 30) + '...' : 'missing',
+            'x-username': req.headers['x-username']
+        });
+
         // Authenticate user
         const authHeader = req.headers.authorization;
         if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            console.log('Missing or invalid authorization header');
             return res.status(401).json({ message: 'Unauthorized' });
         }
 
@@ -865,15 +871,26 @@ app.get('/users/addresses', async (req, res) => {
         const token = authHeader.split(' ')[1];
         let username = null;
 
+        console.log('Token type:', {
+            isDevAdmin: token === 'dev-admin-token',
+            isDevUser: token === 'dev-user-token',
+            isFakeJwt: token.startsWith('fake-jwt-token-'),
+            isGoogleJwt: token.startsWith('google-jwt-token-'),
+            tokenStart: token.substring(0, 20)
+        });
+
         if (token === 'dev-admin-token') {
             username = 'admin';
         } else if (token === 'dev-user-token') {
             username = 'user';
-        } else if (token.startsWith('fake-jwt-token-')) {
+        } else if (token.startsWith('fake-jwt-token-') || token.startsWith('google-jwt-token-')) {
             username = req.headers['x-username'] || req.query.username;
         }
 
+        console.log('Resolved username:', username);
+
         if (!username) {
+            console.log('No username resolved from token or headers');
             return res.status(401).json({ message: 'Invalid token or missing username' });
         }
 
@@ -915,7 +932,7 @@ app.put('/users/addresses/:addressId', async (req, res) => {
             username = 'admin';
         } else if (token === 'dev-user-token') {
             username = 'user';
-        } else if (token.startsWith('fake-jwt-token-')) {
+        } else if (token.startsWith('fake-jwt-token-') || token.startsWith('google-jwt-token-')) {
             username = req.headers['x-username'] || req.body.username;
         }
 
@@ -1003,7 +1020,7 @@ app.delete('/users/addresses/:addressId', async (req, res) => {
             username = 'admin';
         } else if (token === 'dev-user-token') {
             username = 'user';
-        } else if (token.startsWith('fake-jwt-token-')) {
+        } else if (token.startsWith('fake-jwt-token-') || token.startsWith('google-jwt-token-')) {
             username = req.headers['x-username'] || req.query.username;
         }
 
