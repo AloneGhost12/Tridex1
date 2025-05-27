@@ -1498,6 +1498,61 @@ app.post('/products/:id/regenerate-summary', async (req, res) => {
     }
 });
 
+// Get monthly sales count for a specific product
+app.get('/products/:id/monthly-sales', async (req, res) => {
+    try {
+        const productId = req.params.id;
+        const { month, year } = req.query;
+
+        // Use current month/year if not provided
+        const currentDate = new Date();
+        const targetMonth = month ? parseInt(month) : currentDate.getMonth() + 1;
+        const targetYear = year ? parseInt(year) : currentDate.getFullYear();
+
+        // Create date range for the month
+        const startDate = new Date(targetYear, targetMonth - 1, 1);
+        const endDate = new Date(targetYear, targetMonth, 0, 23, 59, 59);
+
+        // Aggregate sales for this product in the specified month
+        const salesData = await Order.aggregate([
+            {
+                $match: {
+                    createdAt: { $gte: startDate, $lte: endDate },
+                    status: { $ne: 'cancelled' }
+                }
+            },
+            { $unwind: '$items' },
+            {
+                $match: {
+                    'items.productId': new mongoose.Types.ObjectId(productId)
+                }
+            },
+            {
+                $group: {
+                    _id: null,
+                    totalSold: { $sum: '$items.quantity' },
+                    totalRevenue: { $sum: { $multiply: ['$items.price', '$items.quantity'] } },
+                    orderCount: { $sum: 1 }
+                }
+            }
+        ]);
+
+        const result = salesData[0] || { totalSold: 0, totalRevenue: 0, orderCount: 0 };
+
+        res.json({
+            productId,
+            month: targetMonth,
+            year: targetYear,
+            totalSold: result.totalSold,
+            totalRevenue: result.totalRevenue,
+            orderCount: result.orderCount
+        });
+    } catch (err) {
+        console.error('Error fetching monthly sales:', err);
+        res.status(500).json({ message: 'Error fetching monthly sales data' });
+    }
+});
+
 // Regenerate AI summaries for all products
 app.post('/products/regenerate-all-summaries', async (req, res) => {
     try {

@@ -7,6 +7,15 @@ class TridexPopup {
     }
 
     init() {
+        // Wait for DOM to be ready before creating container
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => this.createContainer());
+        } else {
+            this.createContainer();
+        }
+    }
+
+    createContainer() {
         // Create modal container if it doesn't exist
         if (!document.getElementById('tridex-modal-container')) {
             const container = document.createElement('div');
@@ -22,14 +31,14 @@ class TridexPopup {
         const size = Math.max(rect.width, rect.height);
         const x = event.clientX - rect.left - size / 2;
         const y = event.clientY - rect.top - size / 2;
-        
+
         ripple.style.width = ripple.style.height = size + 'px';
         ripple.style.left = x + 'px';
         ripple.style.top = y + 'px';
         ripple.classList.add('tridex-btn-ripple');
-        
+
         element.appendChild(ripple);
-        
+
         setTimeout(() => {
             ripple.remove();
         }, 600);
@@ -37,18 +46,26 @@ class TridexPopup {
 
     // Show modal with animation
     showModal(modalElement) {
+        // Ensure container exists
+        this.createContainer();
+
         const container = document.getElementById('tridex-modal-container');
+        if (!container) {
+            console.error('Failed to create modal container');
+            return;
+        }
+
         container.appendChild(modalElement);
-        
+
         // Force reflow
         modalElement.offsetHeight;
-        
+
         // Add show class for animation
         modalElement.classList.add('show');
-        
+
         // Prevent body scroll
         document.body.style.overflow = 'hidden';
-        
+
         this.currentModal = modalElement;
     }
 
@@ -56,9 +73,9 @@ class TridexPopup {
     hideModal(modalElement = null) {
         const modal = modalElement || this.currentModal;
         if (!modal) return;
-        
+
         modal.classList.remove('show');
-        
+
         setTimeout(() => {
             if (modal.parentNode) {
                 modal.parentNode.removeChild(modal);
@@ -110,7 +127,7 @@ class TridexPopup {
         return new Promise((resolve) => {
             const buttons = `<button class="tridex-btn tridex-btn-primary" data-action="ok">OK</button>`;
             const modal = this.createModalHTML(type, title, message, buttons, options);
-            
+
             // Add event listeners
             modal.addEventListener('click', (e) => {
                 if (e.target.dataset.action === 'ok' || e.target.dataset.action === 'close') {
@@ -142,7 +159,7 @@ class TridexPopup {
                 <button class="tridex-btn tridex-btn-danger" data-action="confirm">Confirm</button>
             `;
             const modal = this.createModalHTML('confirm', title, message, buttons, options);
-            
+
             // Add event listeners
             modal.addEventListener('click', (e) => {
                 if (e.target.dataset.action) {
@@ -189,12 +206,12 @@ class TridexPopup {
     // Custom popup with custom buttons
     custom(message, title, buttons, type = 'info', options = {}) {
         return new Promise((resolve) => {
-            const buttonHTML = buttons.map(btn => 
+            const buttonHTML = buttons.map(btn =>
                 `<button class="tridex-btn tridex-btn-${btn.type || 'primary'}" data-action="${btn.action}">${btn.text}</button>`
             ).join('');
-            
+
             const modal = this.createModalHTML(type, title, message, buttonHTML, options);
-            
+
             // Add event listeners
             modal.addEventListener('click', (e) => {
                 if (e.target.dataset.action) {
@@ -223,7 +240,7 @@ class TridexPopup {
         return new Promise((resolve) => {
             const buttons = `<button class="tridex-btn tridex-btn-primary" data-action="ok">OK</button>`;
             const modal = this.createModalHTML(type, title, message, buttons, options);
-            
+
             // Add event listeners
             modal.addEventListener('click', (e) => {
                 if (e.target.dataset.action === 'ok' || e.target.dataset.action === 'close') {
@@ -263,7 +280,7 @@ window.tridexInfo = (message, title, options) => window.TridexPopup.info(message
 if (typeof window.originalAlert === 'undefined') {
     window.originalAlert = window.alert;
     window.originalConfirm = window.confirm;
-    
+
     // Uncomment these lines to completely replace native dialogs
     // window.alert = (message) => window.TridexPopup.alert(message);
     // window.confirm = (message) => window.TridexPopup.confirm(message);
