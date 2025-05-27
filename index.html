@@ -6,6 +6,9 @@
    <title>Tridex</title>
    <link rel="stylesheet" href="style.css">
    <link rel="stylesheet" href="chatbot.css">
+   <!-- Custom Popup System -->
+   <link rel="stylesheet" href="css/custom-popups.css">
+   <script src="js/custom-popups.js"></script>
    <!-- Include the ban system script -->
    <script src="ban-system.js"></script>
    <!-- Include enhanced chatbot scripts -->
@@ -976,7 +979,7 @@ async function fetchAndRenderProducts(filter = "") {
         const isActuallyLoggedIn = localStorage.getItem('isLoggedIn') || hasToken;
 
         if (!isActuallyLoggedIn) {
-            alert('You must login to view your mailbox.');
+            await tridexInfo('You must login to view your mailbox.', 'Login Required');
             window.location.href = 'login.html';
             return;
         }
@@ -1220,7 +1223,7 @@ async function fetchAndRenderProducts(filter = "") {
     });
 
     // Cart icon click: show cart page or popup (redirect to cart.html)
-    document.getElementById('cartIcon').onclick = function(e) {
+    document.getElementById('cartIcon').onclick = async function(e) {
         e.preventDefault();
         const isLoggedIn = localStorage.getItem('isLoggedIn');
         const hasToken = localStorage.getItem('token');
@@ -1234,7 +1237,7 @@ async function fetchAndRenderProducts(filter = "") {
         const isActuallyLoggedIn = localStorage.getItem('isLoggedIn') || hasToken;
 
         if (!isActuallyLoggedIn) {
-            alert('You must login to view your cart.');
+            await tridexInfo('You must login to view your cart.', 'Login Required');
             window.location.href = 'login.html';
             return;
         }

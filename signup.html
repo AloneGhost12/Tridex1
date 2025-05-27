@@ -8,6 +8,9 @@
     <link rel="stylesheet" href="auth.css">
     <link rel="stylesheet" href="css/responsive.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <!-- Custom Popup System -->
+    <link rel="stylesheet" href="css/custom-popups.css">
+    <script src="js/custom-popups.js"></script>
     <!-- Include responsive behavior script -->
     <script src="js/responsive.js" defer></script>
     <!-- Include navigation state management script -->
@@ -244,7 +247,7 @@
                 });
             })
             .then(res => res.json())
-            .then(data => {
+            .then(async (data) => {
                 console.log('Google signup response:', data);
 
                 // Hide loading
@@ -273,22 +276,26 @@
                         localStorage.setItem('verified', data.verified ? 'true' : 'false');
                         localStorage.setItem('isGoogleUser', 'true');
 
-                        alert('Google sign-up successful! Welcome to Tridex!');
+                        await tridexSuccess('Google sign-up successful! Welcome to Tridex!', 'Welcome');
                         window.location.href = 'index.html';
                     }
                 } else {
                     // Handle different error cases
                     if (data.message && data.message.includes('User already exists')) {
                         // User already exists, suggest login
-                        if (confirm('An account with this Google email already exists. Would you like to login instead?')) {
+                        const loginInstead = await tridexConfirm(
+                            'An account with this Google email already exists. Would you like to login instead?',
+                            'Account Already Exists'
+                        );
+                        if (loginInstead) {
                             window.location.href = 'login.html';
                         }
                     } else {
-                        alert(data.message || 'Google sign-up failed. Please try again.');
+                        await tridexError(data.message || 'Google sign-up failed. Please try again.', 'Signup Failed');
                     }
                 }
             })
-            .catch(error => {
+            .catch(async (error) => {
                 console.error('Google signup error:', error);
 
                 // Hide loading
@@ -299,9 +306,9 @@
                 // Provide more specific error handling
                 if (error.message && error.message.includes('Failed to fetch')) {
                     // Server is offline, provide fallback option
-                    const useLocalStorage = confirm(
-                        'Server is currently offline. Would you like to continue with local storage mode?\n\n' +
-                        'Note: Your account will only work on this device until the server comes back online.'
+                    const useLocalStorage = await tridexConfirm(
+                        'Server is currently offline. Would you like to continue with local storage mode?\n\nNote: Your account will only work on this device until the server comes back online.',
+                        'Server Offline'
                     );
 
                     if (useLocalStorage) {
@@ -321,7 +328,11 @@
 
                             if (existingUser) {
                                 // User already exists, suggest login
-                                if (confirm('An account with this Google email already exists. Would you like to login instead?')) {
+                                const loginInstead = await tridexConfirm(
+                                    'An account with this Google email already exists. Would you like to login instead?',
+                                    'Account Already Exists'
+                                );
+                                if (loginInstead) {
                                     window.location.href = 'login.html';
                                 }
                             } else {
@@ -342,18 +353,18 @@
                                 users.push(newUser);
                                 localStorage.setItem('users', JSON.stringify(users));
 
-                                alert('Google sign-up successful! (Local storage mode) Please login.');
+                                await tridexSuccess('Google sign-up successful! (Local storage mode) Please login.', 'Account Created');
                                 window.location.href = 'login.html';
                             }
                         } catch (decodeError) {
                             console.error('Error decoding Google credential:', decodeError);
-                            alert('Google sign-up failed: Unable to process Google account information.');
+                            await tridexError('Google sign-up failed: Unable to process Google account information.', 'Signup Failed');
                         }
                     }
                 } else if (error.message && error.message.includes('CORS')) {
-                    alert('Authentication error: Please try refreshing the page and signing up again.');
+                    await tridexError('Authentication error: Please try refreshing the page and signing up again.', 'Authentication Error');
                 } else {
-                    alert('Google sign-up failed: ' + (error.message || 'Unknown error. Please try again.'));
+                    await tridexError('Google sign-up failed: ' + (error.message || 'Unknown error. Please try again.'), 'Signup Failed');
                 }
             });
         }
@@ -507,21 +518,21 @@
 
             // Basic validation
             if (!username || !password || !email || !phone || !age || !name || !gender) {
-                alert('Please fill in all fields');
+                await tridexWarning('Please fill in all fields', 'Missing Information');
                 hideLoading();
                 return false;
             }
 
             // Password validation
             if (password.length < 6) {
-                alert('Password must be at least 6 characters');
+                await tridexWarning('Password must be at least 6 characters', 'Password Too Short');
                 hideLoading();
                 return false;
             }
 
             // Confirm password
             if (password !== confirmPassword) {
-                alert('Passwords do not match!');
+                await tridexWarning('Passwords do not match!', 'Password Mismatch');
                 hideLoading();
                 return false;
             }
@@ -529,7 +540,7 @@
             // Email validation
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             if (!emailRegex.test(email)) {
-                alert('Please enter a valid email address');
+                await tridexWarning('Please enter a valid email address', 'Invalid Email');
                 hideLoading();
                 return false;
             }
@@ -565,10 +576,10 @@
                 const data = await res.json();
                 if (res.ok) {
                     document.getElementById('signup-success').style.display = 'block';
-                    alert('Sign up successful! Please login.');
+                    await tridexSuccess('Sign up successful! Please login.', 'Account Created');
                     window.location.href = 'login.html';
                 } else {
-                    alert(data.message || 'Signup failed.');
+                    await tridexError(data.message || 'Signup failed.', 'Signup Failed');
                 }
             } catch (err) {
                 console.error('Signup error:', err);
@@ -589,7 +600,7 @@
                     );
 
                     if (userExists) {
-                        alert('User with this username or email already exists');
+                        await tridexError('User with this username or email already exists', 'User Already Exists');
                         hideLoading();
                         return;
                     }
@@ -600,10 +611,10 @@
                     localStorage.setItem('users', JSON.stringify(users));
 
                     document.getElementById('signup-success').style.display = 'block';
-                    alert('Sign up successful! (Local storage mode) Please login.');
+                    await tridexSuccess('Sign up successful! (Local storage mode) Please login.', 'Account Created');
                     window.location.href = 'login.html';
                 } catch (localErr) {
-                    alert('Network error and local storage failed. Please try again.');
+                    await tridexError('Network error and local storage failed. Please try again.', 'Signup Failed');
                 }
             } finally {
                 hideLoading();

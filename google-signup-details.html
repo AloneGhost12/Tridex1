@@ -6,6 +6,9 @@
     <title>Complete Your Profile - Tridex</title>
     <link rel="stylesheet" href="auth.css">
     <link rel="stylesheet" href="css/responsive.css">
+    <!-- Custom Popup System -->
+    <link rel="stylesheet" href="css/custom-popups.css">
+    <script src="js/custom-popups.js"></script>
     <style>
         .details-container {
             max-width: 450px;
@@ -164,7 +167,7 @@
 
             // Validation
             if (!age || !gender || !phone) {
-                alert('Please fill in all required fields');
+                await tridexWarning('Please fill in all required fields', 'Missing Information');
                 return;
             }
 
@@ -245,17 +248,17 @@
 
                     // Show success message with verification status
                     if (data.verified) {
-                        alert('Account created successfully! Welcome to Tridex!');
+                        await tridexSuccess('Account created successfully! Welcome to Tridex!', 'Welcome');
                     } else {
-                        alert('Account created successfully! Your account is pending admin verification. You can still browse products while waiting for approval.');
+                        await tridexSuccess('Account created successfully! Your account is pending admin verification. You can still browse products while waiting for approval.', 'Account Created');
                     }
                     window.location.href = 'index.html';
                 } else {
-                    alert(data.message || 'Registration failed. Please try again.');
+                    await tridexError(data.message || 'Registration failed. Please try again.', 'Registration Failed');
                 }
             } catch (error) {
                 console.error('Registration error:', error);
-                alert('Registration failed. Please check your connection and try again.');
+                await tridexError('Registration failed. Please check your connection and try again.', 'Connection Error');
             } finally {
                 // Hide loading
                 document.getElementById('loading').style.display = 'none';

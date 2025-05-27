@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Profile - Tridex</title>
     <link rel="stylesheet" href="style.css">
+    <!-- Custom Popup System -->
+    <link rel="stylesheet" href="css/custom-popups.css">
+    <script src="js/custom-popups.js"></script>
     <!-- Include the ban system script -->
     <script src="ban-system.js"></script>
     <style>
@@ -1016,7 +1019,11 @@
 
         // Delete address
         async function deleteAddress(addressId) {
-            if (!confirm('Are you sure you want to delete this address?')) {
+            const confirmed = await tridexConfirm(
+                'Are you sure you want to delete this address? This action cannot be undone.',
+                'Delete Address'
+            );
+            if (!confirmed) {
                 return;
             }
 
@@ -1039,10 +1046,10 @@
                 fetchSavedAddresses();
 
                 // Show success message
-                alert('Address deleted successfully');
+                await tridexSuccess('Address deleted successfully', 'Address Deleted');
             } catch (error) {
                 console.error('Error deleting address:', error);
-                alert('Error deleting address. Please try again.');
+                await tridexError('Error deleting address. Please try again.', 'Delete Failed');
             } finally {
                 hideLoading();
             }
@@ -1284,10 +1291,10 @@
                 fetchSavedAddresses();
 
                 // Show success message
-                alert(addressId ? 'Address updated successfully' : 'Address added successfully');
+                await tridexSuccess(addressId ? 'Address updated successfully' : 'Address added successfully', 'Address Saved');
             } catch (error) {
                 console.error('Error saving address:', error);
-                alert('Error saving address. Please try again.');
+                await tridexError('Error saving address. Please try again.', 'Save Failed');
             } finally {
                 hideLoading();
             }
@@ -1554,18 +1561,18 @@
             document.getElementById('profile-picture-input').click();
         });
 
-        document.getElementById('profile-picture-input').addEventListener('change', function(e) {
+        document.getElementById('profile-picture-input').addEventListener('change', async function(e) {
             const file = e.target.files[0];
             if (file) {
                 // Validate file type
                 if (!file.type.startsWith('image/')) {
-                    alert('Please select an image file.');
+                    await tridexWarning('Please select an image file.', 'Invalid File Type');
                     return;
                 }
 
                 // Validate file size (max 5MB)
                 if (file.size > 5 * 1024 * 1024) {
-                    alert('Image size must be less than 5MB.');
+                    await tridexWarning('Image size must be less than 5MB.', 'File Too Large');
                     return;
                 }
 
