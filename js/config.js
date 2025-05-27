@@ -3,8 +3,8 @@
 
 const CONFIG = {
     // Set this to true for local development, false for production
-    isDevelopment: true,
-    
+    isDevelopment: false,
+
     // API endpoints
     endpoints: {
         development: {
@@ -32,7 +32,7 @@ const CONFIG = {
             cloudinary: 'https://tridex1.onrender.com/cloudinary-config'
         }
     },
-    
+
     // Google OAuth Client IDs
     googleClientId: {
         development: '511326319939-431231ifhs4239598gc0d7ba2vc97lms.apps.googleusercontent.com',
@@ -47,22 +47,22 @@ const API = {
         const env = CONFIG.isDevelopment ? 'development' : 'production';
         return CONFIG.endpoints[env][name];
     },
-    
+
     // Get the Google Client ID for current environment
     getGoogleClientId: function() {
         const env = CONFIG.isDevelopment ? 'development' : 'production';
         return CONFIG.googleClientId[env];
     },
-    
+
     // Make a fetch request with automatic endpoint resolution
     fetch: async function(endpointName, options = {}) {
         const url = this.getEndpoint(endpointName);
-        
+
         // Add default headers
         const defaultHeaders = {
             'Content-Type': 'application/json'
         };
-        
+
         const fetchOptions = {
             ...options,
             headers: {
@@ -70,7 +70,7 @@ const API = {
                 ...options.headers
             }
         };
-        
+
         try {
             const response = await fetch(url, fetchOptions);
             return response;
@@ -79,7 +79,7 @@ const API = {
             throw error;
         }
     },
-    
+
     // Make a POST request to any endpoint
     post: async function(endpointName, data, additionalOptions = {}) {
         return this.fetch(endpointName, {
@@ -88,7 +88,7 @@ const API = {
             ...additionalOptions
         });
     },
-    
+
     // Make a GET request to any endpoint
     get: async function(endpointName, additionalOptions = {}) {
         return this.fetch(endpointName, {
@@ -101,16 +101,18 @@ const API = {
 // Auto-detect environment based on current URL
 if (typeof window !== 'undefined') {
     const currentHost = window.location.hostname;
-    
-    // If running on GitHub Pages or a production domain, switch to production
-    if (currentHost.includes('github.io') || currentHost.includes('your-production-domain.com')) {
-        CONFIG.isDevelopment = false;
-        console.log('🌐 Production environment detected');
-    } else if (currentHost === 'localhost' || currentHost === '127.0.0.1') {
+    const currentProtocol = window.location.protocol;
+
+    // If running locally (localhost or file://) and you want to use local server
+    if ((currentHost === 'localhost' || currentHost === '127.0.0.1') && currentProtocol === 'http:') {
         CONFIG.isDevelopment = true;
         console.log('🔧 Development environment detected');
+    } else {
+        // Default to production for file:// protocol and all other cases
+        CONFIG.isDevelopment = false;
+        console.log('🌐 Production environment detected');
     }
-    
+
     console.log(`📡 API Base URL: ${API.getEndpoint('base')}`);
     console.log(`🔑 Google Client ID: ${API.getGoogleClientId()}`);
 }

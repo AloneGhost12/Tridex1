@@ -183,27 +183,50 @@
 
             try {
                 // Get the correct API URL based on environment
-                const apiUrl = window.CONFIG ? window.CONFIG.getApiUrl('auth') : 'http://localhost:3000/auth/google';
+                const apiUrl = window.API ? API.getEndpoint('auth') : 'https://tridex1.onrender.com/auth/google';
                 console.log('Using API URL:', apiUrl);
 
-                // Send complete signup request
-                const response = await fetch(apiUrl, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json'
-                    },
-                    mode: 'cors',
-                    body: JSON.stringify({
-                        credential: googleData.credential,
-                        mode: 'signup',
-                        additionalDetails: {
-                            age: age,
-                            gender: gender,
-                            phone: phone
-                        }
-                    })
-                });
+                // Send complete signup request with fallback
+                let response;
+                try {
+                    response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
+                        },
+                        mode: 'cors',
+                        body: JSON.stringify({
+                            credential: googleData.credential,
+                            mode: 'signup',
+                            additionalDetails: {
+                                age: age,
+                                gender: gender,
+                                phone: phone
+                            }
+                        })
+                    });
+                } catch (fetchError) {
+                    console.log('Primary API failed, trying production server directly...');
+                    // Fallback to production server directly
+                    response = await fetch('https://tridex1.onrender.com/auth/google', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
+                        },
+                        mode: 'cors',
+                        body: JSON.stringify({
+                            credential: googleData.credential,
+                            mode: 'signup',
+                            additionalDetails: {
+                                age: age,
+                                gender: gender,
+                                phone: phone
+                            }
+                        })
+                    });
+                }
 
                 const data = await response.json();
 
