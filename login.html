@@ -66,7 +66,8 @@
                  data-context="signin"
                  data-ux_mode="popup"
                  data-callback="onGoogleSignIn"
-                 data-auto_prompt="false">
+                 data-auto_prompt="false"
+                 data-itp_support="true">
             </div>
             <div class="g_id_signin"
                  data-type="standard"
@@ -80,6 +81,14 @@
         <script src="https://accounts.google.com/gsi/client" async defer></script>
         <script src="js/config.js"></script>
         <script>
+        // Handle COOP errors
+        window.addEventListener('error', function(e) {
+            if (e.message && e.message.includes('Cross-Origin-Opener-Policy')) {
+                console.warn('COOP error detected, this is expected and can be ignored');
+                return true; // Prevent the error from being logged
+            }
+        });
+
         function onGoogleSignIn(response) {
             console.log('Google Sign-In response received');
 
