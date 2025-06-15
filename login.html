@@ -69,18 +69,30 @@
         <a href="#" id="forgot-password-link" style="display:block; margin-top:10px; text-align:right; color:#007bff; text-decoration:underline; cursor:pointer;">Forgot Password?</a>
         <a href="signup.html"><button class="signup-btn" type="button">Sign Up</button></a>
 
-        <!-- Google Sign-In Section (Login) - Temporarily Disabled -->
-        <div style="text-align:center; margin: 20px 0; opacity: 0.6;">
-            <div style="margin-bottom: 10px; color: #666; font-size: 0.9em;">Google Sign-In (Currently Unavailable)</div>
-            <div style="padding: 12px 24px; background: #f8f9fa; border: 2px dashed #dee2e6; border-radius: 8px; color: #6c757d; font-size: 0.9em;">
-                <i class="fas fa-info-circle" style="margin-right: 8px;"></i>
-                Google OAuth is temporarily disabled due to domain authorization requirements.<br>
-                <span style="font-size: 0.8em;">Please use the regular login form above.</span>
+        <!-- Google Sign-In Section (Login) - Re-enabled -->
+        <div style="text-align:center; margin: 20px 0;">
+            <div style="margin-bottom: 10px; color: #333; font-size: 0.9em;">Or sign in with Google</div>
+            <div id="google-signin-container">
+                <div id="g_id_onload"
+                     data-client_id="511326319939-431231ifhs4239598gc0d7ba2vc97lms.apps.googleusercontent.com"
+                     data-context="signin"
+                     data-ux_mode="popup"
+                     data-callback="onGoogleSignIn"
+                     data-auto_prompt="false">
+                </div>
+                <div class="g_id_signin"
+                     data-type="standard"
+                     data-shape="rectangular"
+                     data-theme="outline"
+                     data-text="signin_with"
+                     data-size="large"
+                     data-logo_alignment="left">
+                </div>
             </div>
+            <div id="google-login-status" style="margin-top: 10px; font-size: 0.9em; color: #666;"></div>
         </div>
-        <!-- Google OAuth scripts commented out until domain is properly configured
+        <!-- Google OAuth scripts -->
         <script src="https://accounts.google.com/gsi/client" async defer></script>
-        -->
         <script src="js/config.js"></script>
         <script>
         // Handle COOP errors
@@ -91,19 +103,8 @@
             }
         });
 
-        // Google OAuth temporarily disabled - function disabled
-        function onGoogleSignIn(response) {
-            console.log('Google OAuth is temporarily disabled');
-            // Show user-friendly message instead of processing OAuth
-            if (typeof tridexWarning !== 'undefined') {
-                tridexWarning('Google OAuth is temporarily disabled due to domain authorization requirements. Please use the regular login form.', 'Google OAuth Unavailable');
-            } else {
-                alert('Google OAuth is temporarily disabled. Please use the regular login form.');
-            }
-            return false; // Properly return false instead of bare return
-
-            // Original function commented out until domain authorization is fixed
-            /*
+        // Google OAuth Sign-In Handler - Re-enabled
+        async function onGoogleSignIn(response) {
             console.log('Google Sign-In response received');
 
             // Show loading
@@ -112,30 +113,13 @@
                 loadingOverlay.style.display = 'flex';
             }
 
-            // Google OAuth is disabled - this code should not execute
-            console.log('Google OAuth disabled - this code should not run');
-            return false;
+            try {
+                // Try production server first, then fallback to localhost
+                let apiUrl = 'https://tridex1.onrender.com/auth/google';
+                console.log('Using API URL:', apiUrl);
 
-            // Original code commented out
-            /*
-            // Try production server first, then fallback to localhost
-            let apiUrl = 'https://tridex1.onrender.com/auth/google';
-            console.log('Using API URL:', apiUrl);
-
-            // Send the Google token to your backend for verification and login
-            fetch(apiUrl, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                },
-                mode: 'cors',
-                body: JSON.stringify({ credential: response.credential, mode: 'login' })
-            }).catch(error => {
-                console.log('Production server failed, trying localhost...');
-                // If production fails, try localhost
-                apiUrl = 'http://localhost:3000/auth/google';
-                return fetch(apiUrl, {
+                // Send the Google token to your backend for verification and login
+                const fetchResponse = await fetch(apiUrl, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -143,10 +127,22 @@
                     },
                     mode: 'cors',
                     body: JSON.stringify({ credential: response.credential, mode: 'login' })
+                }).catch(async error => {
+                    console.log('Production server failed, trying localhost...');
+                    // If production fails, try localhost
+                    apiUrl = 'http://localhost:3000/auth/google';
+                    return fetch(apiUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
+                        },
+                        mode: 'cors',
+                        body: JSON.stringify({ credential: response.credential, mode: 'login' })
+                    });
                 });
-            })
-            .then(res => res.json())
-            .then(async (data) => {
+
+                const data = await fetchResponse.json();
                 console.log('Google login response:', data);
 
                 // Hide loading
@@ -175,6 +171,13 @@
                     sessionStorage.removeItem('userBanned');
                     sessionStorage.removeItem('showBanMessage');
 
+                    // Show success message
+                    if (typeof tridexSuccess !== 'undefined') {
+                        await tridexSuccess('Google login successful! Welcome to Tridex!', 'Login Successful');
+                    } else {
+                        alert('Google login successful! Welcome to Tridex!');
+                    }
+
                     // Redirect to home page (Google users cannot access admin panel)
                     window.location.replace('index.html');
                 } else {
@@ -186,19 +189,19 @@
                         window.location.href = 'login.html?banned=true&bannedUser=' + encodeURIComponent(data.username);
                     } else if (data.message && data.message.includes('No account found')) {
                         // No account found, suggest sign up
-                        const createAccount = await tridexConfirm(
-                            'No account found with this Google email. Would you like to create a new account?',
-                            'Account Not Found'
-                        );
+                        const createAccount = confirm('No account found with this Google email. Would you like to create a new account?');
                         if (createAccount) {
                             window.location.href = 'signup.html';
                         }
                     } else {
-                        await tridexError(data.message || 'Google login failed. Please try again.', 'Login Failed');
+                        if (typeof tridexError !== 'undefined') {
+                            await tridexError(data.message || 'Google login failed. Please try again.', 'Login Failed');
+                        } else {
+                            alert(data.message || 'Google login failed. Please try again.');
+                        }
                     }
                 }
-            })
-            .catch(async (error) => {
+            } catch (error) {
                 console.error('Google login error:', error);
 
                 // Hide loading
@@ -209,10 +212,7 @@
                 // Provide more specific error handling
                 if (error.message && error.message.includes('Failed to fetch')) {
                     // Server is offline, provide fallback option
-                    const useLocalStorage = await tridexConfirm(
-                        'Server is currently offline. Would you like to continue with local storage mode?\n\nNote: Your login will only work on this device until the server comes back online.',
-                        'Server Offline'
-                    );
+                    const useLocalStorage = confirm('Server is currently offline. Would you like to continue with local storage mode?\n\nNote: Your login will only work on this device until the server comes back online.');
 
                     if (useLocalStorage) {
                         // Decode the Google credential to get user info
@@ -245,37 +245,51 @@
 
                                 console.log('Google OAuth local login: Admin access explicitly denied for security');
 
-                                await tridexSuccess('Google login successful! (Local storage mode)', 'Login Successful');
+                                alert('Google login successful! (Local storage mode)');
                                 window.location.replace('index.html');
                             } else {
                                 // User doesn't exist, suggest signup
-                                const createAccount = await tridexConfirm(
-                                    'No account found with this Google email. Would you like to create a new account?',
-                                    'Account Not Found'
-                                );
+                                const createAccount = confirm('No account found with this Google email. Would you like to create a new account?');
                                 if (createAccount) {
                                     window.location.href = 'signup.html';
                                 }
                             }
                         } catch (decodeError) {
                             console.error('Error decoding Google credential:', decodeError);
-                            await tridexError('Google login failed: Unable to process Google account information.', 'Login Failed');
+                            alert('Google login failed: Unable to process Google account information.');
                         }
                     }
                 } else {
-                    await tridexError('Google login failed. Please check your internet connection and try again.', 'Connection Error');
+                    alert('Google login failed. Please check your internet connection and try again.');
                 }
-            });
-            */ // End of commented Google OAuth function
+            }
         }
         </script>
     </div>
     <script>
     // --- Prevent back navigation to login page after login ---
     // If user is already logged in, redirect appropriately
-    if (localStorage.getItem('token') && (localStorage.getItem('isLoggedIn') === 'true')) {
+
+    // Development mode detection - disable auto-redirect for testing
+    const isLiveServer = window.location.hostname === '127.0.0.1' ||
+                        window.location.hostname === 'localhost' ||
+                        window.location.port === '5500' ||
+                        window.location.port === '3000';
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const skipAutoRedirect = isLiveServer ||
+                            urlParams.has('dev') ||
+                            urlParams.has('force') ||
+                            urlParams.has('test');
+
+    console.log('Login page - Development mode:', isLiveServer);
+    console.log('Login page - Skip auto-redirect:', skipAutoRedirect);
+
+    if (!skipAutoRedirect && localStorage.getItem('token') && (localStorage.getItem('isLoggedIn') === 'true')) {
         const isAdmin = localStorage.getItem('isAdmin') === 'true';
         const adminLoginMethod = localStorage.getItem('adminLoginMethod');
+
+        console.log('Login page - Auto-redirect triggered');
 
         // Only redirect admin users to admin panel if they have proper admin login method
         if (isAdmin && adminLoginMethod === 'admin_form_login') {
@@ -283,6 +297,8 @@
         } else {
             window.location.replace('index.html');
         }
+    } else if (skipAutoRedirect) {
+        console.log('Login page - Auto-redirect skipped for development');
     }
 
     // --- Handle admin access error messages ---

@@ -187,18 +187,30 @@
         <div id="signup-success" style="color:green; margin-top:10px; display:none;">Account created! <a href="login.html">Go to Login</a></div>
         <a href="login.html" style="display:block;text-align:center;margin-top:12px;">Already have an account? Login</a>
 
-        <!-- Google Sign-Up Section - Temporarily Disabled -->
-        <div style="text-align:center; margin: 20px 0; opacity: 0.6;">
-            <div style="margin-bottom: 10px; color: #666; font-size: 0.9em;">Google Sign-Up (Currently Unavailable)</div>
-            <div style="padding: 12px 24px; background: #f8f9fa; border: 2px dashed #dee2e6; border-radius: 8px; color: #6c757d; font-size: 0.9em;">
-                <i class="fas fa-info-circle" style="margin-right: 8px;"></i>
-                Google OAuth is temporarily disabled due to domain authorization requirements.<br>
-                <span style="font-size: 0.8em;">Please use the regular signup form above.</span>
+        <!-- Google Sign-Up Section - Re-enabled -->
+        <div style="text-align:center; margin: 20px 0;">
+            <div style="margin-bottom: 10px; color: #333; font-size: 0.9em;">Or sign up with Google</div>
+            <div id="google-signup-container">
+                <div id="g_id_onload"
+                     data-client_id="511326319939-431231ifhs4239598gc0d7ba2vc97lms.apps.googleusercontent.com"
+                     data-context="signup"
+                     data-ux_mode="popup"
+                     data-callback="onGoogleSignUp"
+                     data-auto_prompt="false">
+                </div>
+                <div class="g_id_signin"
+                     data-type="standard"
+                     data-shape="rectangular"
+                     data-theme="outline"
+                     data-text="signup_with"
+                     data-size="large"
+                     data-logo_alignment="left">
+                </div>
             </div>
+            <div id="google-signup-status" style="margin-top: 10px; font-size: 0.9em; color: #666;"></div>
         </div>
-        <!-- Google OAuth scripts commented out until domain is properly configured
+        <!-- Google OAuth scripts -->
         <script src="https://accounts.google.com/gsi/client" async defer></script>
-        -->
         <script src="js/config.js"></script>
         <script>
         // Handle COOP errors
