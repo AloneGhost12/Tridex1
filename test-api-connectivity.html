@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Connectivity Test - Tridex</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .warning { background-color: #fff3cd; border-color: #ffeaa7; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background-color: #0056b3; }
+        .log {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 3px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Tridex API Connectivity Test</h1>
+        
+        <div class="test-section info">
+            <h3>Environment Detection</h3>
+            <p><strong>Current URL:</strong> <span id="current-url"></span></p>
+            <p><strong>Hostname:</strong> <span id="hostname"></span></p>
+            <p><strong>Protocol:</strong> <span id="protocol"></span></p>
+            <p><strong>Detected Base URL:</strong> <span id="base-url"></span></p>
+        </div>
+
+        <div class="test-section">
+            <h3>API Endpoint Tests</h3>
+            <button onclick="testAllEndpoints()">🚀 Test All Endpoints</button>
+            <button onclick="testCategories()">📂 Test Categories</button>
+            <button onclick="testProducts()">📦 Test Products</button>
+            <button onclick="testWishlists()">❤️ Test Wishlists</button>
+            <button onclick="clearLog()">🗑️ Clear Log</button>
+        </div>
+
+        <div class="test-section">
+            <h3>Test Results</h3>
+            <div id="test-log" class="log">Click "Test All Endpoints" to start testing...</div>
+        </div>
+
+        <div class="test-section warning">
+            <h3>⚠️ Troubleshooting Tips</h3>
+            <ul>
+                <li><strong>If all tests fail:</strong> Your production server might be down or sleeping</li>
+                <li><strong>If you want to test locally:</strong> Start your Node.js server with <code>node server.js</code></li>
+                <li><strong>CORS errors:</strong> Normal when testing from file:// protocol</li>
+                <li><strong>404 errors:</strong> Check if the endpoint exists on your server</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // Get base URL function (consistent with your app)
+        function getBaseUrl() {
+            if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                return 'http://localhost:3000';
+            } else if (window.location.hostname.includes('onrender.com')) {
+                return 'https://tridex1.onrender.com';
+            } else if (window.location.hostname.includes('github.io') || window.location.protocol === 'file:') {
+                return 'https://tridex1.onrender.com';
+            } else {
+                return 'https://tridex1.onrender.com';
+            }
+        }
+
+        function log(message, type = 'info') {
+            const logElement = document.getElementById('test-log');
+            const timestamp = new Date().toLocaleTimeString();
+            const prefix = type === 'error' ? '❌' : type === 'success' ? '✅' : type === 'warning' ? '⚠️' : 'ℹ️';
+            logElement.textContent += `[${timestamp}] ${prefix} ${message}\n`;
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+
+        function clearLog() {
+            document.getElementById('test-log').textContent = '';
+        }
+
+        async function testEndpoint(name, url, options = {}) {
+            try {
+                log(`Testing ${name}: ${url}`);
+                const response = await fetch(url, {
+                    method: 'GET',
+                    ...options
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log(`${name}: SUCCESS (${response.status}) - ${JSON.stringify(data).substring(0, 100)}...`, 'success');
+                    return true;
+                } else {
+                    log(`${name}: FAILED (${response.status}) - ${response.statusText}`, 'error');
+                    return false;
+                }
+            } catch (error) {
+                log(`${name}: ERROR - ${error.message}`, 'error');
+                return false;
+            }
+        }
+
+        async function testCategories() {
+            const baseUrl = getBaseUrl();
+            return await testEndpoint('Categories', `${baseUrl}/categories`);
+        }
+
+        async function testProducts() {
+            const baseUrl = getBaseUrl();
+            return await testEndpoint('Products', `${baseUrl}/products`);
+        }
+
+        async function testWishlists() {
+            const baseUrl = getBaseUrl();
+            const userId = localStorage.getItem('userId') || 'test-user-id';
+            return await testEndpoint('Wishlists', `${baseUrl}/wishlists`, {
+                headers: { 'userid': userId }
+            });
+        }
+
+        async function testAllEndpoints() {
+            clearLog();
+            log('🚀 Starting comprehensive API test...');
+            
+            const baseUrl = getBaseUrl();
+            log(`Using base URL: ${baseUrl}`);
+            
+            const tests = [
+                () => testCategories(),
+                () => testProducts(),
+                () => testWishlists(),
+                () => testEndpoint('Search Filters', `${baseUrl}/products/search/filters`),
+                () => testEndpoint('Search Suggestions', `${baseUrl}/products/search/suggestions?q=test&limit=5`)
+            ];
+
+            let passed = 0;
+            let total = tests.length;
+
+            for (const test of tests) {
+                if (await test()) {
+                    passed++;
+                }
+                // Small delay between tests
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
+
+            log(`\n📊 Test Summary: ${passed}/${total} tests passed`, passed === total ? 'success' : 'warning');
+            
+            if (passed === 0) {
+                log('🔥 All tests failed! Your server might be down or unreachable.', 'error');
+            } else if (passed < total) {
+                log('⚠️ Some tests failed. Check individual results above.', 'warning');
+            } else {
+                log('🎉 All tests passed! Your API is working correctly.', 'success');
+            }
+        }
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('current-url').textContent = window.location.href;
+            document.getElementById('hostname').textContent = window.location.hostname;
+            document.getElementById('protocol').textContent = window.location.protocol;
+            document.getElementById('base-url').textContent = getBaseUrl();
+        });
+    </script>
+</body>
+</html>

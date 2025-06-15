@@ -866,9 +866,12 @@ class AdvancedSearch {
         } else if (window.location.hostname.includes('onrender.com')) {
             // Production on Render
             return 'https://tridex1.onrender.com';
+        } else if (window.location.hostname.includes('github.io') || window.location.protocol === 'file:') {
+            // GitHub Pages or file:// protocol - use production server
+            return 'https://tridex1.onrender.com';
         } else {
-            // Default to current origin
-            return window.location.origin;
+            // Default to production server for any other case
+            return 'https://tridex1.onrender.com';
         }
     }
 

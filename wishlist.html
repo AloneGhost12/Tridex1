@@ -534,9 +534,15 @@
     <script>
         // Get base URL function
         function getBaseUrl() {
-            return window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-                ? 'http://localhost:3000'
-                : 'https://tridex-backend.onrender.com';
+            if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                return 'http://localhost:3000';
+            } else if (window.location.hostname.includes('onrender.com')) {
+                return 'https://tridex1.onrender.com';
+            } else if (window.location.hostname.includes('github.io') || window.location.protocol === 'file:') {
+                return 'https://tridex1.onrender.com';
+            } else {
+                return 'https://tridex1.onrender.com';
+            }
         }
 
         // Page-specific initialization
