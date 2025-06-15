@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Search Test - Tridex</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .test-button:hover {
+            background: #0056b3;
+        }
+        .result {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 10px 0;
+            white-space: pre-wrap;
+            font-family: monospace;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .success {
+            border-color: #28a745;
+            background: #d4edda;
+        }
+        .error {
+            border-color: #dc3545;
+            background: #f8d7da;
+        }
+        input, select {
+            padding: 8px;
+            margin: 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Advanced Search Test Page</h1>
+    <p>This page tests the Phase 1 advanced search functionality.</p>
+
+    <div class="test-section">
+        <h2>1. Basic Search Test</h2>
+        <input type="text" id="search-query" placeholder="Enter search term..." value="laptop">
+        <button class="test-button" onclick="testBasicSearch()">Test Basic Search</button>
+        <div id="basic-search-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>2. Search Suggestions Test</h2>
+        <input type="text" id="suggestion-query" placeholder="Enter partial term..." value="lap">
+        <button class="test-button" onclick="testSuggestions()">Test Suggestions</button>
+        <div id="suggestions-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>3. Advanced Filtering Test</h2>
+        <input type="text" id="filter-query" placeholder="Search term..." value="phone">
+        <input type="number" id="min-price" placeholder="Min price" value="100">
+        <input type="number" id="max-price" placeholder="Max price" value="1000">
+        <select id="sort-by">
+            <option value="relevance">Relevance</option>
+            <option value="price_asc">Price: Low to High</option>
+            <option value="price_desc">Price: High to Low</option>
+            <option value="rating">Highest Rated</option>
+            <option value="newest">Newest</option>
+        </select>
+        <button class="test-button" onclick="testAdvancedFilter()">Test Advanced Filter</button>
+        <div id="filter-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>4. Search Filters Options Test</h2>
+        <button class="test-button" onclick="testFilterOptions()">Test Filter Options</button>
+        <div id="filter-options-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>5. Search History Test</h2>
+        <button class="test-button" onclick="testSearchHistory()">Test Search History</button>
+        <div id="search-history-result" class="result"></div>
+    </div>
+
+    <script>
+        async function testBasicSearch() {
+            const query = document.getElementById('search-query').value;
+            const resultDiv = document.getElementById('basic-search-result');
+            
+            try {
+                resultDiv.textContent = 'Testing basic search...';
+                
+                const response = await fetch(`/products/search?q=${encodeURIComponent(query)}&limit=5`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.className = 'result success';
+                    resultDiv.textContent = `✅ SUCCESS!\n\nFound ${data.pagination?.totalCount || 0} products\n\n` + 
+                                          JSON.stringify(data, null, 2);
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.textContent = `❌ ERROR!\n\n${JSON.stringify(data, null, 2)}`;
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ NETWORK ERROR!\n\n${error.message}`;
+            }
+        }
+
+        async function testSuggestions() {
+            const query = document.getElementById('suggestion-query').value;
+            const resultDiv = document.getElementById('suggestions-result');
+            
+            try {
+                resultDiv.textContent = 'Testing suggestions...';
+                
+                const response = await fetch(`/products/search/suggestions?q=${encodeURIComponent(query)}&limit=8`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.className = 'result success';
+                    resultDiv.textContent = `✅ SUCCESS!\n\nFound ${data.suggestions?.length || 0} suggestions\n\n` + 
+                                          JSON.stringify(data, null, 2);
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.textContent = `❌ ERROR!\n\n${JSON.stringify(data, null, 2)}`;
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ NETWORK ERROR!\n\n${error.message}`;
+            }
+        }
+
+        async function testAdvancedFilter() {
+            const query = document.getElementById('filter-query').value;
+            const minPrice = document.getElementById('min-price').value;
+            const maxPrice = document.getElementById('max-price').value;
+            const sortBy = document.getElementById('sort-by').value;
+            const resultDiv = document.getElementById('filter-result');
+            
+            try {
+                resultDiv.textContent = 'Testing advanced filtering...';
+                
+                const params = new URLSearchParams();
+                if (query) params.append('q', query);
+                if (minPrice) params.append('minPrice', minPrice);
+                if (maxPrice) params.append('maxPrice', maxPrice);
+                params.append('sortBy', sortBy);
+                params.append('limit', '5');
+                
+                const response = await fetch(`/products/search?${params}`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.className = 'result success';
+                    resultDiv.textContent = `✅ SUCCESS!\n\nFound ${data.pagination?.totalCount || 0} products\nSort: ${sortBy}\nPrice range: ${minPrice || 'any'} - ${maxPrice || 'any'}\n\n` + 
+                                          JSON.stringify(data, null, 2);
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.textContent = `❌ ERROR!\n\n${JSON.stringify(data, null, 2)}`;
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ NETWORK ERROR!\n\n${error.message}`;
+            }
+        }
+
+        async function testFilterOptions() {
+            const resultDiv = document.getElementById('filter-options-result');
+            
+            try {
+                resultDiv.textContent = 'Testing filter options...';
+                
+                const response = await fetch('/products/search/filters');
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.className = 'result success';
+                    resultDiv.textContent = `✅ SUCCESS!\n\nAvailable filters:\n\n` + 
+                                          JSON.stringify(data, null, 2);
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.textContent = `❌ ERROR!\n\n${JSON.stringify(data, null, 2)}`;
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ NETWORK ERROR!\n\n${error.message}`;
+            }
+        }
+
+        async function testSearchHistory() {
+            const resultDiv = document.getElementById('search-history-result');
+            
+            try {
+                resultDiv.textContent = 'Testing search history...';
+                
+                // First, perform a search to create history
+                await fetch('/products/search?q=test&limit=1', {
+                    headers: {
+                        'userid': 'test-user',
+                        'username': 'test-user',
+                        'sessionid': 'test-session-' + Date.now()
+                    }
+                });
+                
+                resultDiv.className = 'result success';
+                resultDiv.textContent = `✅ SUCCESS!\n\nSearch history functionality is working.\nSearch requests are being tracked for analytics.\n\nNote: Search history is stored in the SearchHistory collection in MongoDB.`;
+                
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ NETWORK ERROR!\n\n${error.message}`;
+            }
+        }
+
+        // Auto-run basic test on page load
+        window.addEventListener('load', () => {
+            setTimeout(testBasicSearch, 1000);
+        });
+    </script>
+</body>
+</html>

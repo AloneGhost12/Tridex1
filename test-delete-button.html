@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Delete Button</title>
+    <link rel="stylesheet" href="css/wishlist.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+    <h1>Delete Button Test</h1>
+    
+    <div class="test-section">
+        <h2>Test 1: Static Wishlist Card with Delete Button</h2>
+        <div class="wishlist-card" data-wishlist-id="test123">
+            <div class="wishlist-header">
+                <div class="wishlist-title">
+                    <h3>Test Wishlist</h3>
+                    <span class="default-badge">Default</span>
+                </div>
+                <div class="wishlist-actions">
+                    <span class="item-count">5 items</span>
+                    <button class="delete-wishlist" 
+                            data-wishlist-id="test123" 
+                            data-wishlist-name="Test Wishlist"
+                            title="Delete wishlist">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+            <p class="wishlist-description">This is a test wishlist to verify the delete button appears correctly.</p>
+            <div class="wishlist-items">
+                <p>Items would appear here...</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 2: Load Real Wishlists</h2>
+        <button onclick="loadWishlists()">Load Real Wishlists</button>
+        <div id="real-wishlists-container"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 3: Check User Login Status</h2>
+        <button onclick="checkLoginStatus()">Check Login Status</button>
+        <div id="login-status"></div>
+    </div>
+
+    <script>
+        // Set up a test user ID
+        localStorage.setItem('userId', '682450cab3ab649b5b17ec78');
+        localStorage.setItem('isLoggedIn', 'true');
+
+        // Test delete button click
+        document.addEventListener('click', (e) => {
+            if (e.target.closest('.delete-wishlist')) {
+                const btn = e.target.closest('.delete-wishlist');
+                const wishlistId = btn.dataset.wishlistId;
+                const wishlistName = btn.dataset.wishlistName;
+                
+                alert(`Delete button clicked!\nWishlist ID: ${wishlistId}\nWishlist Name: ${wishlistName}`);
+                
+                // Test actual deletion
+                if (confirm('Do you want to test the actual delete API call?')) {
+                    testDeleteAPI(wishlistId, wishlistName);
+                }
+            }
+        });
+
+        async function testDeleteAPI(wishlistId, wishlistName) {
+            try {
+                const response = await fetch(`http://localhost:3000/wishlists/${wishlistId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'userid': localStorage.getItem('userId')
+                    }
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    alert('✅ Delete API call successful!\n\n' + JSON.stringify(data, null, 2));
+                } else {
+                    alert('❌ Delete API call failed!\n\n' + JSON.stringify(data, null, 2));
+                }
+            } catch (error) {
+                alert('❌ Error calling delete API: ' + error.message);
+            }
+        }
+
+        async function loadWishlists() {
+            const container = document.getElementById('real-wishlists-container');
+            container.innerHTML = 'Loading...';
+            
+            try {
+                const response = await fetch('http://localhost:3000/wishlists', {
+                    headers: {
+                        'userid': localStorage.getItem('userId')
+                    }
+                });
+
+                const data = await response.json();
+                
+                if (response.ok && data.wishlists) {
+                    container.innerHTML = data.wishlists.map(wishlist => `
+                        <div class="wishlist-card" data-wishlist-id="${wishlist._id}">
+                            <div class="wishlist-header">
+                                <div class="wishlist-title">
+                                    <h3>${wishlist.name}</h3>
+                                    ${wishlist.isDefault ? '<span class="default-badge">Default</span>' : ''}
+                                </div>
+                                <div class="wishlist-actions">
+                                    <span class="item-count">${wishlist.items.length} items</span>
+                                    <button class="delete-wishlist" 
+                                            data-wishlist-id="${wishlist._id}" 
+                                            data-wishlist-name="${wishlist.name}"
+                                            title="Delete wishlist">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            ${wishlist.description ? `<p class="wishlist-description">${wishlist.description}</p>` : ''}
+                            <div class="wishlist-items">
+                                <p>${wishlist.items.length} items in this wishlist</p>
+                            </div>
+                        </div>
+                    `).join('');
+                } else {
+                    container.innerHTML = '❌ Failed to load wishlists: ' + (data.message || 'Unknown error');
+                }
+            } catch (error) {
+                container.innerHTML = '❌ Error loading wishlists: ' + error.message;
+            }
+        }
+
+        function checkLoginStatus() {
+            const statusDiv = document.getElementById('login-status');
+            const userId = localStorage.getItem('userId');
+            const isLoggedIn = localStorage.getItem('isLoggedIn');
+            
+            statusDiv.innerHTML = `
+                <p><strong>User ID:</strong> ${userId || 'Not set'}</p>
+                <p><strong>Is Logged In:</strong> ${isLoggedIn || 'Not set'}</p>
+                <p><strong>Status:</strong> ${userId && isLoggedIn === 'true' ? '✅ Logged in' : '❌ Not logged in'}</p>
+            `;
+        }
+
+        // Auto-check login status on load
+        window.addEventListener('load', () => {
+            checkLoginStatus();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,23 @@
+<svg width="192" height="192" viewBox="0 0 192 192" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="192" height="192" fill="#007bff" rx="24"/>
+  
+  <!-- Shopping bag icon -->
+  <g transform="translate(48, 48)">
+    <!-- Bag body -->
+    <path d="M20 40 L76 40 L72 88 L24 88 Z" fill="white" stroke="none"/>
+    
+    <!-- Bag handles -->
+    <path d="M32 40 L32 28 Q32 20 40 20 L56 20 Q64 20 64 28 L64 40" 
+          fill="none" stroke="white" stroke-width="4" stroke-linecap="round"/>
+    
+    <!-- Tridex "T" -->
+    <text x="48" y="70" font-family="Arial, sans-serif" font-size="24" font-weight="bold" 
+          text-anchor="middle" fill="#007bff">T</text>
+  </g>
+  
+  <!-- Small decorative dots -->
+  <circle cx="156" cy="36" r="4" fill="rgba(255,255,255,0.3)"/>
+  <circle cx="36" cy="156" r="4" fill="rgba(255,255,255,0.3)"/>
+  <circle cx="156" cy="156" r="6" fill="rgba(255,255,255,0.2)"/>
+</svg>

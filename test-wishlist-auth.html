@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wishlist Authentication Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background: #f9f9f9;
+        }
+        .result {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            font-family: monospace;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        input {
+            padding: 8px;
+            margin: 5px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            width: 300px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Wishlist Authentication & Delete Button Test</h1>
+    
+    <div class="test-section">
+        <h2>Step 1: Set User Authentication</h2>
+        <input type="text" id="user-id" placeholder="Enter User ID" value="682450cab3ab649b5b17ec78">
+        <button onclick="setUserAuth()">Set User Authentication</button>
+        <div id="auth-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Step 2: Test Wishlist API Access</h2>
+        <button onclick="testWishlistAPI()">Test Wishlist API</button>
+        <div id="api-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Step 3: Test WishlistManager</h2>
+        <button onclick="testWishlistManager()">Test WishlistManager</button>
+        <div id="manager-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Step 4: Simulate Delete Button</h2>
+        <button onclick="simulateDeleteButton()">Simulate Delete Button Click</button>
+        <div id="delete-result" class="result"></div>
+    </div>
+
+    <script>
+        function setUserAuth() {
+            const userId = document.getElementById('user-id').value;
+            const resultDiv = document.getElementById('auth-result');
+            
+            if (!userId) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = '❌ Please enter a user ID';
+                return;
+            }
+            
+            localStorage.setItem('userId', userId);
+            localStorage.setItem('isLoggedIn', 'true');
+            localStorage.setItem('username', 'TestUser');
+            
+            resultDiv.className = 'result success';
+            resultDiv.textContent = `✅ User authentication set:
+User ID: ${userId}
+Is Logged In: true
+Username: TestUser`;
+        }
+
+        async function testWishlistAPI() {
+            const resultDiv = document.getElementById('api-result');
+            resultDiv.textContent = 'Testing wishlist API...';
+            
+            try {
+                const userId = localStorage.getItem('userId');
+                if (!userId) {
+                    resultDiv.className = 'result error';
+                    resultDiv.textContent = '❌ No user ID set. Please set authentication first.';
+                    return;
+                }
+
+                const response = await fetch('http://localhost:3000/wishlists', {
+                    headers: {
+                        'userid': userId
+                    }
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.className = 'result success';
+                    resultDiv.textContent = `✅ Wishlist API working:
+Status: ${response.status}
+Wishlists found: ${data.wishlists ? data.wishlists.length : 0}
+
+Response:
+${JSON.stringify(data, null, 2)}`;
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.textContent = `❌ Wishlist API error:
+Status: ${response.status}
+Error: ${data.message || 'Unknown error'}
+
+Response:
+${JSON.stringify(data, null, 2)}`;
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ Network error: ${error.message}`;
+            }
+        }
+
+        async function testWishlistManager() {
+            const resultDiv = document.getElementById('manager-result');
+            
+            try {
+                // Load the wishlist script if not already loaded
+                if (typeof WishlistManager === 'undefined') {
+                    resultDiv.textContent = 'Loading WishlistManager...';
+                    
+                    const script = document.createElement('script');
+                    script.src = 'js/wishlist.js';
+                    script.onload = () => {
+                        setTimeout(() => testWishlistManagerAfterLoad(), 100);
+                    };
+                    script.onerror = () => {
+                        resultDiv.className = 'result error';
+                        resultDiv.textContent = '❌ Failed to load js/wishlist.js';
+                    };
+                    document.head.appendChild(script);
+                } else {
+                    testWishlistManagerAfterLoad();
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ Error testing WishlistManager: ${error.message}`;
+            }
+        }
+
+        async function testWishlistManagerAfterLoad() {
+            const resultDiv = document.getElementById('manager-result');
+            
+            try {
+                if (typeof WishlistManager === 'undefined') {
+                    resultDiv.className = 'result error';
+                    resultDiv.textContent = '❌ WishlistManager still not available after loading script';
+                    return;
+                }
+
+                const manager = new WishlistManager();
+                await manager.loadUserWishlists();
+                
+                resultDiv.className = 'result success';
+                resultDiv.textContent = `✅ WishlistManager working:
+Wishlists loaded: ${manager.wishlists ? manager.wishlists.length : 0}
+Manager instance: ${typeof manager}
+
+Wishlists:
+${JSON.stringify(manager.wishlists, null, 2)}`;
+                
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ WishlistManager error: ${error.message}`;
+            }
+        }
+
+        async function simulateDeleteButton() {
+            const resultDiv = document.getElementById('delete-result');
+            
+            try {
+                if (typeof WishlistManager === 'undefined') {
+                    resultDiv.className = 'result error';
+                    resultDiv.textContent = '❌ WishlistManager not loaded. Please test WishlistManager first.';
+                    return;
+                }
+
+                const manager = new WishlistManager();
+                
+                // Get the first wishlist for testing
+                await manager.loadUserWishlists();
+                
+                if (!manager.wishlists || manager.wishlists.length === 0) {
+                    resultDiv.className = 'result error';
+                    resultDiv.textContent = '❌ No wishlists found to test delete functionality';
+                    return;
+                }
+
+                const testWishlist = manager.wishlists[0];
+                
+                resultDiv.className = 'result success';
+                resultDiv.textContent = `✅ Delete button simulation ready:
+Test Wishlist: ${testWishlist.name}
+Wishlist ID: ${testWishlist._id}
+Is Default: ${testWishlist.isDefault}
+
+Click the button below to test actual deletion:`;
+                
+                // Create a test delete button
+                const deleteBtn = document.createElement('button');
+                deleteBtn.textContent = `Delete "${testWishlist.name}"`;
+                deleteBtn.style.backgroundColor = '#dc3545';
+                deleteBtn.onclick = async () => {
+                    const success = await manager.deleteWishlist(testWishlist._id, testWishlist.name);
+                    if (success) {
+                        resultDiv.textContent += '\n\n✅ Delete operation successful!';
+                    } else {
+                        resultDiv.textContent += '\n\n❌ Delete operation failed!';
+                    }
+                };
+                
+                resultDiv.appendChild(document.createElement('br'));
+                resultDiv.appendChild(document.createElement('br'));
+                resultDiv.appendChild(deleteBtn);
+                
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ Error simulating delete: ${error.message}`;
+            }
+        }
+
+        // Auto-set authentication on page load
+        window.addEventListener('load', () => {
+            setUserAuth();
+        });
+    </script>
+</body>
+</html>

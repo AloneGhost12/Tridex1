@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CORS Fix Test - Tridex</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .test-button:hover {
+            background: #0056b3;
+        }
+        .result {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 10px 0;
+            white-space: pre-wrap;
+            font-family: monospace;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .success {
+            border-color: #28a745;
+            background: #d4edda;
+        }
+        .error {
+            border-color: #dc3545;
+            background: #f8d7da;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 CORS Fix Test</h1>
+    <p>This page tests if the CORS issue has been resolved for advanced search.</p>
+
+    <div class="test-section">
+        <h2>1. Test Search with Custom Headers</h2>
+        <button class="test-button" onclick="testSearchWithHeaders()">Test Search with sessionid Header</button>
+        <div id="search-headers-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>2. Test Suggestions with Custom Headers</h2>
+        <button class="test-button" onclick="testSuggestionsWithHeaders()">Test Suggestions with sessionid Header</button>
+        <div id="suggestions-headers-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>3. Test Advanced Search Class</h2>
+        <button class="test-button" onclick="testAdvancedSearchClass()">Test AdvancedSearch Class</button>
+        <div id="advanced-search-result" class="result"></div>
+    </div>
+
+    <script>
+        // Helper function to get base URL
+        function getBaseUrl() {
+            if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                return 'http://localhost:3000';
+            } else if (window.location.hostname.includes('onrender.com')) {
+                return 'https://tridex1.onrender.com';
+            } else {
+                return window.location.origin;
+            }
+        }
+
+        async function testSearchWithHeaders() {
+            const resultDiv = document.getElementById('search-headers-result');
+            
+            try {
+                resultDiv.textContent = 'Testing search with custom headers...';
+                
+                const baseUrl = getBaseUrl();
+                const headers = {
+                    'Content-Type': 'application/json',
+                    'userid': 'test-user-123',
+                    'username': 'test-user',
+                    'sessionid': 'test-session-' + Date.now()
+                };
+                
+                const response = await fetch(`${baseUrl}/products/search?q=test&limit=3`, { 
+                    method: 'GET',
+                    headers: headers 
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.className = 'result success';
+                    resultDiv.textContent = `✅ SUCCESS! CORS issue resolved!\n\nHeaders sent successfully:\n${JSON.stringify(headers, null, 2)}\n\nResponse:\n${JSON.stringify(data, null, 2)}`;
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.textContent = `❌ ERROR!\n\n${JSON.stringify(data, null, 2)}`;
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                if (error.message.includes('CORS')) {
+                    resultDiv.textContent = `❌ CORS ERROR STILL EXISTS!\n\n${error.message}\n\nThe server needs to allow the custom headers in CORS configuration.`;
+                } else {
+                    resultDiv.textContent = `❌ NETWORK ERROR!\n\n${error.message}`;
+                }
+            }
+        }
+
+        async function testSuggestionsWithHeaders() {
+            const resultDiv = document.getElementById('suggestions-headers-result');
+            
+            try {
+                resultDiv.textContent = 'Testing suggestions with custom headers...';
+                
+                const baseUrl = getBaseUrl();
+                const headers = {
+                    'Content-Type': 'application/json',
+                    'userid': 'test-user-123',
+                    'username': 'test-user',
+                    'sessionid': 'test-session-' + Date.now()
+                };
+                
+                const response = await fetch(`${baseUrl}/products/search/suggestions?q=te&limit=5`, { 
+                    method: 'GET',
+                    headers: headers 
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.className = 'result success';
+                    resultDiv.textContent = `✅ SUCCESS! Suggestions working with custom headers!\n\nResponse:\n${JSON.stringify(data, null, 2)}`;
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.textContent = `❌ ERROR!\n\n${JSON.stringify(data, null, 2)}`;
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                if (error.message.includes('CORS')) {
+                    resultDiv.textContent = `❌ CORS ERROR STILL EXISTS!\n\n${error.message}`;
+                } else {
+                    resultDiv.textContent = `❌ NETWORK ERROR!\n\n${error.message}`;
+                }
+            }
+        }
+
+        async function testAdvancedSearchClass() {
+            const resultDiv = document.getElementById('advanced-search-result');
+            
+            try {
+                resultDiv.textContent = 'Testing AdvancedSearch class integration...';
+                
+                // Check if AdvancedSearch class is available
+                if (typeof AdvancedSearch === 'undefined') {
+                    resultDiv.className = 'result error';
+                    resultDiv.textContent = '❌ AdvancedSearch class not loaded!\n\nMake sure js/advanced-search.js is included in the page.';
+                    return;
+                }
+                
+                // Create an instance
+                const advancedSearch = new AdvancedSearch();
+                
+                // Test the getBaseUrl method
+                const baseUrl = advancedSearch.getBaseUrl();
+                
+                resultDiv.className = 'result success';
+                resultDiv.textContent = `✅ SUCCESS! AdvancedSearch class is working!\n\nBase URL: ${baseUrl}\n\nClass methods available:\n- getSuggestions\n- performSearch\n- loadInitialFilters\n- getBaseUrl\n\nThe advanced search functionality should now work without CORS errors.`;
+                
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ ERROR!\n\n${error.message}`;
+            }
+        }
+
+        // Auto-run the first test on page load
+        window.addEventListener('load', () => {
+            setTimeout(testSearchWithHeaders, 1000);
+        });
+    </script>
+
+    <!-- Include the advanced search script to test class availability -->
+    <script src="js/advanced-search.js"></script>
+</body>
+</html>

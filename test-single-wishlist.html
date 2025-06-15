@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Single Wishlist - Tridex</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="css/wishlist.css">
+    <link rel="stylesheet" href="css/custom-popups.css">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        
+        .test-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .test-header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #007bff;
+        }
+        
+        .test-header h1 {
+            color: #007bff;
+            margin: 0;
+        }
+        
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        
+        .test-section h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        
+        .test-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        
+        .test-button:hover {
+            background: #0056b3;
+        }
+        
+        .test-button.success {
+            background: #28a745;
+        }
+        
+        .test-button.success:hover {
+            background: #218838;
+        }
+        
+        .test-results {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            margin-top: 10px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        
+        .wishlist-link {
+            display: inline-block;
+            background: #28a745;
+            color: white;
+            padding: 15px 30px;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 10px;
+            font-weight: bold;
+        }
+        
+        .wishlist-link:hover {
+            background: #218838;
+            color: white;
+        }
+        
+        .product-card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+            background: white;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .product-info {
+            flex: 1;
+        }
+        
+        .product-name {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .product-price {
+            color: #007bff;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        
+        .add-to-wishlist-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .add-to-wishlist-btn:hover {
+            background: #c82333;
+        }
+        
+        .add-to-wishlist-btn.in-wishlist {
+            background: #28a745;
+        }
+        
+        .add-to-wishlist-btn.in-wishlist:hover {
+            background: #218838;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <div class="test-header">
+            <h1><i class="fas fa-heart"></i> Single Wishlist Test</h1>
+            <p>Testing the simplified single wishlist functionality</p>
+        </div>
+
+        <div class="test-section">
+            <h3>1. Authentication Status</h3>
+            <div id="auth-status"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>2. Test Products</h3>
+            <p>Try adding these test products to your wishlist:</p>
+            
+            <div class="product-card">
+                <div class="product-info">
+                    <div class="product-name">Test Product 1</div>
+                    <div class="product-price">₹999</div>
+                </div>
+                <button class="add-to-wishlist-btn" onclick="testAddToWishlist('test-product-1')">
+                    <i class="far fa-heart"></i>
+                    Add to Wishlist
+                </button>
+            </div>
+            
+            <div class="product-card">
+                <div class="product-info">
+                    <div class="product-name">Test Product 2</div>
+                    <div class="product-price">₹1,499</div>
+                </div>
+                <button class="add-to-wishlist-btn" onclick="testAddToWishlist('test-product-2')">
+                    <i class="far fa-heart"></i>
+                    Add to Wishlist
+                </button>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>3. Wishlist Operations</h3>
+            <button class="test-button" onclick="loadWishlist()">Load Wishlist</button>
+            <button class="test-button" onclick="checkWishlistCount()">Check Count</button>
+            <div id="wishlist-results" class="test-results">
+                Click "Load Wishlist" to see your wishlist items...
+            </div>
+        </div>
+
+        <div class="test-section" style="text-align: center;">
+            <h3>View Full Wishlist Page</h3>
+            <a href="wishlist.html" class="wishlist-link">
+                <i class="fas fa-heart"></i> Open Wishlist Page
+            </a>
+            <a href="index.html" class="wishlist-link" style="background: #6c757d;">
+                <i class="fas fa-home"></i> Back to Home
+            </a>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/custom-popups.js"></script>
+    <script src="js/wishlist.js"></script>
+    
+    <script>
+        let wishlistManager;
+        
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Initializing single wishlist test...');
+            
+            // Initialize wishlist manager
+            wishlistManager = new WishlistManager();
+            
+            checkAuthStatus();
+        });
+
+        function checkAuthStatus() {
+            const authStatus = document.getElementById('auth-status');
+            const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+            const username = localStorage.getItem('username');
+            const userId = localStorage.getItem('userId');
+            
+            let html = '';
+            
+            if (isLoggedIn && username) {
+                html += `<div style="color: green;">✅ Logged in as: ${username}</div>`;
+                if (userId) {
+                    html += `<div style="color: green;">✅ User ID: ${userId}</div>`;
+                } else {
+                    html += `<div style="color: orange;">⚠️ User ID missing (will be fetched automatically)</div>`;
+                }
+            } else {
+                html += `<div style="color: red;">❌ Not logged in</div>`;
+                html += `<div><a href="login.html" style="color: #007bff;">Please log in first</a></div>`;
+            }
+            
+            authStatus.innerHTML = html;
+        }
+
+        async function testAddToWishlist(productId) {
+            const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+            
+            if (!isLoggedIn) {
+                if (typeof window.tridexError === 'function') {
+                    window.tridexError('Please log in to add items to wishlist');
+                } else {
+                    alert('Please log in to add items to wishlist');
+                }
+                return;
+            }
+
+            try {
+                console.log('Testing add to wishlist for product:', productId);
+                await wishlistManager.addToDefaultWishlist(productId);
+                
+                // Update button state
+                const button = event.target.closest('.add-to-wishlist-btn');
+                button.classList.add('in-wishlist');
+                button.innerHTML = '<i class="fas fa-heart"></i> In Wishlist';
+                
+            } catch (error) {
+                console.error('Error adding to wishlist:', error);
+                if (typeof window.tridexError === 'function') {
+                    window.tridexError('Failed to add to wishlist');
+                } else {
+                    alert('Failed to add to wishlist');
+                }
+            }
+        }
+
+        async function loadWishlist() {
+            const results = document.getElementById('wishlist-results');
+            results.innerHTML = 'Loading wishlist...';
+            
+            try {
+                await wishlistManager.loadUserWishlists();
+                
+                const wishlists = wishlistManager.wishlists;
+                let html = '';
+                
+                if (wishlists.length === 0) {
+                    html = 'No wishlists found. Try adding a product first.';
+                } else {
+                    html = `Found ${wishlists.length} wishlist(s):\n\n`;
+                    
+                    wishlists.forEach((wishlist, index) => {
+                        html += `Wishlist ${index + 1}: ${wishlist.name}\n`;
+                        html += `- Items: ${wishlist.items.length}\n`;
+                        html += `- Default: ${wishlist.isDefault ? 'Yes' : 'No'}\n`;
+                        html += `- ID: ${wishlist._id}\n\n`;
+                        
+                        if (wishlist.items.length > 0) {
+                            html += 'Items:\n';
+                            wishlist.items.forEach((item, itemIndex) => {
+                                html += `  ${itemIndex + 1}. Product ID: ${item.productId}\n`;
+                                html += `     Added: ${new Date(item.addedAt).toLocaleDateString()}\n`;
+                            });
+                            html += '\n';
+                        }
+                    });
+                }
+                
+                results.innerHTML = html;
+                
+            } catch (error) {
+                console.error('Error loading wishlist:', error);
+                results.innerHTML = `Error loading wishlist: ${error.message}`;
+            }
+        }
+
+        function checkWishlistCount() {
+            const count = wishlistManager.getTotalItemCount();
+            const results = document.getElementById('wishlist-results');
+            results.innerHTML = `Total items in wishlist: ${count}`;
+        }
+    </script>
+</body>
+</html>

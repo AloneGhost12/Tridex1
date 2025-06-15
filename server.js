@@ -13,6 +13,9 @@ const ChatInteraction = require('./models/ChatInteraction');
 const ContactMessage = require('./models/ContactMessage');
 const Order = require('./models/Order');
 const Review = require('./models/Review');
+const SearchHistory = require('./models/SearchHistory');
+const Wishlist = require('./models/Wishlist');
+const Notification = require('./models/Notification');
 const { generateProductSummary } = require('./utils/aiSummaryGenerator');
 
 // Load environment variables
@@ -55,7 +58,7 @@ app.use(cors({
         }
     },
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Username', 'X-Requested-With', 'Accept', 'Origin'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Username', 'X-Requested-With', 'Accept', 'Origin', 'userid', 'username', 'sessionid'],
     exposedHeaders: ['Content-Type', 'Authorization'],
     // Don't use credentials with wildcard origin
     credentials: false
@@ -80,7 +83,7 @@ app.use((req, res, next) => {
     res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
 
     // Allow specific headers
-    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, X-Username');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, X-Username, userid, username, sessionid');
 
     // Fix COOP policy for Google OAuth
     res.header('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
@@ -97,6 +100,32 @@ app.use((req, res, next) => {
     next();
 });
 app.use(express.json());
+
+// Handle legacy product.html redirects
+app.get('/product.html', (req, res) => {
+    const productId = req.query.id;
+    if (productId) {
+        res.redirect(301, `/product-details.html?id=${productId}`);
+    } else {
+        res.redirect(301, '/product-details.html');
+    }
+});
+
+// Serve static files (HTML, CSS, JS, images)
+app.use(express.static('./', {
+    index: 'index.html',
+    extensions: ['html', 'css', 'js', 'png', 'jpg', 'jpeg', 'gif', 'svg', 'ico'],
+    setHeaders: (res, path) => {
+        // Set proper MIME types
+        if (path.endsWith('.css')) {
+            res.setHeader('Content-Type', 'text/css');
+        } else if (path.endsWith('.js')) {
+            res.setHeader('Content-Type', 'application/javascript');
+        } else if (path.endsWith('.html')) {
+            res.setHeader('Content-Type', 'text/html');
+        }
+    }
+}));
 
 // File upload middleware
 app.use(fileUpload({
@@ -267,6 +296,7 @@ app.post('/login', async (req, res) => {
         // Respond with token and user info
         res.status(200).json({
             message: 'Login successful!',
+            userId: user._id,
             isAdmin: user.isAdmin || false,
             username: user.username,
             verified: user.verified || false,
@@ -420,6 +450,7 @@ app.post('/auth/google', async (req, res) => {
             return res.json({
                 success: true,
                 message: 'Google sign-up successful! Your account is pending admin verification.',
+                userId: user._id,
                 token: 'google-jwt-token-' + Date.now(),
                 username: user.username,
                 isAdmin: user.isAdmin || false,
@@ -456,6 +487,7 @@ app.post('/auth/google', async (req, res) => {
             return res.json({
                 success: true,
                 message: 'Google login successful!',
+                userId: user._id,
                 token: 'google-jwt-token-' + Date.now(),
                 username: user.username,
                 isAdmin: user.isAdmin || false,
@@ -1157,6 +1189,41 @@ app.put('/users/change-password', async (req, res) => {
         res.json({ message: 'Password updated successfully' });
     } catch (err) {
         console.error('Error changing password:', err);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// Get user profile by username (simple endpoint for getting userId)
+app.get('/profile/:username', async (req, res) => {
+    try {
+        const username = req.params.username;
+
+        if (!username) {
+            return res.status(400).json({ message: 'Username is required' });
+        }
+
+        // Find user by username
+        const user = await User.findOne({ username }, '-password');
+
+        // Handle hardcoded users
+        if (!user && (username === 'admin' || username === 'user')) {
+            return res.json({
+                _id: username === 'admin' ? 'admin-id' : 'user-id',
+                username: username,
+                name: username === 'admin' ? 'Administrator' : 'Test User',
+                email: username === 'admin' ? 'admin@example.com' : 'user@example.com',
+                verified: username === 'admin' ? true : false,
+                isAdmin: username === 'admin' ? true : false
+            });
+        }
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        res.json(user);
+    } catch (err) {
+        console.error('Error fetching user profile:', err);
         res.status(500).json({ message: 'Server error' });
     }
 });
@@ -2088,6 +2155,1036 @@ app.put('/products/:id/media', async (req, res) => {
     }
 });
 
+// ========== ADVANCED SEARCH & FILTERING ENDPOINTS ==========
+
+// Advanced product search with filtering and sorting
+app.get('/products/search', async (req, res) => {
+    try {
+        const {
+            q: query,
+            category,
+            minPrice,
+            maxPrice,
+            brand,
+            minRating,
+            isAvailable,
+            sortBy = 'relevance',
+            page = 1,
+            limit = 20,
+            tags
+        } = req.query;
+
+        // Parse numeric values
+        const searchParams = {
+            query: query ? query.trim() : '',
+            category: category || null,
+            minPrice: minPrice ? parseFloat(minPrice) : undefined,
+            maxPrice: maxPrice ? parseFloat(maxPrice) : undefined,
+            brand: brand || null,
+            minRating: minRating ? parseFloat(minRating) : undefined,
+            isAvailable: isAvailable !== undefined ? isAvailable === 'true' : undefined,
+            sortBy,
+            page: parseInt(page),
+            limit: Math.min(parseInt(limit), 100), // Max 100 items per page
+            tags: tags ? (Array.isArray(tags) ? tags : [tags]) : []
+        };
+
+        // Use the advanced search method from Product model
+        const products = await Product.advancedSearch(searchParams);
+
+        // Get total count for pagination
+        const totalQuery = { ...searchParams };
+        delete totalQuery.page;
+        delete totalQuery.limit;
+        const totalProducts = await Product.advancedSearch({ ...totalQuery, limit: 999999 });
+        const totalCount = totalProducts.length;
+
+        // Calculate pagination info
+        const totalPages = Math.ceil(totalCount / searchParams.limit);
+        const hasNextPage = searchParams.page < totalPages;
+        const hasPrevPage = searchParams.page > 1;
+
+        // Record search in history (if user is logged in)
+        const userId = req.headers.userid || null;
+        const username = req.headers.username || 'anonymous';
+        const sessionId = req.headers.sessionid || 'anonymous';
+
+        if (query && query.trim()) {
+            try {
+                const searchRecord = new SearchHistory({
+                    userId: userId || null,
+                    username,
+                    query: query.trim(),
+                    filters: {
+                        category: category || null,
+                        priceRange: {
+                            min: searchParams.minPrice,
+                            max: searchParams.maxPrice
+                        },
+                        brand: brand || null,
+                        rating: searchParams.minRating,
+                        availability: searchParams.isAvailable,
+                        sortBy
+                    },
+                    resultsCount: totalCount,
+                    sessionId,
+                    deviceInfo: {
+                        userAgent: req.headers['user-agent'],
+                        isMobile: /mobile/i.test(req.headers['user-agent']),
+                        platform: req.headers['sec-ch-ua-platform'] || 'unknown'
+                    }
+                });
+
+                await searchRecord.save();
+            } catch (searchHistoryError) {
+                console.error('Error saving search history:', searchHistoryError);
+                // Don't fail the search if history saving fails
+            }
+        }
+
+        res.json({
+            products,
+            pagination: {
+                currentPage: searchParams.page,
+                totalPages,
+                totalCount,
+                hasNextPage,
+                hasPrevPage,
+                limit: searchParams.limit
+            },
+            searchParams,
+            timestamp: new Date().toISOString()
+        });
+
+    } catch (err) {
+        console.error('Error in advanced search:', err);
+        res.status(500).json({
+            message: 'Error performing search',
+            error: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error'
+        });
+    }
+});
+
+// Get search suggestions/autocomplete
+app.get('/products/search/suggestions', async (req, res) => {
+    try {
+        const { q: query, limit = 10 } = req.query;
+
+        if (!query || query.trim().length < 2) {
+            return res.json({ suggestions: [] });
+        }
+
+        const searchTerm = query.trim();
+        const maxSuggestions = Math.min(parseInt(limit), 20);
+
+        // Get product name suggestions
+        const productSuggestions = await Product.aggregate([
+            {
+                $match: {
+                    $or: [
+                        { name: { $regex: searchTerm, $options: 'i' } },
+                        { brand: { $regex: searchTerm, $options: 'i' } },
+                        { tags: { $regex: searchTerm, $options: 'i' } }
+                    ],
+                    isAvailable: true
+                }
+            },
+            {
+                $project: {
+                    name: 1,
+                    brand: 1,
+                    category: 1,
+                    image: 1,
+                    price: 1,
+                    averageRating: 1,
+                    type: { $literal: 'product' }
+                }
+            },
+            {
+                $limit: maxSuggestions
+            }
+        ]);
+
+        // Get category suggestions
+        const categorySuggestions = await Category.aggregate([
+            {
+                $match: {
+                    name: { $regex: searchTerm, $options: 'i' }
+                }
+            },
+            {
+                $project: {
+                    name: 1,
+                    icon: 1,
+                    type: { $literal: 'category' }
+                }
+            },
+            {
+                $limit: 5
+            }
+        ]);
+
+        // Get brand suggestions
+        const brandSuggestions = await Product.aggregate([
+            {
+                $match: {
+                    brand: { $regex: searchTerm, $options: 'i' },
+                    brand: { $ne: '' }
+                }
+            },
+            {
+                $group: {
+                    _id: '$brand',
+                    productCount: { $sum: 1 }
+                }
+            },
+            {
+                $project: {
+                    name: '$_id',
+                    productCount: 1,
+                    type: { $literal: 'brand' }
+                }
+            },
+            {
+                $sort: { productCount: -1 }
+            },
+            {
+                $limit: 5
+            }
+        ]);
+
+        // Get popular search terms
+        const popularSearches = await SearchHistory.aggregate([
+            {
+                $match: {
+                    query: { $regex: searchTerm, $options: 'i' },
+                    timestamp: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } // Last 30 days
+                }
+            },
+            {
+                $group: {
+                    _id: '$query',
+                    searchCount: { $sum: 1 }
+                }
+            },
+            {
+                $project: {
+                    name: '$_id',
+                    searchCount: 1,
+                    type: { $literal: 'search' }
+                }
+            },
+            {
+                $sort: { searchCount: -1 }
+            },
+            {
+                $limit: 3
+            }
+        ]);
+
+        // Combine all suggestions
+        const allSuggestions = [
+            ...productSuggestions,
+            ...categorySuggestions,
+            ...brandSuggestions,
+            ...popularSearches
+        ].slice(0, maxSuggestions);
+
+        res.json({
+            suggestions: allSuggestions,
+            query: searchTerm
+        });
+
+    } catch (err) {
+        console.error('Error getting search suggestions:', err);
+        res.status(500).json({
+            message: 'Error getting suggestions',
+            suggestions: []
+        });
+    }
+});
+
+// Get search filters/facets for a category
+app.get('/products/search/filters', async (req, res) => {
+    try {
+        const { category } = req.query;
+
+        // Build base match criteria
+        const matchCriteria = { isAvailable: true };
+        if (category) {
+            matchCriteria.category = mongoose.Types.ObjectId(category);
+        }
+
+        // Get price range
+        const priceRange = await Product.aggregate([
+            { $match: matchCriteria },
+            {
+                $group: {
+                    _id: null,
+                    minPrice: { $min: '$price' },
+                    maxPrice: { $max: '$price' }
+                }
+            }
+        ]);
+
+        // Get available brands
+        const brands = await Product.aggregate([
+            { $match: { ...matchCriteria, brand: { $ne: '' } } },
+            {
+                $group: {
+                    _id: '$brand',
+                    count: { $sum: 1 }
+                }
+            },
+            {
+                $sort: { count: -1 }
+            },
+            {
+                $limit: 20
+            }
+        ]);
+
+        // Get rating distribution
+        const ratings = await Product.aggregate([
+            { $match: { ...matchCriteria, averageRating: { $gt: 0 } } },
+            {
+                $group: {
+                    _id: { $floor: '$averageRating' },
+                    count: { $sum: 1 }
+                }
+            },
+            {
+                $sort: { _id: -1 }
+            }
+        ]);
+
+        // Get available tags
+        const tags = await Product.aggregate([
+            { $match: matchCriteria },
+            { $unwind: '$tags' },
+            {
+                $group: {
+                    _id: '$tags',
+                    count: { $sum: 1 }
+                }
+            },
+            {
+                $sort: { count: -1 }
+            },
+            {
+                $limit: 15
+            }
+        ]);
+
+        res.json({
+            priceRange: priceRange[0] || { minPrice: 0, maxPrice: 0 },
+            brands: brands.map(b => ({ name: b._id, count: b.count })),
+            ratings: ratings.map(r => ({ rating: r._id, count: r.count })),
+            tags: tags.map(t => ({ name: t._id, count: t.count }))
+        });
+
+    } catch (err) {
+        console.error('Error getting search filters:', err);
+        res.status(500).json({
+            message: 'Error getting filters',
+            error: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error'
+        });
+    }
+});
+
+// ========== WISHLIST ENDPOINTS ==========
+
+// Get user's wishlists
+app.get('/wishlists', async (req, res) => {
+    try {
+        const userId = req.headers.userid;
+
+        if (!userId) {
+            return res.status(401).json({ message: 'User ID required' });
+        }
+
+        // Validate userId format
+        if (!mongoose.Types.ObjectId.isValid(userId)) {
+            return res.status(400).json({ message: 'Invalid user ID format' });
+        }
+
+        // Verify user exists
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        const wishlists = await Wishlist.find({ userId })
+            .populate('items.productId', 'name price image media averageRating reviewCount isAvailable')
+            .sort({ isDefault: -1, createdAt: -1 });
+
+        res.json({ wishlists });
+
+    } catch (err) {
+        console.error('Error fetching wishlists:', err);
+
+        // Provide more specific error messages
+        if (err.name === 'CastError') {
+            return res.status(400).json({
+                message: 'Invalid data format',
+                details: err.message
+            });
+        }
+
+        res.status(500).json({ message: 'Error fetching wishlists' });
+    }
+});
+
+// Get a specific wishlist
+app.get('/wishlists/:id', async (req, res) => {
+    try {
+        const userId = req.headers.userid;
+        const wishlistId = req.params.id;
+
+        if (!userId) {
+            return res.status(401).json({ message: 'User ID required' });
+        }
+
+        const wishlist = await Wishlist.findOne({
+            _id: wishlistId,
+            $or: [
+                { userId },
+                { 'sharedWith.userId': userId },
+                { isPublic: true }
+            ]
+        }).populate('items.productId', 'name price image media averageRating reviewCount isAvailable brand category');
+
+        if (!wishlist) {
+            return res.status(404).json({ message: 'Wishlist not found' });
+        }
+
+        // Increment view count if not owner
+        if (wishlist.userId.toString() !== userId) {
+            wishlist.viewCount += 1;
+            wishlist.lastViewedAt = new Date();
+            await wishlist.save();
+        }
+
+        res.json({ wishlist });
+
+    } catch (err) {
+        console.error('Error fetching wishlist:', err);
+        res.status(500).json({ message: 'Error fetching wishlist' });
+    }
+});
+
+// Create a new wishlist
+app.post('/wishlists', async (req, res) => {
+    try {
+        const userId = req.headers.userid;
+        const { name, description, isPublic = false } = req.body;
+
+        if (!userId) {
+            return res.status(401).json({ message: 'User ID required' });
+        }
+
+        // Validate userId format (MongoDB ObjectId)
+        if (!mongoose.Types.ObjectId.isValid(userId)) {
+            return res.status(400).json({ message: 'Invalid user ID format' });
+        }
+
+        if (!name || name.trim().length === 0) {
+            return res.status(400).json({ message: 'Wishlist name is required' });
+        }
+
+        // Verify user exists
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Check if this is the user's first wishlist
+        const existingWishlists = await Wishlist.countDocuments({ userId });
+        const isDefault = existingWishlists === 0;
+
+        const wishlist = new Wishlist({
+            userId,
+            name: name.trim(),
+            description: description || '',
+            isPublic,
+            isDefault
+        });
+
+        await wishlist.save();
+
+        res.status(201).json({
+            message: 'Wishlist created successfully',
+            wishlist
+        });
+
+    } catch (err) {
+        console.error('Error creating wishlist:', err);
+
+        // Provide more specific error messages
+        if (err.name === 'ValidationError') {
+            return res.status(400).json({
+                message: 'Validation error',
+                details: err.message
+            });
+        } else if (err.name === 'CastError') {
+            return res.status(400).json({
+                message: 'Invalid data format',
+                details: err.message
+            });
+        }
+
+        res.status(500).json({ message: 'Error creating wishlist' });
+    }
+});
+
+// Add item to wishlist
+app.post('/wishlists/:id/items', async (req, res) => {
+    try {
+        const userId = req.headers.userid;
+        const wishlistId = req.params.id;
+        const { productId, notes = '', priority = 'medium' } = req.body;
+
+        if (!userId) {
+            return res.status(401).json({ message: 'User ID required' });
+        }
+
+        // Validate userId format
+        if (!mongoose.Types.ObjectId.isValid(userId)) {
+            return res.status(400).json({ message: 'Invalid user ID format' });
+        }
+
+        // Validate wishlistId format
+        if (!mongoose.Types.ObjectId.isValid(wishlistId)) {
+            return res.status(400).json({ message: 'Invalid wishlist ID format' });
+        }
+
+        if (!productId) {
+            return res.status(400).json({ message: 'Product ID is required' });
+        }
+
+        // Validate productId format
+        if (!mongoose.Types.ObjectId.isValid(productId)) {
+            return res.status(400).json({ message: 'Invalid product ID format' });
+        }
+
+        // Find the wishlist
+        const wishlist = await Wishlist.findOne({
+            _id: wishlistId,
+            $or: [
+                { userId },
+                { 'sharedWith.userId': userId, 'sharedWith.permission': 'edit' }
+            ]
+        });
+
+        if (!wishlist) {
+            return res.status(404).json({ message: 'Wishlist not found or no edit permission' });
+        }
+
+        // Check if product exists
+        const product = await Product.findById(productId);
+        if (!product) {
+            return res.status(404).json({ message: 'Product not found' });
+        }
+
+        // Add item to wishlist
+        await wishlist.addItem(productId, notes, priority);
+
+        // Update product wishlist count
+        await Product.findByIdAndUpdate(productId, {
+            $inc: { wishlistCount: 1 }
+        });
+
+        // Populate the updated wishlist
+        await wishlist.populate('items.productId', 'name price image media averageRating reviewCount isAvailable');
+
+        res.json({
+            message: 'Item added to wishlist',
+            wishlist
+        });
+
+    } catch (err) {
+        console.error('Error adding item to wishlist:', err);
+
+        // Provide more specific error messages
+        if (err.name === 'ValidationError') {
+            return res.status(400).json({
+                message: 'Validation error',
+                details: err.message
+            });
+        } else if (err.name === 'CastError') {
+            return res.status(400).json({
+                message: 'Invalid data format',
+                details: err.message
+            });
+        }
+
+        res.status(500).json({ message: 'Error adding item to wishlist' });
+    }
+});
+
+// Remove item from wishlist
+app.delete('/wishlists/:id/items/:productId', async (req, res) => {
+    try {
+        const userId = req.headers.userid;
+        const wishlistId = req.params.id;
+        const productId = req.params.productId;
+
+        if (!userId) {
+            return res.status(401).json({ message: 'User ID required' });
+        }
+
+        // Find the wishlist
+        const wishlist = await Wishlist.findOne({
+            _id: wishlistId,
+            $or: [
+                { userId },
+                { 'sharedWith.userId': userId, 'sharedWith.permission': 'edit' }
+            ]
+        });
+
+        if (!wishlist) {
+            return res.status(404).json({ message: 'Wishlist not found or no edit permission' });
+        }
+
+        // Remove item from wishlist
+        await wishlist.removeItem(productId);
+
+        // Update product wishlist count
+        await Product.findByIdAndUpdate(productId, {
+            $inc: { wishlistCount: -1 }
+        });
+
+        res.json({
+            message: 'Item removed from wishlist',
+            wishlist
+        });
+
+    } catch (err) {
+        console.error('Error removing item from wishlist:', err);
+        res.status(500).json({ message: 'Error removing item from wishlist' });
+    }
+});
+
+// Quick add to default wishlist
+app.post('/wishlists/quick-add', async (req, res) => {
+    try {
+        const userId = req.headers.userid;
+        const { productId } = req.body;
+
+        if (!userId) {
+            return res.status(401).json({ message: 'User ID required' });
+        }
+
+        // Validate userId format
+        if (!mongoose.Types.ObjectId.isValid(userId)) {
+            return res.status(400).json({ message: 'Invalid user ID format' });
+        }
+
+        if (!productId) {
+            return res.status(400).json({ message: 'Product ID is required' });
+        }
+
+        // Validate productId format
+        if (!mongoose.Types.ObjectId.isValid(productId)) {
+            return res.status(400).json({ message: 'Invalid product ID format' });
+        }
+
+        // Verify user exists
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Find or create default wishlist
+        let wishlist = await Wishlist.findOne({ userId, isDefault: true });
+
+        if (!wishlist) {
+            wishlist = new Wishlist({
+                userId,
+                name: 'My Wishlist',
+                isDefault: true
+            });
+            await wishlist.save();
+        }
+
+        // Check if product exists
+        const product = await Product.findById(productId);
+        if (!product) {
+            return res.status(404).json({ message: 'Product not found' });
+        }
+
+        // Check if item already exists
+        const existingItem = wishlist.items.find(item =>
+            item.productId.toString() === productId
+        );
+
+        if (existingItem) {
+            return res.status(400).json({ message: 'Item already in wishlist' });
+        }
+
+        // Add item to wishlist
+        await wishlist.addItem(productId);
+
+        // Update product wishlist count
+        await Product.findByIdAndUpdate(productId, {
+            $inc: { wishlistCount: 1 }
+        });
+
+        res.json({
+            message: 'Item added to wishlist',
+            wishlistId: wishlist._id
+        });
+
+    } catch (err) {
+        console.error('Error quick adding to wishlist:', err);
+
+        // Provide more specific error messages
+        if (err.name === 'ValidationError') {
+            return res.status(400).json({
+                message: 'Validation error',
+                details: err.message
+            });
+        } else if (err.name === 'CastError') {
+            return res.status(400).json({
+                message: 'Invalid data format',
+                details: err.message
+            });
+        }
+
+        res.status(500).json({ message: 'Error adding to wishlist' });
+    }
+});
+
+// Delete a wishlist
+app.delete('/wishlists/:id', async (req, res) => {
+    try {
+        const userId = req.headers.userid;
+        const wishlistId = req.params.id;
+
+        if (!userId) {
+            return res.status(401).json({ message: 'User ID required' });
+        }
+
+        // Validate userId format
+        if (!mongoose.Types.ObjectId.isValid(userId)) {
+            return res.status(400).json({ message: 'Invalid user ID format' });
+        }
+
+        // Validate wishlistId format
+        if (!mongoose.Types.ObjectId.isValid(wishlistId)) {
+            return res.status(400).json({ message: 'Invalid wishlist ID format' });
+        }
+
+        // Find the wishlist and verify ownership
+        const wishlist = await Wishlist.findOne({
+            _id: wishlistId,
+            userId: userId
+        });
+
+        if (!wishlist) {
+            return res.status(404).json({ message: 'Wishlist not found or access denied' });
+        }
+
+        // Check if this is the default wishlist
+        if (wishlist.isDefault) {
+            // Check if user has other wishlists
+            const otherWishlists = await Wishlist.find({
+                userId: userId,
+                _id: { $ne: wishlistId }
+            }).sort({ createdAt: 1 });
+
+            if (otherWishlists.length > 0) {
+                // Make the oldest remaining wishlist the default
+                await Wishlist.findByIdAndUpdate(otherWishlists[0]._id, { isDefault: true });
+            }
+        }
+
+        // Update product wishlist counts for all items in the wishlist
+        if (wishlist.items.length > 0) {
+            const productIds = wishlist.items.map(item => item.productId);
+            await Product.updateMany(
+                { _id: { $in: productIds } },
+                { $inc: { wishlistCount: -1 } }
+            );
+        }
+
+        // Delete the wishlist
+        await Wishlist.findByIdAndDelete(wishlistId);
+
+        res.json({
+            message: 'Wishlist deleted successfully',
+            deletedWishlistId: wishlistId
+        });
+
+    } catch (err) {
+        console.error('Error deleting wishlist:', err);
+
+        // Provide more specific error messages
+        if (err.name === 'CastError') {
+            return res.status(400).json({
+                message: 'Invalid data format',
+                details: err.message
+            });
+        }
+
+        res.status(500).json({ message: 'Error deleting wishlist' });
+    }
+});
+
+
+// ========== ENHANCED REVIEW SYSTEM ENDPOINTS ==========
+
+// Get reviews for a product with enhanced features
+app.get('/products/:id/reviews', async (req, res) => {
+    try {
+        const productId = req.params.id;
+        const {
+            page = 1,
+            limit = 10,
+            sortBy = 'newest',
+            filterBy = 'all',
+            verified = null
+        } = req.query;
+
+        // Build query
+        const query = { product: productId, isApproved: true };
+
+        if (verified === 'true') {
+            query.isVerifiedPurchase = true;
+        }
+
+        if (filterBy !== 'all' && !isNaN(filterBy)) {
+            query.rating = parseInt(filterBy);
+        }
+
+        // Build sort
+        let sort = {};
+        switch (sortBy) {
+            case 'newest':
+                sort.createdAt = -1;
+                break;
+            case 'oldest':
+                sort.createdAt = 1;
+                break;
+            case 'rating_high':
+                sort.rating = -1;
+                sort.createdAt = -1;
+                break;
+            case 'rating_low':
+                sort.rating = 1;
+                sort.createdAt = -1;
+                break;
+            case 'helpful':
+                sort.helpfulCount = -1;
+                sort.createdAt = -1;
+                break;
+            default:
+                sort.createdAt = -1;
+        }
+
+        const skip = (parseInt(page) - 1) * parseInt(limit);
+
+        const reviews = await Review.find(query)
+            .populate('user', 'username profilePicture verified')
+            .sort(sort)
+            .skip(skip)
+            .limit(parseInt(limit));
+
+        const totalReviews = await Review.countDocuments(query);
+        const totalPages = Math.ceil(totalReviews / parseInt(limit));
+
+        // Get review statistics
+        const stats = await Review.aggregate([
+            { $match: { product: mongoose.Types.ObjectId(productId), isApproved: true } },
+            {
+                $group: {
+                    _id: null,
+                    averageRating: { $avg: '$rating' },
+                    totalReviews: { $sum: 1 },
+                    verifiedReviews: {
+                        $sum: { $cond: ['$isVerifiedPurchase', 1, 0] }
+                    },
+                    ratingDistribution: {
+                        $push: '$rating'
+                    }
+                }
+            }
+        ]);
+
+        // Calculate rating distribution
+        let ratingDistribution = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+        if (stats[0] && stats[0].ratingDistribution) {
+            stats[0].ratingDistribution.forEach(rating => {
+                ratingDistribution[rating] = (ratingDistribution[rating] || 0) + 1;
+            });
+        }
+
+        res.json({
+            reviews,
+            pagination: {
+                currentPage: parseInt(page),
+                totalPages,
+                totalReviews,
+                hasNextPage: parseInt(page) < totalPages,
+                hasPrevPage: parseInt(page) > 1
+            },
+            statistics: {
+                averageRating: stats[0]?.averageRating || 0,
+                totalReviews: stats[0]?.totalReviews || 0,
+                verifiedReviews: stats[0]?.verifiedReviews || 0,
+                ratingDistribution
+            }
+        });
+
+    } catch (err) {
+        console.error('Error fetching reviews:', err);
+        res.status(500).json({ message: 'Error fetching reviews' });
+    }
+});
+
+// Create a new review with enhanced features
+app.post('/products/:id/reviews', async (req, res) => {
+    try {
+        const productId = req.params.id;
+        const userId = req.headers.userid;
+        const {
+            rating,
+            title,
+            text,
+            media = [],
+            orderId = null
+        } = req.body;
+
+        if (!userId) {
+            return res.status(401).json({ message: 'User authentication required' });
+        }
+
+        if (!rating || !text) {
+            return res.status(400).json({ message: 'Rating and review text are required' });
+        }
+
+        if (rating < 1 || rating > 5) {
+            return res.status(400).json({ message: 'Rating must be between 1 and 5' });
+        }
+
+        // Check if user already reviewed this product
+        const existingReview = await Review.findOne({
+            product: productId,
+            user: userId
+        });
+
+        if (existingReview) {
+            return res.status(400).json({ message: 'You have already reviewed this product' });
+        }
+
+        // Check if this is a verified purchase
+        let isVerifiedPurchase = false;
+        if (orderId) {
+            const order = await Order.findOne({
+                _id: orderId,
+                userId: userId,
+                'items.productId': productId,
+                status: 'delivered'
+            });
+            isVerifiedPurchase = !!order;
+        }
+
+        // Create the review
+        const review = new Review({
+            product: productId,
+            user: userId,
+            rating,
+            title: title || '',
+            text,
+            media: media || [],
+            isVerifiedPurchase,
+            orderId: isVerifiedPurchase ? orderId : null
+        });
+
+        await review.save();
+
+        // Update product rating
+        await updateProductRating(productId);
+
+        // Populate user info for response
+        await review.populate('user', 'username profilePicture verified');
+
+        res.status(201).json({
+            message: 'Review created successfully',
+            review
+        });
+
+    } catch (err) {
+        console.error('Error creating review:', err);
+        res.status(500).json({ message: 'Error creating review' });
+    }
+});
+
+// Mark review as helpful/not helpful
+app.post('/reviews/:id/helpful', async (req, res) => {
+    try {
+        const reviewId = req.params.id;
+        const userId = req.headers.userid;
+        const { helpful } = req.body; // true for helpful, false for not helpful
+
+        if (!userId) {
+            return res.status(401).json({ message: 'User authentication required' });
+        }
+
+        const review = await Review.findById(reviewId);
+        if (!review) {
+            return res.status(404).json({ message: 'Review not found' });
+        }
+
+        if (helpful) {
+            await review.markHelpful(userId);
+        } else {
+            await review.markNotHelpful(userId);
+        }
+
+        res.json({
+            message: helpful ? 'Marked as helpful' : 'Marked as not helpful',
+            helpfulCount: review.helpfulCount,
+            notHelpfulCount: review.notHelpfulCount
+        });
+
+    } catch (err) {
+        console.error('Error updating review helpfulness:', err);
+        res.status(500).json({ message: 'Error updating review' });
+    }
+});
+
+// Helper function to update product rating
+async function updateProductRating(productId) {
+    try {
+        const stats = await Review.aggregate([
+            {
+                $match: {
+                    product: mongoose.Types.ObjectId(productId),
+                    isApproved: true
+                }
+            },
+            {
+                $group: {
+                    _id: null,
+                    averageRating: { $avg: '$rating' },
+                    reviewCount: { $sum: 1 }
+                }
+            }
+        ]);
+
+        const averageRating = stats[0]?.averageRating || 0;
+        const reviewCount = stats[0]?.reviewCount || 0;
+
+        await Product.findByIdAndUpdate(productId, {
+            averageRating: Math.round(averageRating * 10) / 10, // Round to 1 decimal
+            reviewCount
+        });
+
+    } catch (error) {
+        console.error('Error updating product rating:', error);
+    }
+}
 
 // ========== PASSWORD RESET ROUTES ==========
 
@@ -3490,6 +4587,145 @@ app.put('/orders/:id/status', async (req, res) => {
     } catch (err) {
         console.error('Error updating order status:', err);
         res.status(500).json({ error: 'Error updating order status' });
+    }
+});
+
+// ========== PUSH NOTIFICATION ENDPOINTS ==========
+
+// Subscribe to push notifications
+app.post('/api/notifications/subscribe', async (req, res) => {
+    try {
+        const { subscription, userId } = req.body;
+
+        if (!subscription || !userId) {
+            return res.status(400).json({ message: 'Subscription and userId are required' });
+        }
+
+        // Check if subscription already exists
+        const existingSubscription = await Notification.findByEndpoint(subscription.endpoint);
+
+        if (existingSubscription) {
+            // Update existing subscription
+            existingSubscription.userId = userId;
+            existingSubscription.subscription = subscription;
+            existingSubscription.isActive = true;
+            existingSubscription.lastUsed = new Date();
+            await existingSubscription.save();
+
+            return res.json({ message: 'Subscription updated successfully' });
+        }
+
+        // Create new subscription
+        const newSubscription = new Notification({
+            userId,
+            subscription,
+            deviceInfo: {
+                userAgent: req.headers['user-agent'],
+                platform: req.headers['sec-ch-ua-platform'],
+                language: req.headers['accept-language'],
+                timezone: req.body.timezone
+            }
+        });
+
+        await newSubscription.save();
+        res.json({ message: 'Subscription created successfully' });
+
+    } catch (error) {
+        console.error('Error subscribing to notifications:', error);
+        res.status(500).json({ message: 'Error subscribing to notifications' });
+    }
+});
+
+// Update notification preferences
+app.put('/api/notifications/preferences', async (req, res) => {
+    try {
+        const { userId, preferences } = req.body;
+
+        if (!userId || !preferences) {
+            return res.status(400).json({ message: 'UserId and preferences are required' });
+        }
+
+        const subscriptions = await Notification.findActiveByUserId(userId);
+
+        for (const subscription of subscriptions) {
+            await subscription.updatePreferences(preferences);
+        }
+
+        res.json({ message: 'Preferences updated successfully' });
+
+    } catch (error) {
+        console.error('Error updating notification preferences:', error);
+        res.status(500).json({ message: 'Error updating preferences' });
+    }
+});
+
+// Get notification preferences
+app.get('/api/notifications/preferences/:userId', async (req, res) => {
+    try {
+        const { userId } = req.params;
+
+        const subscription = await Notification.findOne({ userId, isActive: true });
+
+        if (!subscription) {
+            return res.json({ preferences: null });
+        }
+
+        res.json({ preferences: subscription.preferences });
+
+    } catch (error) {
+        console.error('Error getting notification preferences:', error);
+        res.status(500).json({ message: 'Error getting preferences' });
+    }
+});
+
+// Unsubscribe from notifications
+app.delete('/api/notifications/unsubscribe', async (req, res) => {
+    try {
+        const { endpoint, userId } = req.body;
+
+        let query = {};
+        if (endpoint) {
+            query['subscription.endpoint'] = endpoint;
+        } else if (userId) {
+            query.userId = userId;
+        } else {
+            return res.status(400).json({ message: 'Endpoint or userId is required' });
+        }
+
+        await Notification.updateMany(query, { isActive: false });
+        res.json({ message: 'Unsubscribed successfully' });
+
+    } catch (error) {
+        console.error('Error unsubscribing from notifications:', error);
+        res.status(500).json({ message: 'Error unsubscribing' });
+    }
+});
+
+// Send test notification (admin only)
+app.post('/api/notifications/test', async (req, res) => {
+    try {
+        const { userId, title, body } = req.body;
+
+        if (!userId) {
+            return res.status(400).json({ message: 'UserId is required' });
+        }
+
+        const subscriptions = await Notification.findActiveByUserId(userId);
+
+        if (subscriptions.length === 0) {
+            return res.status(404).json({ message: 'No active subscriptions found' });
+        }
+
+        // TODO: Implement actual push notification sending with web-push library
+        // For now, just return success
+        res.json({
+            message: 'Test notification sent',
+            subscriptionsCount: subscriptions.length
+        });
+
+    } catch (error) {
+        console.error('Error sending test notification:', error);
+        res.status(500).json({ message: 'Error sending notification' });
     }
 });
 

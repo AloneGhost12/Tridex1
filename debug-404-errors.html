@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug 404 Errors - Tridex</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="css/custom-popups.css">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        
+        .debug-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .debug-header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #dc3545;
+        }
+        
+        .debug-header h1 {
+            color: #dc3545;
+            margin: 0;
+        }
+        
+        .debug-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        
+        .debug-section h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        
+        .debug-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        
+        .debug-button:hover {
+            background: #0056b3;
+        }
+        
+        .debug-button.danger {
+            background: #dc3545;
+        }
+        
+        .debug-button.danger:hover {
+            background: #c82333;
+        }
+        
+        .debug-output {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            margin-top: 10px;
+            font-family: monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .error-log {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        
+        .success-log {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        
+        .warning-log {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+        }
+        
+        .resource-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px;
+            margin: 5px 0;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+        }
+        
+        .resource-item.success {
+            background: #d4edda;
+            border-color: #c3e6cb;
+        }
+        
+        .resource-item.error {
+            background: #f8d7da;
+            border-color: #f5c6cb;
+        }
+        
+        .resource-item.pending {
+            background: #fff3cd;
+            border-color: #ffeaa7;
+        }
+    </style>
+</head>
+<body>
+    <div class="debug-container">
+        <div class="debug-header">
+            <h1><i class="fas fa-exclamation-triangle"></i> 404 Error Debugger</h1>
+            <p>Comprehensive tool to identify and fix 404 errors</p>
+        </div>
+
+        <div class="debug-section">
+            <h3>1. Resource Loading Test</h3>
+            <p>Test all critical resources to identify what's failing:</p>
+            <button class="debug-button" onclick="testAllResources()">Test All Resources</button>
+            <button class="debug-button" onclick="testSpecificFiles()">Test Specific Files</button>
+            <div id="resource-test-results" class="debug-output">
+                Click "Test All Resources" to check what's causing 404 errors...
+            </div>
+        </div>
+
+        <div class="debug-section">
+            <h3>2. Network Monitor</h3>
+            <p>Monitor network requests in real-time:</p>
+            <button class="debug-button" onclick="startNetworkMonitoring()">Start Monitoring</button>
+            <button class="debug-button danger" onclick="stopNetworkMonitoring()">Stop Monitoring</button>
+            <div id="network-monitor" class="debug-output">
+                Network monitoring not started...
+            </div>
+        </div>
+
+        <div class="debug-section">
+            <h3>3. Server Connectivity Test</h3>
+            <p>Test server endpoints and API connectivity:</p>
+            <button class="debug-button" onclick="testServerEndpoints()">Test Server</button>
+            <div id="server-test-results" class="debug-output">
+                Click "Test Server" to check server connectivity...
+            </div>
+        </div>
+
+        <div class="debug-section">
+            <h3>4. File Existence Check</h3>
+            <p>Check if critical files exist on the server:</p>
+            <button class="debug-button" onclick="checkFileExistence()">Check Files</button>
+            <div id="file-check-results" class="debug-output">
+                Click "Check Files" to verify file existence...
+            </div>
+        </div>
+
+        <div class="debug-section">
+            <h3>5. Console Error Monitor</h3>
+            <p>Real-time console error monitoring:</p>
+            <div id="console-errors" class="debug-output error-log">
+                Console error monitoring active...
+            </div>
+        </div>
+
+        <div class="debug-section">
+            <h3>6. Quick Fixes</h3>
+            <p>Common solutions for 404 errors:</p>
+            <button class="debug-button" onclick="clearCache()">Clear Browser Cache</button>
+            <button class="debug-button" onclick="reloadPage()">Hard Reload</button>
+            <button class="debug-button" onclick="checkLocalStorage()">Check LocalStorage</button>
+        </div>
+    </div>
+
+    <script>
+        let networkMonitoring = false;
+        let originalFetch = window.fetch;
+        let originalXHR = window.XMLHttpRequest;
+
+        // Console error monitoring
+        const originalConsoleError = console.error;
+        const originalConsoleWarn = console.warn;
+        const consoleErrors = document.getElementById('console-errors');
+
+        console.error = function(...args) {
+            originalConsoleError.apply(console, args);
+            addToConsoleLog('ERROR', args.join(' '));
+        };
+
+        console.warn = function(...args) {
+            originalConsoleWarn.apply(console, args);
+            addToConsoleLog('WARN', args.join(' '));
+        };
+
+        function addToConsoleLog(type, message) {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] ${type}: ${message}\n`;
+            consoleErrors.textContent += logEntry;
+            consoleErrors.scrollTop = consoleErrors.scrollHeight;
+        }
+
+        async function testAllResources() {
+            const results = document.getElementById('resource-test-results');
+            results.textContent = 'Testing resources...\n\n';
+
+            const resourcesToTest = [
+                // CSS Files
+                { url: 'style.css', type: 'CSS' },
+                { url: 'css/wishlist.css', type: 'CSS' },
+                { url: 'css/custom-popups.css', type: 'CSS' },
+                { url: 'css/responsive.css', type: 'CSS' },
+                { url: 'css/product-media-gallery.css', type: 'CSS' },
+                
+                // JavaScript Files
+                { url: 'js/wishlist.js', type: 'JS' },
+                { url: 'js/custom-popups.js', type: 'JS' },
+                { url: 'js/advanced-search.js', type: 'JS' },
+                { url: 'js/responsive.js', type: 'JS' },
+                
+                // HTML Pages
+                { url: 'index.html', type: 'HTML' },
+                { url: 'product-details.html', type: 'HTML' },
+                { url: 'wishlist.html', type: 'HTML' },
+                { url: 'cart.html', type: 'HTML' },
+                { url: 'login.html', type: 'HTML' },
+                
+                // Images and Icons
+                { url: 'favicon.svg', type: 'Image' },
+                { url: 'icons/icon-192x192.png', type: 'Image' },
+                
+                // Old/Problematic URLs
+                { url: 'product.html', type: 'HTML (Should fail)' }
+            ];
+
+            for (const resource of resourcesToTest) {
+                try {
+                    const response = await fetch(resource.url, { method: 'HEAD' });
+                    const status = response.ok ? '✅ OK' : `❌ ${response.status}`;
+                    results.textContent += `${resource.type}: ${resource.url} - ${status}\n`;
+                } catch (error) {
+                    results.textContent += `${resource.type}: ${resource.url} - ❌ FAILED (${error.message})\n`;
+                }
+            }
+
+            results.textContent += '\nResource test completed!';
+        }
+
+        async function testSpecificFiles() {
+            const results = document.getElementById('resource-test-results');
+            results.textContent = 'Testing specific problematic files...\n\n';
+
+            // Test the most common 404 culprits
+            const specificTests = [
+                'product.html',
+                'js/main.js',
+                'images/favicon.ico',
+                'images/favicon-32x32.png',
+                'images/favicon-16x16.png',
+                'css/main.css',
+                'js/product.js'
+            ];
+
+            for (const file of specificTests) {
+                try {
+                    const response = await fetch(file, { method: 'HEAD' });
+                    const status = response.ok ? '✅ EXISTS' : `❌ NOT FOUND (${response.status})`;
+                    results.textContent += `${file}: ${status}\n`;
+                } catch (error) {
+                    results.textContent += `${file}: ❌ ERROR (${error.message})\n`;
+                }
+            }
+        }
+
+        function startNetworkMonitoring() {
+            if (networkMonitoring) return;
+            
+            networkMonitoring = true;
+            const monitor = document.getElementById('network-monitor');
+            monitor.textContent = 'Network monitoring started...\n\n';
+
+            // Override fetch
+            window.fetch = function(...args) {
+                const url = args[0];
+                monitor.textContent += `FETCH: ${url}\n`;
+                
+                return originalFetch.apply(this, args)
+                    .then(response => {
+                        const status = response.ok ? '✅' : '❌';
+                        monitor.textContent += `  → ${status} ${response.status} ${response.statusText}\n`;
+                        monitor.scrollTop = monitor.scrollHeight;
+                        return response;
+                    })
+                    .catch(error => {
+                        monitor.textContent += `  → ❌ ERROR: ${error.message}\n`;
+                        monitor.scrollTop = monitor.scrollHeight;
+                        throw error;
+                    });
+            };
+
+            // Override XMLHttpRequest
+            const originalOpen = XMLHttpRequest.prototype.open;
+            XMLHttpRequest.prototype.open = function(method, url, ...args) {
+                monitor.textContent += `XHR: ${method} ${url}\n`;
+                
+                this.addEventListener('load', () => {
+                    const status = this.status >= 200 && this.status < 300 ? '✅' : '❌';
+                    monitor.textContent += `  → ${status} ${this.status} ${this.statusText}\n`;
+                    monitor.scrollTop = monitor.scrollHeight;
+                });
+                
+                this.addEventListener('error', () => {
+                    monitor.textContent += `  → ❌ ERROR\n`;
+                    monitor.scrollTop = monitor.scrollHeight;
+                });
+                
+                return originalOpen.call(this, method, url, ...args);
+            };
+        }
+
+        function stopNetworkMonitoring() {
+            networkMonitoring = false;
+            window.fetch = originalFetch;
+            XMLHttpRequest.prototype.open = originalXHR.prototype.open;
+            
+            const monitor = document.getElementById('network-monitor');
+            monitor.textContent += '\nNetwork monitoring stopped.\n';
+        }
+
+        async function testServerEndpoints() {
+            const results = document.getElementById('server-test-results');
+            results.textContent = 'Testing server endpoints...\n\n';
+
+            const endpoints = [
+                '/products',
+                '/wishlists',
+                '/profile/Ghost',
+                '/health',
+                '/cloudinary-config'
+            ];
+
+            const baseUrl = 'http://localhost:3000';
+
+            for (const endpoint of endpoints) {
+                try {
+                    const response = await fetch(baseUrl + endpoint);
+                    const status = response.ok ? '✅ OK' : `❌ ${response.status}`;
+                    results.textContent += `${endpoint}: ${status}\n`;
+                } catch (error) {
+                    results.textContent += `${endpoint}: ❌ ERROR (${error.message})\n`;
+                }
+            }
+        }
+
+        async function checkFileExistence() {
+            const results = document.getElementById('file-check-results');
+            results.textContent = 'Checking file existence...\n\n';
+
+            const criticalFiles = [
+                'index.html',
+                'product-details.html',
+                'wishlist.html',
+                'style.css',
+                'js/wishlist.js',
+                'favicon.svg'
+            ];
+
+            for (const file of criticalFiles) {
+                try {
+                    const response = await fetch(file, { method: 'HEAD' });
+                    const status = response.ok ? '✅ EXISTS' : `❌ MISSING (${response.status})`;
+                    results.textContent += `${file}: ${status}\n`;
+                } catch (error) {
+                    results.textContent += `${file}: ❌ ERROR (${error.message})\n`;
+                }
+            }
+        }
+
+        function clearCache() {
+            if ('caches' in window) {
+                caches.keys().then(names => {
+                    names.forEach(name => {
+                        caches.delete(name);
+                    });
+                });
+            }
+            localStorage.clear();
+            sessionStorage.clear();
+            alert('Cache cleared! Please refresh the page.');
+        }
+
+        function reloadPage() {
+            window.location.reload(true);
+        }
+
+        function checkLocalStorage() {
+            const results = document.getElementById('file-check-results');
+            results.textContent = 'LocalStorage contents:\n\n';
+            
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                const value = localStorage.getItem(key);
+                results.textContent += `${key}: ${value}\n`;
+            }
+        }
+
+        // Auto-start console monitoring
+        document.addEventListener('DOMContentLoaded', function() {
+            addToConsoleLog('INFO', '404 Error Debugger loaded');
+            
+            // Listen for resource loading errors
+            window.addEventListener('error', function(e) {
+                if (e.target !== window) {
+                    addToConsoleLog('RESOURCE_ERROR', `Failed to load: ${e.target.src || e.target.href || 'unknown resource'}`);
+                }
+            }, true);
+        });
+    </script>
+</body>
+</html>

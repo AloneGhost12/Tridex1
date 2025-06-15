@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Wishlist Fixed - Tridex</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link rel="apple-touch-icon" sizes="180x180" href="icons/icon-192x192.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="icons/icon-192x192.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="icons/icon-192x192.png">
+    
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="css/wishlist.css">
+    <link rel="stylesheet" href="css/custom-popups.css">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .test-header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #007bff;
+        }
+        
+        .test-header h1 {
+            color: #007bff;
+            margin: 0;
+        }
+        
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        
+        .test-section h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        
+        .status {
+            padding: 5px 10px;
+            border-radius: 3px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .test-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        
+        .test-button:hover {
+            background: #0056b3;
+        }
+        
+        .console-output {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            margin-top: 10px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .wishlist-link {
+            display: inline-block;
+            background: #28a745;
+            color: white;
+            padding: 15px 30px;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 10px;
+            font-weight: bold;
+        }
+        
+        .wishlist-link:hover {
+            background: #218838;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <div class="test-header">
+            <h1><i class="fas fa-heart"></i> Wishlist Fix Test</h1>
+            <p>Testing the fixed wishlist.html page for errors</p>
+        </div>
+
+        <div class="test-section">
+            <h3>1. JavaScript Files Loading Test</h3>
+            <p>Checking if all required JavaScript files are loading correctly...</p>
+            <div id="js-test-results"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>2. Favicon Loading Test</h3>
+            <p>Checking if favicon files are accessible...</p>
+            <div id="favicon-test-results"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>3. Custom Popup System Test</h3>
+            <p>Testing the custom popup system functionality...</p>
+            <button class="test-button" onclick="testPopups()">Test Popups</button>
+            <div id="popup-test-results"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>4. Wishlist Manager Test</h3>
+            <p>Testing if WishlistManager class is available...</p>
+            <button class="test-button" onclick="testWishlistManager()">Test Wishlist Manager</button>
+            <div id="wishlist-test-results"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>5. Console Output</h3>
+            <p>Any console errors or warnings will appear below:</p>
+            <div id="console-output" class="console-output">
+                Console monitoring started...
+            </div>
+        </div>
+
+        <div class="test-section" style="text-align: center;">
+            <h3>Test the Fixed Wishlist Page</h3>
+            <a href="wishlist.html" class="wishlist-link">
+                <i class="fas fa-heart"></i> Open Wishlist Page
+            </a>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/custom-popups.js"></script>
+    
+    <script>
+        // Console monitoring
+        const originalConsoleLog = console.log;
+        const originalConsoleError = console.error;
+        const originalConsoleWarn = console.warn;
+        const consoleOutput = document.getElementById('console-output');
+        
+        function addToConsole(type, message) {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.innerHTML = `<span style="color: #666;">[${timestamp}]</span> <span style="color: ${type === 'error' ? 'red' : type === 'warn' ? 'orange' : 'blue'};">[${type.toUpperCase()}]</span> ${message}`;
+            consoleOutput.appendChild(logEntry);
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+        }
+        
+        console.log = function(...args) {
+            originalConsoleLog.apply(console, args);
+            addToConsole('log', args.join(' '));
+        };
+        
+        console.error = function(...args) {
+            originalConsoleError.apply(console, args);
+            addToConsole('error', args.join(' '));
+        };
+        
+        console.warn = function(...args) {
+            originalConsoleWarn.apply(console, args);
+            addToConsole('warn', args.join(' '));
+        };
+
+        // Test functions
+        function testJavaScriptFiles() {
+            const results = document.getElementById('js-test-results');
+            let html = '';
+            
+            // Test custom-popups.js
+            if (typeof window.TridexPopup !== 'undefined') {
+                html += '<div>✅ custom-popups.js loaded successfully <span class="status success">PASS</span></div>';
+            } else {
+                html += '<div>❌ custom-popups.js failed to load <span class="status error">FAIL</span></div>';
+            }
+            
+            results.innerHTML = html;
+        }
+
+        function testFaviconFiles() {
+            const results = document.getElementById('favicon-test-results');
+            const faviconFiles = [
+                'favicon.svg',
+                'icons/icon-192x192.png'
+            ];
+            
+            let html = '';
+            let testsCompleted = 0;
+            
+            faviconFiles.forEach(file => {
+                const img = new Image();
+                img.onload = function() {
+                    html += `<div>✅ ${file} loaded successfully <span class="status success">PASS</span></div>`;
+                    testsCompleted++;
+                    if (testsCompleted === faviconFiles.length) {
+                        results.innerHTML = html;
+                    }
+                };
+                img.onerror = function() {
+                    html += `<div>❌ ${file} failed to load <span class="status error">FAIL</span></div>`;
+                    testsCompleted++;
+                    if (testsCompleted === faviconFiles.length) {
+                        results.innerHTML = html;
+                    }
+                };
+                img.src = file;
+            });
+        }
+
+        function testPopups() {
+            const results = document.getElementById('popup-test-results');
+            
+            if (typeof window.tridexSuccess === 'function') {
+                window.tridexSuccess('Popup system is working correctly!', 'Test Success');
+                results.innerHTML = '<div>✅ Popup system test completed <span class="status success">PASS</span></div>';
+            } else {
+                results.innerHTML = '<div>❌ Popup system not available <span class="status error">FAIL</span></div>';
+            }
+        }
+
+        function testWishlistManager() {
+            const results = document.getElementById('wishlist-test-results');
+            
+            // Load wishlist.js and test
+            const script = document.createElement('script');
+            script.src = 'js/wishlist.js';
+            script.onload = function() {
+                if (typeof WishlistManager !== 'undefined') {
+                    results.innerHTML = '<div>✅ WishlistManager class available <span class="status success">PASS</span></div>';
+                } else {
+                    results.innerHTML = '<div>❌ WishlistManager class not found <span class="status error">FAIL</span></div>';
+                }
+            };
+            script.onerror = function() {
+                results.innerHTML = '<div>❌ Failed to load js/wishlist.js <span class="status error">FAIL</span></div>';
+            };
+            document.head.appendChild(script);
+        }
+
+        // Run tests when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Starting wishlist fix tests...');
+            
+            setTimeout(() => {
+                testJavaScriptFiles();
+                testFaviconFiles();
+            }, 500);
+        });
+    </script>
+</body>
+</html>

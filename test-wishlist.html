@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wishlist Debug Test - Tridex</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .test-button:hover {
+            background: #0056b3;
+        }
+        .result {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 10px 0;
+            white-space: pre-wrap;
+            font-family: monospace;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .success {
+            border-color: #28a745;
+            background: #d4edda;
+        }
+        .error {
+            border-color: #dc3545;
+            background: #f8d7da;
+        }
+        .login-section {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        input, select {
+            padding: 8px;
+            margin: 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            width: 200px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Wishlist Debug Test</h1>
+    <p>This page helps debug wishlist functionality issues.</p>
+
+    <div class="login-section">
+        <h3>⚠️ Login Status Check</h3>
+        <p>For wishlist to work, you need to be logged in. Use the quick login below or go to the main site.</p>
+        <div>
+            <select id="quick-user-select">
+                <option value="">Select a user to login as...</option>
+                <option value="682450cab3ab649b5b17ec78">Ghost (Google User)</option>
+                <option value="6820650a4cab31cfa2abb758">admin (Admin User)</option>
+                <option value="68244a592871dc3efc89946a">tridex (Regular User)</option>
+            </select>
+            <button class="test-button" onclick="quickLogin()">Quick Login</button>
+            <button class="test-button" onclick="logout()">Logout</button>
+        </div>
+        <div id="login-status" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>1. Check Login Status</h2>
+        <button class="test-button" onclick="checkLoginStatus()">Check Current Login Status</button>
+        <div id="login-check-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>2. Test Wishlist API</h2>
+        <button class="test-button" onclick="testWishlistAPI()">Test Get Wishlists</button>
+        <div id="wishlist-api-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>3. Test Add to Wishlist</h2>
+        <input type="text" id="product-id" placeholder="Enter Product ID" value="6820650a4cab31cfa2abb759">
+        <button class="test-button" onclick="testAddToWishlist()">Test Add to Wishlist</button>
+        <div id="add-wishlist-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>4. Test Wishlist Manager</h2>
+        <button class="test-button" onclick="testWishlistManager()">Test WishlistManager Class</button>
+        <div id="wishlist-manager-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>5. Create Test Wishlist</h2>
+        <input type="text" id="wishlist-name" placeholder="Wishlist Name" value="Test Wishlist">
+        <button class="test-button" onclick="testCreateWishlist()">Create Wishlist</button>
+        <div id="create-wishlist-result" class="result"></div>
+    </div>
+
+    <script>
+        // Helper function to get base URL
+        function getBaseUrl() {
+            if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                return 'http://localhost:3000';
+            } else if (window.location.hostname.includes('onrender.com')) {
+                return 'https://tridex1.onrender.com';
+            } else {
+                return window.location.origin;
+            }
+        }
+
+        function quickLogin() {
+            const userId = document.getElementById('quick-user-select').value;
+            if (!userId) {
+                alert('Please select a user');
+                return;
+            }
+
+            // Set login data in localStorage
+            localStorage.setItem('isLoggedIn', 'true');
+            localStorage.setItem('userId', userId);
+            
+            // Set username based on user
+            const usernames = {
+                '682450cab3ab649b5b17ec78': 'Ghost',
+                '6820650a4cab31cfa2abb758': 'admin', 
+                '68244a592871dc3efc89946a': 'tridex'
+            };
+            localStorage.setItem('username', usernames[userId] || 'TestUser');
+
+            document.getElementById('login-status').textContent = `✅ Logged in as ${usernames[userId]} (${userId})`;
+            document.getElementById('login-status').className = 'result success';
+        }
+
+        function logout() {
+            localStorage.removeItem('isLoggedIn');
+            localStorage.removeItem('userId');
+            localStorage.removeItem('username');
+            
+            document.getElementById('login-status').textContent = '❌ Logged out';
+            document.getElementById('login-status').className = 'result error';
+        }
+
+        function checkLoginStatus() {
+            const resultDiv = document.getElementById('login-check-result');
+            
+            const isLoggedIn = localStorage.getItem('isLoggedIn');
+            const userId = localStorage.getItem('userId');
+            const username = localStorage.getItem('username');
+            
+            const status = {
+                isLoggedIn: isLoggedIn,
+                userId: userId,
+                username: username,
+                localStorage: {
+                    all: Object.keys(localStorage).reduce((obj, key) => {
+                        obj[key] = localStorage.getItem(key);
+                        return obj;
+                    }, {})
+                }
+            };
+            
+            resultDiv.textContent = JSON.stringify(status, null, 2);
+            resultDiv.className = isLoggedIn === 'true' && userId ? 'result success' : 'result error';
+        }
+
+        async function testWishlistAPI() {
+            const resultDiv = document.getElementById('wishlist-api-result');
+            
+            try {
+                resultDiv.textContent = 'Testing wishlist API...';
+                
+                const userId = localStorage.getItem('userId');
+                if (!userId) {
+                    resultDiv.textContent = '❌ ERROR: No userId found. Please login first.';
+                    resultDiv.className = 'result error';
+                    return;
+                }
+                
+                const baseUrl = getBaseUrl();
+                const response = await fetch(`${baseUrl}/wishlists`, {
+                    headers: {
+                        'userid': userId
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.className = 'result success';
+                    resultDiv.textContent = `✅ SUCCESS!\n\nWishlists found: ${data.wishlists?.length || 0}\n\n${JSON.stringify(data, null, 2)}`;
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.textContent = `❌ ERROR!\n\nStatus: ${response.status}\n\n${JSON.stringify(data, null, 2)}`;
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ NETWORK ERROR!\n\n${error.message}`;
+            }
+        }
+
+        async function testAddToWishlist() {
+            const resultDiv = document.getElementById('add-wishlist-result');
+            const productId = document.getElementById('product-id').value;
+            
+            try {
+                resultDiv.textContent = 'Testing add to wishlist...';
+                
+                const userId = localStorage.getItem('userId');
+                if (!userId) {
+                    resultDiv.textContent = '❌ ERROR: No userId found. Please login first.';
+                    resultDiv.className = 'result error';
+                    return;
+                }
+                
+                if (!productId) {
+                    resultDiv.textContent = '❌ ERROR: Please enter a product ID.';
+                    resultDiv.className = 'result error';
+                    return;
+                }
+                
+                const baseUrl = getBaseUrl();
+                const response = await fetch(`${baseUrl}/wishlists/quick-add`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'userid': userId
+                    },
+                    body: JSON.stringify({ productId })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.className = 'result success';
+                    resultDiv.textContent = `✅ SUCCESS!\n\n${JSON.stringify(data, null, 2)}`;
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.textContent = `❌ ERROR!\n\nStatus: ${response.status}\n\n${JSON.stringify(data, null, 2)}`;
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ NETWORK ERROR!\n\n${error.message}`;
+            }
+        }
+
+        async function testCreateWishlist() {
+            const resultDiv = document.getElementById('create-wishlist-result');
+            const name = document.getElementById('wishlist-name').value;
+            
+            try {
+                resultDiv.textContent = 'Testing create wishlist...';
+                
+                const userId = localStorage.getItem('userId');
+                if (!userId) {
+                    resultDiv.textContent = '❌ ERROR: No userId found. Please login first.';
+                    resultDiv.className = 'result error';
+                    return;
+                }
+                
+                if (!name) {
+                    resultDiv.textContent = '❌ ERROR: Please enter a wishlist name.';
+                    resultDiv.className = 'result error';
+                    return;
+                }
+                
+                const baseUrl = getBaseUrl();
+                const response = await fetch(`${baseUrl}/wishlists`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'userid': userId
+                    },
+                    body: JSON.stringify({ 
+                        name: name,
+                        description: 'Test wishlist created from debug page'
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.className = 'result success';
+                    resultDiv.textContent = `✅ SUCCESS!\n\n${JSON.stringify(data, null, 2)}`;
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.textContent = `❌ ERROR!\n\nStatus: ${response.status}\n\n${JSON.stringify(data, null, 2)}`;
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ NETWORK ERROR!\n\n${error.message}`;
+            }
+        }
+
+        function testWishlistManager() {
+            const resultDiv = document.getElementById('wishlist-manager-result');
+            
+            try {
+                if (typeof WishlistManager === 'undefined') {
+                    resultDiv.className = 'result error';
+                    resultDiv.textContent = '❌ WishlistManager class not found!\n\nMake sure js/wishlist.js is loaded.';
+                    return;
+                }
+                
+                const manager = window.wishlistManager || new WishlistManager();
+                
+                resultDiv.className = 'result success';
+                resultDiv.textContent = `✅ WishlistManager is available!\n\nMethods available:\n- loadUserWishlists\n- toggleWishlistItem\n- addToDefaultWishlist\n- removeFromWishlist\n- createWishlist\n\nCurrent wishlists: ${manager.getWishlists().length}`;
+                
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ ERROR!\n\n${error.message}`;
+            }
+        }
+
+        // Auto-run login status check on page load
+        window.addEventListener('load', () => {
+            setTimeout(checkLoginStatus, 500);
+        });
+    </script>
+
+    <!-- Include wishlist script for testing -->
+    <script src="js/wishlist.js"></script>
+</body>
+</html>

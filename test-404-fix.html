@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>404 Fix Test - Tridex</title>
+    
+    <!-- Test the exact same favicon links as index.html -->
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link rel="apple-touch-icon" sizes="180x180" href="icons/icon-192x192.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="icons/icon-192x192.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="icons/icon-192x192.png">
+    
+    <!-- Test CSS files -->
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="chatbot.css">
+    <link rel="stylesheet" href="css/custom-popups.css">
+    <link rel="stylesheet" href="css/wishlist.css">
+    <link rel="stylesheet" href="css/advanced-search.css">
+    
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .test-header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #007bff;
+        }
+        
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        
+        .test-section h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+        
+        .status-indicator.success {
+            background: #28a745;
+        }
+        
+        .status-indicator.error {
+            background: #dc3545;
+        }
+        
+        .status-indicator.pending {
+            background: #ffc107;
+        }
+        
+        .test-results {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            margin-top: 10px;
+            font-family: monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+        }
+        
+        .test-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        
+        .test-button:hover {
+            background: #0056b3;
+        }
+        
+        .resource-list {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .resource-item {
+            display: flex;
+            align-items: center;
+            padding: 8px;
+            margin: 5px 0;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+        }
+        
+        .resource-item.success {
+            background: #d4edda;
+            border-color: #c3e6cb;
+        }
+        
+        .resource-item.error {
+            background: #f8d7da;
+            border-color: #f5c6cb;
+        }
+        
+        .resource-item.pending {
+            background: #fff3cd;
+            border-color: #ffeaa7;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <div class="test-header">
+            <h1>🔧 404 Error Fix Test</h1>
+            <p>Testing all resources to identify and fix 404 errors</p>
+        </div>
+
+        <div class="test-section">
+            <h3>1. Resource Loading Status</h3>
+            <p>Real-time monitoring of resource loading:</p>
+            <ul id="resource-status" class="resource-list">
+                <li class="resource-item pending">
+                    <span class="status-indicator pending"></span>
+                    <span>Initializing tests...</span>
+                </li>
+            </ul>
+        </div>
+
+        <div class="test-section">
+            <h3>2. Manual Resource Tests</h3>
+            <p>Click to test specific resources:</p>
+            <button class="test-button" onclick="testFavicons()">Test Favicons</button>
+            <button class="test-button" onclick="testCSS()">Test CSS Files</button>
+            <button class="test-button" onclick="testJS()">Test JS Files</button>
+            <button class="test-button" onclick="testImages()">Test Images</button>
+            <button class="test-button" onclick="testAll()">Test All</button>
+            
+            <div id="manual-test-results" class="test-results">
+                Click a test button to check specific resources...
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>3. Network Error Log</h3>
+            <p>Real-time network error monitoring:</p>
+            <div id="error-log" class="test-results">
+                Monitoring for network errors...
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>4. Console Error Log</h3>
+            <p>JavaScript console errors:</p>
+            <div id="console-log" class="test-results">
+                Monitoring console errors...
+            </div>
+        </div>
+    </div>
+
+    <!-- Test JavaScript files -->
+    <script src="js/custom-popups.js"></script>
+    <script src="ban-system.js"></script>
+    <script src="chatbot.js"></script>
+    <script src="chatbot-ai.js"></script>
+
+    <script>
+        // Resource monitoring
+        const resourceStatus = document.getElementById('resource-status');
+        const errorLog = document.getElementById('error-log');
+        const consoleLog = document.getElementById('console-log');
+        const manualTestResults = document.getElementById('manual-test-results');
+        
+        let errorCount = 0;
+        let successCount = 0;
+
+        // Monitor resource loading errors
+        window.addEventListener('error', function(e) {
+            errorCount++;
+            const errorInfo = {
+                type: 'Resource Error',
+                source: e.target.src || e.target.href || 'Unknown',
+                message: e.message || 'Failed to load resource',
+                timestamp: new Date().toLocaleTimeString()
+            };
+            
+            logError(errorInfo);
+            updateResourceStatus(errorInfo.source, 'error', errorInfo.message);
+        }, true);
+
+        // Monitor console errors
+        const originalConsoleError = console.error;
+        console.error = function(...args) {
+            originalConsoleError.apply(console, args);
+            logConsoleError('ERROR', args.join(' '));
+        };
+
+        const originalConsoleWarn = console.warn;
+        console.warn = function(...args) {
+            originalConsoleWarn.apply(console, args);
+            logConsoleError('WARN', args.join(' '));
+        };
+
+        function logError(errorInfo) {
+            const timestamp = new Date().toLocaleTimeString();
+            errorLog.textContent += `[${timestamp}] ${errorInfo.type}: ${errorInfo.source}\n  → ${errorInfo.message}\n\n`;
+            errorLog.scrollTop = errorLog.scrollHeight;
+        }
+
+        function logConsoleError(type, message) {
+            const timestamp = new Date().toLocaleTimeString();
+            consoleLog.textContent += `[${timestamp}] ${type}: ${message}\n`;
+            consoleLog.scrollTop = consoleLog.scrollHeight;
+        }
+
+        function updateResourceStatus(resource, status, message) {
+            const statusList = document.getElementById('resource-status');
+            
+            // Remove "Initializing" message if it exists
+            const initItem = statusList.querySelector('.resource-item.pending');
+            if (initItem && initItem.textContent.includes('Initializing')) {
+                initItem.remove();
+            }
+            
+            const item = document.createElement('li');
+            item.className = `resource-item ${status}`;
+            
+            const indicator = document.createElement('span');
+            indicator.className = `status-indicator ${status}`;
+            
+            const text = document.createElement('span');
+            text.textContent = `${resource} - ${message}`;
+            
+            item.appendChild(indicator);
+            item.appendChild(text);
+            statusList.appendChild(item);
+        }
+
+        // Manual test functions
+        async function testResource(url, type) {
+            try {
+                const response = await fetch(url, { method: 'HEAD' });
+                const status = response.ok ? 'success' : 'error';
+                const message = response.ok ? 'OK' : `${response.status} ${response.statusText}`;
+                
+                updateResourceStatus(`${type}: ${url}`, status, message);
+                return { url, status, message };
+            } catch (error) {
+                updateResourceStatus(`${type}: ${url}`, 'error', error.message);
+                return { url, status: 'error', message: error.message };
+            }
+        }
+
+        async function testFavicons() {
+            manualTestResults.textContent = 'Testing favicon files...\n\n';
+            
+            const favicons = [
+                'favicon.svg',
+                'icons/icon-192x192.png'
+            ];
+            
+            for (const favicon of favicons) {
+                const result = await testResource(favicon, 'Favicon');
+                manualTestResults.textContent += `${favicon}: ${result.status === 'success' ? '✅' : '❌'} ${result.message}\n`;
+            }
+        }
+
+        async function testCSS() {
+            manualTestResults.textContent = 'Testing CSS files...\n\n';
+            
+            const cssFiles = [
+                'style.css',
+                'chatbot.css',
+                'css/custom-popups.css',
+                'css/wishlist.css',
+                'css/advanced-search.css'
+            ];
+            
+            for (const css of cssFiles) {
+                const result = await testResource(css, 'CSS');
+                manualTestResults.textContent += `${css}: ${result.status === 'success' ? '✅' : '❌'} ${result.message}\n`;
+            }
+        }
+
+        async function testJS() {
+            manualTestResults.textContent = 'Testing JavaScript files...\n\n';
+            
+            const jsFiles = [
+                'js/custom-popups.js',
+                'ban-system.js',
+                'chatbot.js',
+                'chatbot-ai.js'
+            ];
+            
+            for (const js of jsFiles) {
+                const result = await testResource(js, 'JS');
+                manualTestResults.textContent += `${js}: ${result.status === 'success' ? '✅' : '❌'} ${result.message}\n`;
+            }
+        }
+
+        async function testImages() {
+            manualTestResults.textContent = 'Testing image files...\n\n';
+            
+            const images = [
+                'favicon.svg',
+                'icons/icon-192x192.png',
+                'icons/tridex-icon.svg'
+            ];
+            
+            for (const img of images) {
+                const result = await testResource(img, 'Image');
+                manualTestResults.textContent += `${img}: ${result.status === 'success' ? '✅' : '❌'} ${result.message}\n`;
+            }
+        }
+
+        async function testAll() {
+            manualTestResults.textContent = 'Running comprehensive test...\n\n';
+            
+            await testFavicons();
+            manualTestResults.textContent += '\n';
+            await testCSS();
+            manualTestResults.textContent += '\n';
+            await testJS();
+            manualTestResults.textContent += '\n';
+            await testImages();
+            
+            manualTestResults.textContent += `\n\nTest completed!\nErrors: ${errorCount}\nSuccessful loads: ${successCount}`;
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            updateResourceStatus('Test page', 'success', 'Loaded successfully');
+            
+            // Auto-run basic test after 2 seconds
+            setTimeout(testAll, 2000);
+        });
+    </script>
+</body>
+</html>
