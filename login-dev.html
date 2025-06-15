@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tridex - Login (Development)</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <!-- Custom Popup System -->
+    <link rel="stylesheet" href="css/custom-popups.css">
+    <script src="js/custom-popups.js"></script>
+    <!-- Google OAuth Script -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <style>
+        .dev-banner {
+            background: #ff6b6b;
+            color: white;
+            text-align: center;
+            padding: 10px;
+            font-weight: bold;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 9999;
+        }
+        body {
+            margin-top: 50px;
+        }
+        .clear-storage-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="dev-banner">
+        🔧 DEVELOPMENT MODE - No Auto-Redirects
+        <button class="clear-storage-btn" onclick="clearStorage()">Clear Storage</button>
+    </div>
+
+    <!-- Loading animation overlay -->
+    <div id="loading-overlay" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(255,255,255,0.7); z-index:99999; align-items:center; justify-content:center;">
+        <div style="border:6px solid #f3f3f3; border-top:6px solid #007bff; border-radius:50%; width:48px; height:48px; animation:spin 1s linear infinite;"></div>
+    </div>
+
+    <div class="login-container">
+        <h2>Login to Tridex</h2>
+        <form id="login-form">
+            <label for="username">Username:</label>
+            <input type="text" id="username" name="username" required>
+            
+            <label for="password">Password:</label>
+            <div style="position:relative; display:flex; align-items:center;">
+                <input type="password" id="password" name="password" required style="padding-right:32px; flex:1;">
+                <span id="toggle-login-password"
+                    style="position:absolute; right:12px; top:50%; transform:translateY(-50%); cursor:pointer; user-select:none; font-size:1.1em; color:#888;">
+                    👁️
+                </span>
+            </div>
+
+            <button type="submit">Login</button>
+        </form>
+        
+        <div id="login-error" style="color:red; margin-top:10px; display:none;">
+            Incorrect username or password.
+        </div>
+        
+        <a href="#" id="forgot-password-link" style="display:block; margin-top:10px; text-align:right; color:#007bff; text-decoration:underline; cursor:pointer;">Forgot Password?</a>
+        <a href="signup.html"><button class="signup-btn" type="button">Sign Up</button></a>
+
+        <!-- Google Sign-In Section (Development) -->
+        <div style="text-align:center; margin: 20px 0;">
+            <div style="margin-bottom: 10px; color: #333; font-size: 0.9em;">Or sign in with Google</div>
+            <div id="google-signin-container">
+                <div id="g_id_onload"
+                     data-client_id="511326319939-431231ifhs4239598gc0d7ba2vc97lms.apps.googleusercontent.com"
+                     data-context="signin"
+                     data-ux_mode="popup"
+                     data-callback="onGoogleSignIn"
+                     data-auto_prompt="false">
+                </div>
+                <div class="g_id_signin"
+                     data-type="standard"
+                     data-shape="rectangular"
+                     data-theme="outline"
+                     data-text="signin_with"
+                     data-size="large"
+                     data-logo_alignment="left">
+                </div>
+            </div>
+            <div id="google-login-status" style="margin-top: 10px; font-size: 0.9em; color: #666;"></div>
+        </div>
+
+        <!-- Development Tools -->
+        <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+            <h4>Development Tools</h4>
+            <button onclick="loginAsAdmin()" style="background: #007bff; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; margin: 5px;">
+                Quick Admin Login
+            </button>
+            <button onclick="loginAsUser()" style="background: #28a745; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; margin: 5px;">
+                Quick User Login
+            </button>
+            <button onclick="showStorageInfo()" style="background: #6c757d; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; margin: 5px;">
+                Show Storage Info
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Development helper functions
+        function clearStorage() {
+            localStorage.clear();
+            sessionStorage.clear();
+            alert('Storage cleared! Page will reload.');
+            location.reload();
+        }
+
+        function loginAsAdmin() {
+            localStorage.setItem('token', 'dev-admin-token');
+            localStorage.setItem('username', 'admin');
+            localStorage.setItem('currentUser', 'admin');
+            localStorage.setItem('isLoggedIn', 'true');
+            localStorage.setItem('isAdmin', 'true');
+            localStorage.setItem('adminLoginMethod', 'admin_form_login');
+            localStorage.setItem('verified', 'true');
+            alert('Logged in as admin! Redirecting to admin panel...');
+            window.location.href = 'admin.html';
+        }
+
+        function loginAsUser() {
+            localStorage.setItem('token', 'dev-user-token');
+            localStorage.setItem('username', 'testuser');
+            localStorage.setItem('currentUser', 'testuser');
+            localStorage.setItem('isLoggedIn', 'true');
+            localStorage.setItem('isAdmin', 'false');
+            localStorage.setItem('verified', 'true');
+            alert('Logged in as regular user! Redirecting to home...');
+            window.location.href = 'index.html';
+        }
+
+        function showStorageInfo() {
+            const info = {
+                token: localStorage.getItem('token'),
+                username: localStorage.getItem('username'),
+                isLoggedIn: localStorage.getItem('isLoggedIn'),
+                isAdmin: localStorage.getItem('isAdmin'),
+                adminLoginMethod: localStorage.getItem('adminLoginMethod'),
+                verified: localStorage.getItem('verified')
+            };
+            console.log('Current localStorage:', info);
+            alert('Storage info logged to console. Press F12 to view.');
+        }
+
+        // Password toggle functionality
+        document.getElementById('toggle-login-password').addEventListener('click', function() {
+            const passwordInput = document.getElementById('password');
+            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordInput.setAttribute('type', type);
+            this.textContent = type === 'password' ? '👁️' : '🙈';
+        });
+
+        // Regular login form functionality
+        document.getElementById('login-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            // Show loading
+            document.getElementById('loading-overlay').style.display = 'flex';
+            
+            try {
+                // Try to login with server
+                const response = await fetch('https://tridex1.onrender.com/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Store login data
+                    localStorage.setItem('token', data.token);
+                    localStorage.setItem('username', data.username);
+                    localStorage.setItem('currentUser', data.username);
+                    localStorage.setItem('isLoggedIn', 'true');
+                    localStorage.setItem('isAdmin', data.isAdmin ? 'true' : 'false');
+                    localStorage.setItem('verified', data.verified ? 'true' : 'false');
+                    
+                    if (data.isAdmin) {
+                        localStorage.setItem('adminLoginMethod', 'admin_form_login');
+                        alert('Admin login successful! Redirecting to admin panel...');
+                        window.location.href = 'admin.html';
+                    } else {
+                        alert('Login successful! Redirecting to home...');
+                        window.location.href = 'index.html';
+                    }
+                } else {
+                    document.getElementById('login-error').textContent = data.message || 'Login failed';
+                    document.getElementById('login-error').style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                document.getElementById('login-error').textContent = 'Server error. Please try again.';
+                document.getElementById('login-error').style.display = 'block';
+            } finally {
+                document.getElementById('loading-overlay').style.display = 'none';
+            }
+        });
+
+        // Google OAuth Sign-In Handler
+        async function onGoogleSignIn(response) {
+            console.log('Google Sign-In response received');
+            document.getElementById('google-login-status').textContent = 'Processing Google login...';
+
+            // Show loading
+            document.getElementById('loading-overlay').style.display = 'flex';
+
+            try {
+                // Try production server first, then fallback to localhost
+                let apiUrl = 'https://tridex1.onrender.com/auth/google';
+                console.log('Using API URL:', apiUrl);
+
+                const fetchResponse = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    mode: 'cors',
+                    body: JSON.stringify({ credential: response.credential, mode: 'login' })
+                }).catch(async error => {
+                    console.log('Production server failed, trying localhost...');
+                    // If production fails, try localhost
+                    apiUrl = 'http://localhost:3000/auth/google';
+                    return fetch(apiUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
+                        },
+                        mode: 'cors',
+                        body: JSON.stringify({ credential: response.credential, mode: 'login' })
+                    });
+                });
+
+                const data = await fetchResponse.json();
+                console.log('Google login response:', data);
+
+                if (data.success) {
+                    // Save user data to localStorage
+                    localStorage.setItem('token', data.token);
+                    localStorage.setItem('username', data.username);
+                    localStorage.setItem('currentUser', data.username);
+                    localStorage.setItem('isLoggedIn', 'true');
+                    // Google OAuth users are NEVER allowed admin access for security
+                    localStorage.setItem('isAdmin', 'false');
+                    localStorage.setItem('verified', data.verified ? 'true' : 'false');
+                    localStorage.setItem('isGoogleUser', 'true');
+
+                    // Explicitly remove admin login method flag for Google users
+                    localStorage.removeItem('adminLoginMethod');
+
+                    console.log('Google OAuth login: Admin access explicitly denied for security');
+
+                    document.getElementById('google-login-status').textContent = 'Google login successful!';
+                    alert('Google login successful! Redirecting to home page...');
+
+                    // Redirect to home page (Google users cannot access admin panel)
+                    window.location.replace('index.html');
+                } else {
+                    // Handle different error cases
+                    if (data.isBanned) {
+                        // User is banned
+                        localStorage.setItem('bannedUsername', data.username);
+                        sessionStorage.setItem('userBanned', 'true');
+                        window.location.href = 'login.html?banned=true&bannedUser=' + encodeURIComponent(data.username);
+                    } else if (data.message && data.message.includes('No account found')) {
+                        // No account found, suggest sign up
+                        const createAccount = confirm('No account found with this Google email. Would you like to create a new account?');
+                        if (createAccount) {
+                            window.location.href = 'signup.html';
+                        }
+                    } else {
+                        document.getElementById('google-login-status').textContent = 'Google login failed: ' + (data.message || 'Unknown error');
+                        alert(data.message || 'Google login failed. Please try again.');
+                    }
+                }
+            } catch (error) {
+                console.error('Google login error:', error);
+                document.getElementById('google-login-status').textContent = 'Google login error: ' + error.message;
+
+                // Provide more specific error handling
+                if (error.message && error.message.includes('Failed to fetch')) {
+                    alert('Server is currently offline. Please try again later or use the regular login form.');
+                } else {
+                    alert('Google login failed. Please check your internet connection and try again.');
+                }
+            } finally {
+                // Hide loading
+                document.getElementById('loading-overlay').style.display = 'none';
+            }
+        }
+
+        // Show current storage state on load
+        console.log('Development login page loaded');
+        console.log('Current localStorage:', {
+            token: localStorage.getItem('token'),
+            username: localStorage.getItem('username'),
+            isLoggedIn: localStorage.getItem('isLoggedIn'),
+            isAdmin: localStorage.getItem('isAdmin'),
+            adminLoginMethod: localStorage.getItem('adminLoginMethod')
+        });
+    </script>
+</body>
+</html>
