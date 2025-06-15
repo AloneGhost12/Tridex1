@@ -604,7 +604,7 @@ app.get('/users/check-ban/:username', async (req, res) => {
         });
     } catch (err) {
         console.error('Error checking ban status:', err);
-        res.status(500).json({ message: 'Error checking ban status' });
+        res.status(500).json({ message: 'Server error' });
     }
 });
 
@@ -1161,6 +1161,58 @@ app.put('/users/change-password', async (req, res) => {
     }
 });
 
+// Endpoint to get a user by username (for admin verification)
+// This route must be AFTER all specific user routes to avoid conflicts
+app.get('/users/:username', async (req, res) => {
+    try {
+        const username = req.params.username;
+        if (!username) {
+            return res.status(400).json({ message: 'Username is required' });
+        }
+
+        console.log('Fetching user by username:', username);
+
+        // Find user by username (exclude password)
+        const user = await User.findOne({ username }, '-password');
+
+        // If user not found in database but it's a hardcoded user, return mock data
+        if (!user && username === 'admin') {
+            console.log('User not found in DB, returning hardcoded admin data');
+            return res.json({
+                username: 'admin',
+                name: 'Administrator',
+                email: 'admin@example.com',
+                isAdmin: true,
+                verified: true,
+                banned: false,
+                createdAt: new Date()
+            });
+        }
+
+        if (!user) {
+            console.log('User not found:', username);
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        console.log('User found:', user.username, 'isAdmin:', user.isAdmin);
+
+        // Return user data
+        res.json({
+            _id: user._id,
+            username: user.username,
+            email: user.email,
+            name: user.name,
+            isAdmin: user.isAdmin || false,
+            verified: user.verified || false,
+            banned: user.banned || false,
+            profilePicture: user.profilePicture,
+            createdAt: user.createdAt
+        });
+    } catch (err) {
+        console.error('Error fetching user by username:', err);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
 
 // ========== CATEGORY ROUTES ==========
 

@@ -69,27 +69,18 @@
         <a href="#" id="forgot-password-link" style="display:block; margin-top:10px; text-align:right; color:#007bff; text-decoration:underline; cursor:pointer;">Forgot Password?</a>
         <a href="signup.html"><button class="signup-btn" type="button">Sign Up</button></a>
 
-        <!-- Google Sign-In Section (Login) -->
-        <div style="text-align:center; margin: 20px 0;">
-            <div style="margin-bottom: 10px; color: #666; font-size: 0.9em;">Or continue with:</div>
-            <div id="g_id_onload"
-                 data-client_id="511326319939-431231ifhs4239598gc0d7ba2vc97lms.apps.googleusercontent.com"
-                 data-context="signin"
-                 data-ux_mode="popup"
-                 data-callback="onGoogleSignIn"
-                 data-auto_prompt="false"
-                 data-itp_support="true">
-            </div>
-            <div class="g_id_signin"
-                 data-type="standard"
-                 data-shape="rectangular"
-                 data-theme="outline"
-                 data-text="signin_with"
-                 data-size="large"
-                 data-logo_alignment="left">
+        <!-- Google Sign-In Section (Login) - Temporarily Disabled -->
+        <div style="text-align:center; margin: 20px 0; opacity: 0.6;">
+            <div style="margin-bottom: 10px; color: #666; font-size: 0.9em;">Google Sign-In (Currently Unavailable)</div>
+            <div style="padding: 12px 24px; background: #f8f9fa; border: 2px dashed #dee2e6; border-radius: 8px; color: #6c757d; font-size: 0.9em;">
+                <i class="fas fa-info-circle" style="margin-right: 8px;"></i>
+                Google OAuth is temporarily disabled due to domain authorization requirements.<br>
+                <span style="font-size: 0.8em;">Please use the regular login form above.</span>
             </div>
         </div>
+        <!-- Google OAuth scripts commented out until domain is properly configured
         <script src="https://accounts.google.com/gsi/client" async defer></script>
+        -->
         <script src="js/config.js"></script>
         <script>
         // Handle COOP errors
@@ -100,7 +91,19 @@
             }
         });
 
+        // Google OAuth temporarily disabled - function disabled
         function onGoogleSignIn(response) {
+            console.log('Google OAuth is temporarily disabled');
+            // Show user-friendly message instead of processing OAuth
+            if (typeof tridexWarning !== 'undefined') {
+                tridexWarning('Google OAuth is temporarily disabled due to domain authorization requirements. Please use the regular login form.', 'Google OAuth Unavailable');
+            } else {
+                alert('Google OAuth is temporarily disabled. Please use the regular login form.');
+            }
+            return false; // Properly return false instead of bare return
+
+            // Original function commented out until domain authorization is fixed
+            /*
             console.log('Google Sign-In response received');
 
             // Show loading
@@ -109,6 +112,12 @@
                 loadingOverlay.style.display = 'flex';
             }
 
+            // Google OAuth is disabled - this code should not execute
+            console.log('Google OAuth disabled - this code should not run');
+            return false;
+
+            // Original code commented out
+            /*
             // Try production server first, then fallback to localhost
             let apiUrl = 'https://tridex1.onrender.com/auth/google';
             console.log('Using API URL:', apiUrl);
@@ -151,17 +160,23 @@
                     localStorage.setItem('username', data.username);
                     localStorage.setItem('currentUser', data.username);
                     localStorage.setItem('isLoggedIn', 'true');
-                    localStorage.setItem('isAdmin', data.isAdmin ? 'true' : 'false');
+                    // Google OAuth users are NEVER allowed admin access
+                    localStorage.setItem('isAdmin', 'false');
                     localStorage.setItem('verified', data.verified ? 'true' : 'false');
                     localStorage.setItem('isGoogleUser', 'true');
+
+                    // Explicitly remove admin login method flag for Google users
+                    localStorage.removeItem('adminLoginMethod');
+
+                    console.log('Google OAuth login: Admin access explicitly denied for security');
 
                     // Clear any ban flags
                     localStorage.removeItem('bannedUsername');
                     sessionStorage.removeItem('userBanned');
                     sessionStorage.removeItem('showBanMessage');
 
-                    // Redirect to home page
-                    window.location.href = 'index.html';
+                    // Redirect to home page (Google users cannot access admin panel)
+                    window.location.replace('index.html');
                 } else {
                     // Handle different error cases
                     if (data.isBanned) {
@@ -220,12 +235,18 @@
                                 localStorage.setItem('username', existingUser.username || googleUser.email);
                                 localStorage.setItem('currentUser', existingUser.username || googleUser.email);
                                 localStorage.setItem('isLoggedIn', 'true');
+                                // Google OAuth users are NEVER allowed admin access
                                 localStorage.setItem('isAdmin', 'false');
                                 localStorage.setItem('verified', 'false');
                                 localStorage.setItem('isGoogleUser', 'true');
 
+                                // Explicitly remove admin login method flag for Google users
+                                localStorage.removeItem('adminLoginMethod');
+
+                                console.log('Google OAuth local login: Admin access explicitly denied for security');
+
                                 await tridexSuccess('Google login successful! (Local storage mode)', 'Login Successful');
-                                window.location.href = 'index.html';
+                                window.location.replace('index.html');
                             } else {
                                 // User doesn't exist, suggest signup
                                 const createAccount = await tridexConfirm(
@@ -245,15 +266,71 @@
                     await tridexError('Google login failed. Please check your internet connection and try again.', 'Connection Error');
                 }
             });
+            */ // End of commented Google OAuth function
         }
         </script>
     </div>
     <script>
     // --- Prevent back navigation to login page after login ---
-    // If user is already logged in, redirect to index.html
+    // If user is already logged in, redirect appropriately
     if (localStorage.getItem('token') && (localStorage.getItem('isLoggedIn') === 'true')) {
-        window.location.replace('index.html');
+        const isAdmin = localStorage.getItem('isAdmin') === 'true';
+        const adminLoginMethod = localStorage.getItem('adminLoginMethod');
+
+        // Only redirect admin users to admin panel if they have proper admin login method
+        if (isAdmin && adminLoginMethod === 'admin_form_login') {
+            window.location.replace('admin.html');
+        } else {
+            window.location.replace('index.html');
+        }
     }
+
+    // --- Handle admin access error messages ---
+    document.addEventListener('DOMContentLoaded', function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const error = urlParams.get('error');
+
+        if (error) {
+            let errorMessage = '';
+            switch (error) {
+                case 'admin_access_required':
+                    errorMessage = 'Admin access required. Please login with admin credentials.';
+                    break;
+                case 'invalid_admin_access':
+                    errorMessage = 'Invalid admin access method. Please use the admin login form.';
+                    break;
+                case 'not_admin':
+                    errorMessage = 'Access denied. Admin privileges required.';
+                    break;
+                case 'server_verification_failed':
+                    errorMessage = 'Unable to verify admin credentials with server. Please check your internet connection and try logging in again.';
+                    break;
+                case 'verification_error':
+                    errorMessage = 'Authentication verification error. Please try again.';
+                    break;
+                case 'session_invalid':
+                    errorMessage = 'Session expired or invalid. Please login again.';
+                    break;
+                case 'session_expired':
+                    errorMessage = 'Your admin session has expired. Please login again.';
+                    break;
+                case 'direct_access_denied':
+                    errorMessage = 'Direct access to admin panel is not allowed. Please login first.';
+                    break;
+                default:
+                    errorMessage = 'Authentication error. Please login again.';
+            }
+
+            // Show error message
+            setTimeout(async () => {
+                await tridexError(errorMessage, 'Authentication Required');
+            }, 500);
+
+            // Clear the error parameter from URL
+            const newUrl = window.location.pathname;
+            window.history.replaceState({}, document.title, newUrl);
+        }
+    });
 
     // Check if the server is running
     async function checkServerStatus() {
@@ -273,15 +350,9 @@
 
                 console.log('Server ping successful with no-cors mode');
 
-                // If we get here, the server is at least reachable
-                // We won't try a normal CORS request since we know it will likely fail
-                // Instead, we'll assume the server is running but has CORS restrictions
-
                 // Clear the timeout
                 clearTimeout(timeoutId);
                 timeoutId = null;
-
-                // CORS message removed
 
                 return true; // Server is running, even with CORS issues
             } catch (pingError) {
@@ -303,92 +374,40 @@
         }
     }
 
-    // Check server status on page load with 60-second countdown timer
+    // Enhanced fetch function with better error handling
+    async function safeFetch(url, options = {}) {
+        try {
+            console.log(`Making request to: ${url}`);
+            const response = await fetch(url, options);
+
+            if (!response.ok) {
+                console.warn(`Request to ${url} failed with status: ${response.status} ${response.statusText}`);
+                return null;
+            }
+
+            console.log(`Request to ${url} successful`);
+            return response;
+        } catch (error) {
+            console.error(`Request to ${url} failed:`, error.message);
+            return null;
+        }
+    }
+
+    // Check server status on page load with simple message
     checkServerStatus().then(isRunning => {
         if (!isRunning) {
-            // Show enhanced server startup message with 60-second countdown timer
+            // Show simple server startup message
             document.getElementById('login-error').innerHTML = `
-                <div style="text-align: center; padding: 20px; background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%); border: 2px solid #ffc107; border-radius: 12px; margin: 15px 0; box-shadow: 0 4px 12px rgba(255, 193, 7, 0.3);">
-                    <div style="font-size: 2em; margin-bottom: 12px; animation: bounce 2s infinite;">🚀</div>
-                    <div style="font-weight: bold; color: #856404; margin-bottom: 10px; font-size: 1.2em;">Server Starting Up</div>
-                    <div style="color: #856404; font-size: 0.95em; margin-bottom: 15px; line-height: 1.4;">
-                        Our free server takes about 60 seconds to wake up from sleep mode.<br>
-                        <span style="font-size: 0.85em; opacity: 0.8;">Please wait while we bring the server online...</span>
-                    </div>
-                    <div style="background: #ff6b35; color: white; padding: 12px 20px; border-radius: 25px; display: inline-block; font-weight: bold; font-size: 1.3em; box-shadow: 0 2px 8px rgba(255, 107, 53, 0.4); min-width: 80px;" id="login-server-countdown">
-                        60s
-                    </div>
-                    <div style="color: #856404; font-size: 0.85em; margin-top: 12px; font-style: italic;">
-                        ⏱️ Server will be ready soon! Thank you for your patience.
+                <div style="text-align: center; padding: 15px; background: #fff3cd; border: 2px solid #ffc107; border-radius: 8px; margin: 15px 0;">
+                    <div style="font-size: 1.5em; margin-bottom: 8px;">⚠️</div>
+                    <div style="font-weight: bold; color: #856404; margin-bottom: 8px;">Server Offline</div>
+                    <div style="color: #856404; font-size: 0.9em; line-height: 1.4;">
+                        The server is currently starting up. Please try again in a moment.
                     </div>
                 </div>
             `;
             document.getElementById('login-error').style.display = 'block';
 
-            // Add bounce animation for the rocket emoji
-            if (!document.getElementById('bounce-animation')) {
-                const style = document.createElement('style');
-                style.id = 'bounce-animation';
-                style.textContent = `
-                    @keyframes bounce {
-                        0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
-                        40% { transform: translateY(-10px); }
-                        60% { transform: translateY(-5px); }
-                    }
-                `;
-                document.head.appendChild(style);
-            }
-
-            // Start 60-second countdown timer
-            let countdown = 60;
-            const countdownElement = document.getElementById('login-server-countdown');
-            const countdownInterval = setInterval(() => {
-                countdown--;
-                if (countdownElement) {
-                    countdownElement.textContent = countdown + 's';
-
-                    // Change colors as time decreases
-                    if (countdown <= 10) {
-                        countdownElement.style.background = '#dc3545'; // Red for final 10 seconds
-                        countdownElement.style.boxShadow = '0 2px 8px rgba(220, 53, 69, 0.5)';
-                    } else if (countdown <= 20) {
-                        countdownElement.style.background = '#ffc107'; // Yellow for 20-11 seconds
-                        countdownElement.style.color = '#000';
-                        countdownElement.style.boxShadow = '0 2px 8px rgba(255, 193, 7, 0.5)';
-                    } else if (countdown <= 40) {
-                        countdownElement.style.background = '#fd7e14'; // Orange for 40-21 seconds
-                        countdownElement.style.boxShadow = '0 2px 8px rgba(253, 126, 20, 0.5)';
-                    }
-                }
-
-                if (countdown <= 0) {
-                    clearInterval(countdownInterval);
-                    if (countdownElement) {
-                        countdownElement.textContent = 'Ready!';
-                        countdownElement.style.background = '#28a745'; // Green when complete
-                        countdownElement.style.color = '#fff';
-                        countdownElement.style.boxShadow = '0 2px 8px rgba(40, 167, 69, 0.5)';
-                    }
-
-                    // Show "Server should be ready!" message briefly
-                    setTimeout(() => {
-                        if (document.getElementById('login-error')) {
-                            document.getElementById('login-error').innerHTML = `
-                                <div style="text-align: center; padding: 15px; background: #d4edda; border: 2px solid #28a745; border-radius: 8px; margin: 10px 0;">
-                                    <div style="font-size: 1.5em; margin-bottom: 8px;">✅</div>
-                                    <div style="font-weight: bold; color: #155724; margin-bottom: 5px;">Server Should Be Ready!</div>
-                                    <div style="color: #155724; font-size: 0.9em;">You can now try logging in.</div>
-                                </div>
-                            `;
-
-                            // Hide the message completely after 5 seconds
-                            setTimeout(() => {
-                                document.getElementById('login-error').style.display = 'none';
-                            }, 5000);
-                        }
-                    }, 2000);
-                }
-            }, 1000);
         }
     });
 
@@ -447,11 +466,15 @@
                 loadingOverlay.style.display = 'none';
             }
 
-            // Clear all login data to prevent auto-login
+            // Clear all login data to prevent auto-login including admin credentials
             localStorage.removeItem('token');
             localStorage.removeItem('isLoggedIn');
             localStorage.removeItem('username');
             localStorage.removeItem('currentUser');
+            localStorage.removeItem('isAdmin');
+            localStorage.removeItem('verified');
+            localStorage.removeItem('isGoogleUser');
+            localStorage.removeItem('adminLoginMethod');
 
             // Store the ban status in localStorage to ensure it persists across page refreshes
             localStorage.setItem('loginPageBanMessageShown', 'true');
@@ -480,9 +503,9 @@
 
                     try {
                         // Check with the server if this user is actually banned
-                        const response = await fetch(`https://tridex1.onrender.com/users/check-ban/${bannedUsername}`);
+                        const response = await safeFetch(`https://tridex1.onrender.com/users/check-ban/${bannedUsername}`);
 
-                        if (response.ok) {
+                        if (response && response.ok) {
                             const data = await response.json();
                             console.log(`Server says user ${bannedUsername} ban status is: ${data.isBanned}`);
 
@@ -1023,13 +1046,23 @@
                     localStorage.setItem('isLoggedIn', 'true');
                     // Also set currentUser for cart functionality
                     localStorage.setItem('currentUser', result.username || userInput);
+
+                    // Set admin login method flag for admin users ONLY through form login
+                    if (result.isAdmin) {
+                        localStorage.setItem('adminLoginMethod', 'admin_form_login');
+                        console.log('Admin login successful via form, setting admin login method flag');
+                    } else {
+                        // Ensure non-admin users don't have admin login method flag
+                        localStorage.removeItem('adminLoginMethod');
+                    }
+
                     console.log('Login successful, redirecting...');
 
                     // Redirect based on user type
                     if (result.isAdmin) {
-                        window.location.href = 'admin.html';
+                        window.location.replace('admin.html');
                     } else {
-                        window.location.href = 'index.html';
+                        window.location.replace('index.html');
                     }
                 } else {
                     console.error('Login failed:', result);
@@ -1101,13 +1134,22 @@
                     localStorage.setItem('isLoggedIn', 'true');
                     localStorage.setItem('currentUser', userInput);
 
+                    // Set admin login method flag for admin users ONLY through form login
+                    if (userInput === 'admin') {
+                        localStorage.setItem('adminLoginMethod', 'admin_form_login');
+                        console.log('Local admin login successful via form, setting admin login method flag');
+                    } else {
+                        // Ensure non-admin users don't have admin login method flag
+                        localStorage.removeItem('adminLoginMethod');
+                    }
+
                     console.log('Local login successful, redirecting...');
 
                     // Redirect based on user type
                     if (userInput === 'admin') {
-                        window.location.href = 'admin.html';
+                        window.location.replace('admin.html');
                     } else {
-                        window.location.href = 'index.html';
+                        window.location.replace('index.html');
                     }
                 } else {
                     // Check hardcoded admin/user credentials as a last resort
@@ -1160,13 +1202,22 @@
                         localStorage.setItem('isLoggedIn', 'true');
                         localStorage.setItem('currentUser', userInput);
 
+                        // Set admin login method flag for admin users ONLY through form login
+                        if (userInput === 'admin') {
+                            localStorage.setItem('adminLoginMethod', 'admin_form_login');
+                            console.log('Hardcoded admin login successful via form, setting admin login method flag');
+                        } else {
+                            // Ensure non-admin users don't have admin login method flag
+                            localStorage.removeItem('adminLoginMethod');
+                        }
+
                         console.log('Hardcoded login successful, redirecting...');
 
                         // Redirect based on user type
                         if (userInput === 'admin') {
-                            window.location.href = 'admin.html';
+                            window.location.replace('admin.html');
                         } else {
-                            window.location.href = 'index.html';
+                            window.location.replace('index.html');
                         }
                     } else {
                         // No valid user found

@@ -470,11 +470,15 @@ function setupBanButtonHandlers() {
                     document.body.removeAttribute('data-ban-touchmove-handler');
                 }
 
-                // Clear all login data
+                // Clear all login data including admin credentials
                 localStorage.removeItem('token');
                 localStorage.removeItem('isLoggedIn');
                 localStorage.removeItem('username');
                 localStorage.removeItem('currentUser');
+                localStorage.removeItem('isAdmin');
+                localStorage.removeItem('verified');
+                localStorage.removeItem('isGoogleUser');
+                localStorage.removeItem('adminLoginMethod');
 
                 // Allow scrolling again
                 document.body.style.overflow = '';
@@ -540,11 +544,15 @@ function checkCurrentUserBan() {
                 loadingOverlay.style.display = 'none';
             }
 
-            // Clear all login data
+            // Clear all login data including admin credentials
             localStorage.removeItem('token');
             localStorage.removeItem('isLoggedIn');
             localStorage.removeItem('username');
             localStorage.removeItem('currentUser');
+            localStorage.removeItem('isAdmin');
+            localStorage.removeItem('verified');
+            localStorage.removeItem('isGoogleUser');
+            localStorage.removeItem('adminLoginMethod');
 
             // Set ban flags in sessionStorage
             sessionStorage.setItem('userBanned', 'true');
@@ -570,11 +578,15 @@ function checkCurrentUserBan() {
             if (sessionStorage.getItem('userBanned') === 'true') {
                 console.log('Ban System: Ban flag found in sessionStorage. User was previously banned.');
 
-                // Clear all login data
+                // Clear all login data including admin credentials
                 localStorage.removeItem('token');
                 localStorage.removeItem('isLoggedIn');
                 localStorage.removeItem('username');
                 localStorage.removeItem('currentUser');
+                localStorage.removeItem('isAdmin');
+                localStorage.removeItem('verified');
+                localStorage.removeItem('isGoogleUser');
+                localStorage.removeItem('adminLoginMethod');
 
                 // Show the ban message
                 if (document.readyState === 'loading') {

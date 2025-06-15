@@ -15,6 +15,162 @@
     <link rel="stylesheet" href="css/custom-popups.css">
     <script src="js/custom-popups.js"></script>
     <script>
+        // --- Strict Admin-Only Authentication Check ---
+(async function enforceStrictAdminAuth() {
+    console.log('Admin Panel: Starting strict authentication check...');
+
+    // Clear any existing redirect loops by removing history
+    if (document.referrer && document.referrer.includes('admin.html')) {
+        console.log('Admin Panel: Potential redirect loop detected, clearing history');
+        history.replaceState(null, '', 'admin.html');
+    }
+
+    const token = localStorage.getItem('token');
+    const username = localStorage.getItem('username') || localStorage.getItem('currentUser');
+    const isAdmin = localStorage.getItem('isAdmin') === 'true';
+
+    console.log('Admin Panel: Auth check - Token:', !!token, 'Username:', username, 'IsAdmin:', isAdmin);
+
+    // First level check: Basic requirements
+    if (!token || !username || !isAdmin) {
+        console.log('Admin Panel: Basic auth requirements not met, redirecting to login');
+        localStorage.removeItem('token');
+        localStorage.removeItem('isAdmin');
+        localStorage.removeItem('username');
+        localStorage.removeItem('currentUser');
+        localStorage.removeItem('isLoggedIn');
+        window.location.replace('login.html?error=admin_access_required');
+        return;
+    }
+
+    // Second level check: Verify admin credentials are from proper login method
+    const adminLoginMethod = localStorage.getItem('adminLoginMethod');
+    if (!adminLoginMethod || adminLoginMethod !== 'admin_form_login') {
+        console.log('Admin Panel: Invalid admin login method, redirecting to login');
+        localStorage.removeItem('token');
+        localStorage.removeItem('isAdmin');
+        localStorage.removeItem('username');
+        localStorage.removeItem('currentUser');
+        localStorage.removeItem('isLoggedIn');
+        localStorage.removeItem('adminLoginMethod');
+        window.location.replace('login.html?error=invalid_admin_access');
+        return;
+    }
+
+    // Third level check: Verify with backend for extra security (with fallback)
+    try {
+        console.log('Admin Panel: Verifying admin status with server...');
+
+        let userData = null;
+        let verificationSuccessful = false;
+
+        // Try the new user endpoint first with better error handling
+        try {
+            console.log('Admin Panel: Trying user endpoint...');
+
+            // Add timeout to prevent hanging requests
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+
+            const userResponse = await fetch(`https://tridex1.onrender.com/users/${username}`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                signal: controller.signal
+            });
+
+            clearTimeout(timeoutId);
+
+            if (userResponse.ok) {
+                userData = await userResponse.json();
+                verificationSuccessful = true;
+                console.log('Admin Panel: User endpoint successful, user data:', userData);
+            } else {
+                console.warn(`Admin Panel: User endpoint failed with status: ${userResponse.status} ${userResponse.statusText}`);
+                if (userResponse.status === 404) {
+                    console.log('Admin Panel: User endpoint not found (404) - this is expected if server is not updated');
+                }
+            }
+        } catch (userError) {
+            console.warn('Admin Panel: User endpoint error:', userError.message);
+            if (userError.name === 'AbortError') {
+                console.log('Admin Panel: User endpoint request timed out');
+            }
+        }
+
+        // Fallback: If server verification failed, check if it's the hardcoded admin
+        if (!verificationSuccessful) {
+            if (username === 'admin') {
+                console.log('Admin Panel: Server verification failed, but user is hardcoded admin - allowing access');
+                verificationSuccessful = true;
+                userData = { username: 'admin', isAdmin: true };
+            } else {
+                console.log('Admin Panel: Server verification failed for non-admin user:', username);
+            }
+        }
+
+        // Evaluate the verification result
+        if (verificationSuccessful && userData) {
+            if (userData.isAdmin || username === 'admin') {
+                // Update localStorage with server-confirmed admin status
+                localStorage.setItem('isAdmin', 'true');
+                console.log('Admin Panel: Authentication successful, admin access granted');
+            } else {
+                console.log('Admin Panel: Server confirms user is not admin, redirecting');
+                localStorage.removeItem('token');
+                localStorage.removeItem('isAdmin');
+                localStorage.removeItem('username');
+                localStorage.removeItem('currentUser');
+                localStorage.removeItem('isLoggedIn');
+                localStorage.removeItem('adminLoginMethod');
+                window.location.replace('login.html?error=not_admin');
+                return;
+            }
+        } else {
+            // If server verification failed but user is hardcoded admin, allow access with warning
+            if (username === 'admin') {
+                console.log('Admin Panel: Server verification failed, but allowing hardcoded admin access');
+                localStorage.setItem('isAdmin', 'true');
+
+                // Show a warning message about server connectivity
+                setTimeout(() => {
+                    if (typeof tridexWarning !== 'undefined') {
+                        tridexWarning('Server verification failed, but you are logged in as the hardcoded admin. Some features may not work properly until server connectivity is restored.', 'Server Connection Warning');
+                    }
+                }, 1000);
+            } else {
+                console.log('Admin Panel: Server verification failed, redirecting to login');
+                localStorage.removeItem('token');
+                localStorage.removeItem('isAdmin');
+                localStorage.removeItem('username');
+                localStorage.removeItem('currentUser');
+                localStorage.removeItem('isLoggedIn');
+                localStorage.removeItem('adminLoginMethod');
+                window.location.replace('login.html?error=server_verification_failed');
+                return;
+            }
+        }
+    } catch (error) {
+        console.error('Admin Panel: Error verifying admin status:', error);
+
+        // If it's the hardcoded admin and server is unreachable, allow access
+        if (username === 'admin') {
+            console.log('Admin Panel: Server unreachable but user is hardcoded admin - allowing access');
+            localStorage.setItem('isAdmin', 'true');
+        } else {
+            localStorage.removeItem('token');
+            localStorage.removeItem('isAdmin');
+            localStorage.removeItem('username');
+            localStorage.removeItem('currentUser');
+            localStorage.removeItem('isLoggedIn');
+            localStorage.removeItem('adminLoginMethod');
+            window.location.replace('login.html?error=verification_error');
+            return;
+        }
+    }
+})();
         // Fallback functions in case custom popups don't load
         window.tridexConfirm = window.tridexConfirm || function(message) { return Promise.resolve(confirm(message)); };
         window.tridexSuccess = window.tridexSuccess || function(message) { alert(message); return Promise.resolve(); };
@@ -534,24 +690,24 @@
             console.error('Unhandled promise rejection:', e.reason);
         });
 
-        // --- Simple login protection: redirect to login.html if not logged in ---
+        // --- Admin Panel Initialization ---
         console.log('Admin panel loading...');
-        console.log('Token:', localStorage.getItem('token'));
+        console.log('Token:', !!localStorage.getItem('token'));
         console.log('isAdmin:', localStorage.getItem('isAdmin'));
+        console.log('Username:', localStorage.getItem('username'));
 
-        // Temporarily bypass admin check for debugging
-        if (!localStorage.getItem('token')) {
-            console.log('No token found, setting demo token for debugging');
-            localStorage.setItem('token', 'demo-token');
-            localStorage.setItem('isAdmin', 'true');
-            localStorage.setItem('username', 'admin');
-        }
-        // Enforce admin-only access
-        if (localStorage.getItem('isAdmin') !== 'true') {
-            console.log('Not admin, setting admin for debugging');
-            localStorage.setItem('isAdmin', 'true');
-            localStorage.setItem('username', 'admin');
-        }
+        // Verify admin authentication is still valid
+        (function checkAdminAuth() {
+            const token = localStorage.getItem('token');
+            const isAdmin = localStorage.getItem('isAdmin') === 'true';
+            const adminLoginMethod = localStorage.getItem('adminLoginMethod');
+
+            if (!token || !isAdmin || adminLoginMethod !== 'admin_form_login') {
+                console.log('Admin panel: Authentication invalid, redirecting to login');
+                window.location.replace('login.html?error=session_invalid');
+                return; // Now this return is valid inside the function
+            }
+        })();
 
         // Function to get Cloudinary configuration from server
         async function getCloudinaryConfig() {
@@ -638,6 +794,74 @@
         if (!localStorage.getItem('currentUser') && localStorage.getItem('username')) {
             localStorage.setItem('currentUser', localStorage.getItem('username'));
         }
+
+        // --- Admin Session Validation ---
+        // Periodically validate admin session to prevent unauthorized access
+        function validateAdminSession() {
+            const token = localStorage.getItem('token');
+            const isAdmin = localStorage.getItem('isAdmin') === 'true';
+            const adminLoginMethod = localStorage.getItem('adminLoginMethod');
+            const username = localStorage.getItem('username');
+
+            console.log('Admin Panel: Validating session...');
+
+            if (!token || !isAdmin || adminLoginMethod !== 'admin_form_login' || !username) {
+                console.log('Admin Panel: Session validation failed, redirecting to login');
+                localStorage.removeItem('token');
+                localStorage.removeItem('isAdmin');
+                localStorage.removeItem('username');
+                localStorage.removeItem('currentUser');
+                localStorage.removeItem('isLoggedIn');
+                localStorage.removeItem('adminLoginMethod');
+                window.location.replace('login.html?error=session_expired');
+                return false;
+            }
+
+            console.log('Admin Panel: Session validation successful');
+            return true;
+        }
+
+        // Validate session every 5 minutes
+        setInterval(validateAdminSession, 5 * 60 * 1000);
+
+        // Validate session when page becomes visible (user switches back to tab)
+        document.addEventListener('visibilitychange', function() {
+            if (!document.hidden) {
+                console.log('Admin Panel: Page became visible, validating session...');
+                validateAdminSession();
+            }
+        });
+
+        // Validate session on page focus
+        window.addEventListener('focus', function() {
+            console.log('Admin Panel: Window focused, validating session...');
+            validateAdminSession();
+        });
+
+        // --- Prevent Direct URL Access ---
+        // Check if user came from login page or has valid session
+        function checkAccessMethod() {
+            const referrer = document.referrer;
+            const hasValidSession = localStorage.getItem('adminLoginMethod') === 'admin_form_login';
+
+            // If no valid session and didn't come from login page, redirect
+            if (!hasValidSession && !referrer.includes('login.html')) {
+                console.log('Admin Panel: Direct URL access detected without valid session');
+                localStorage.removeItem('token');
+                localStorage.removeItem('isAdmin');
+                localStorage.removeItem('username');
+                localStorage.removeItem('currentUser');
+                localStorage.removeItem('isLoggedIn');
+                localStorage.removeItem('adminLoginMethod');
+                window.location.replace('login.html?error=direct_access_denied');
+                return false;
+            }
+
+            return true;
+        }
+
+        // Check access method on page load
+        checkAccessMethod();
 
         let users = [];
         let products = [];
