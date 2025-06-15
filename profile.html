@@ -1499,9 +1499,15 @@
                 localStorage.removeItem('isLoggedIn');
                 localStorage.removeItem('username');
                 localStorage.removeItem('currentUser');
+                localStorage.removeItem('isAdmin');
+                localStorage.removeItem('verified');
+                localStorage.removeItem('isGoogleUser');
+                localStorage.removeItem('adminLoginMethod'); // Clear admin login method flag
+
+                console.log('Logout: All user data cleared including admin credentials');
 
                 // Redirect to login page
-                window.location.href = 'login.html';
+                window.location.replace('login.html');
             }, 300);
         };
 

@@ -416,11 +416,15 @@
             const banOkBtn = document.getElementById('ban-ok-btn');
             if (banOkBtn) {
                 banOkBtn.addEventListener('click', function() {
-                    // Clear all login data
+                    // Clear all login data including admin credentials
                     localStorage.removeItem('token');
                     localStorage.removeItem('isLoggedIn');
                     localStorage.removeItem('username');
                     localStorage.removeItem('currentUser');
+                    localStorage.removeItem('isAdmin');
+                    localStorage.removeItem('verified');
+                    localStorage.removeItem('isGoogleUser');
+                    localStorage.removeItem('adminLoginMethod');
 
                     // Allow scrolling again
                     document.body.style.overflow = '';
@@ -610,11 +614,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 // If the ban system isn't loaded yet but we have a ban flag, show a basic ban message
                 console.log('Ban flag found in sessionStorage but ban system not loaded');
 
-                // Clear all login data
+                // Clear all login data including admin credentials
                 localStorage.removeItem('token');
                 localStorage.removeItem('isLoggedIn');
                 localStorage.removeItem('username');
                 localStorage.removeItem('currentUser');
+                localStorage.removeItem('isAdmin');
+                localStorage.removeItem('verified');
+                localStorage.removeItem('isGoogleUser');
+                localStorage.removeItem('adminLoginMethod');
 
                 // Redirect to login page with banned parameter
                 window.location.href = 'login.html?banned=true';
@@ -659,11 +667,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (sessionStorage.getItem('userBanned') === 'true') {
                     console.log('Ban flag found in sessionStorage but ban system failed to load');
 
-                    // Clear all login data
+                    // Clear all login data including admin credentials
                     localStorage.removeItem('token');
                     localStorage.removeItem('isLoggedIn');
                     localStorage.removeItem('username');
                     localStorage.removeItem('currentUser');
+                    localStorage.removeItem('isAdmin');
+                    localStorage.removeItem('verified');
+                    localStorage.removeItem('isGoogleUser');
+                    localStorage.removeItem('adminLoginMethod');
 
                     // Redirect to login page with banned parameter
                     window.location.href = 'login.html?banned=true';

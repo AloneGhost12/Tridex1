@@ -472,9 +472,9 @@ TridexChatbot.prototype.getStandardResponse = function(query) {
     return `
         I'm not sure I understand. Could you try rephrasing or check these topics?<br><br>
         <div class="suggestion-chips">
-            <button class="suggestion-chip" onclick="document.getElementById('chatbot-input').value='How to buy'; document.getElementById('chatbot-form').dispatchEvent(new Event('submit'));">How to buy</button>
-            <button class="suggestion-chip" onclick="document.getElementById('chatbot-input').value='Contact info'; document.getElementById('chatbot-form').dispatchEvent(new Event('submit'));">Contact info</button>
-            <button class="suggestion-chip" onclick="document.getElementById('chatbot-input').value='Help'; document.getElementById('chatbot-form').dispatchEvent(new Event('submit'));">Help</button>
+            <button class="suggestion-chip" onclick="document.getElementById('chatbot-input').value='How to buy'; document.getElementById('chatbot-form').dispatchEvent(new Event('submit'))">How to buy</button>
+            <button class="suggestion-chip" onclick="document.getElementById('chatbot-input').value='Contact info'; document.getElementById('chatbot-form').dispatchEvent(new Event('submit'))">Contact info</button>
+            <button class="suggestion-chip" onclick="document.getElementById('chatbot-input').value='Help'; document.getElementById('chatbot-form').dispatchEvent(new Event('submit'))">Help</button>
         </div>
     `;
 };
