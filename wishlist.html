@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Wishlist - Tridex</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link rel="apple-touch-icon" sizes="180x180" href="icons/icon-192x192.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="icons/icon-192x192.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="icons/icon-192x192.png">
+    
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="css/wishlist.css">
+    <link rel="stylesheet" href="css/custom-popups.css">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <!-- Meta tags for SEO -->
+    <meta name="description" content="Manage your wishlist on Tridex. Save your favorite products and shop them later.">
+    <meta name="keywords" content="wishlist, saved items, favorites, Tridex, e-commerce">
+    <meta name="author" content="Tridex">
+    
+    <!-- Open Graph tags -->
+    <meta property="og:title" content="My Wishlist - Tridex">
+    <meta property="og:description" content="Manage your wishlist on Tridex. Save your favorite products and shop them later.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://aloneghost12.github.io/Tridex1/wishlist.html">
+    
+    <style>
+        /* Page-specific styles */
+        .main-content {
+            min-height: calc(100vh - 200px);
+            padding-top: 20px;
+        }
+        
+        .breadcrumb {
+            background: #f8f9fa;
+            padding: 12px 0;
+            margin-bottom: 20px;
+        }
+        
+        .breadcrumb-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        .breadcrumb-nav {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+        }
+        
+        .breadcrumb-nav a {
+            color: #007bff;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+        
+        .breadcrumb-nav a:hover {
+            color: #0056b3;
+        }
+        
+        .breadcrumb-separator {
+            color: #6c757d;
+        }
+        
+        .breadcrumb-current {
+            color: #6c757d;
+        }
+
+        /* Wishlist Count Badge */
+        .wishlist-count {
+            background: #e74c3c;
+            color: white;
+            border-radius: 50%;
+            padding: 2px 6px;
+            font-size: 10px;
+            font-weight: bold;
+            min-width: 16px;
+            height: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+            margin-left: 5px;
+        }
+
+        /* Header Styling to match index.html */
+        header {
+            background-color: #333 !important;
+            color: white !important;
+            padding: 15px 0 !important;
+            position: relative !important;
+        }
+
+        header h1 {
+            color: white !important;
+            margin: 0 !important;
+            font-size: 1.8rem !important;
+        }
+
+        .nav {
+            padding: 10px;
+            margin: 0 5px;
+            color: rgb(255, 255, 255);
+            background-color: #007bff;
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .nav:hover {
+            background-color: #0056b3;
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .nav a {
+            color: white;
+            display: block;
+            width: 100%;
+            height: 100%;
+            text-decoration: none;
+        }
+
+        .nav-icon {
+            font-size: 1.3em;
+            position: relative;
+            color: white !important;
+            text-decoration: none;
+        }
+
+        .search-bar {
+            margin: 10px auto;
+            max-width: 600px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            background: white;
+            border-radius: 25px;
+            padding: 5px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .search-bar input {
+            flex: 1;
+            border: none;
+            outline: none;
+            padding: 10px 15px;
+            font-size: 16px;
+            border-radius: 20px;
+        }
+
+        .search-bar button {
+            background: #007bff;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .search-bar button:hover {
+            background: #0056b3;
+        }
+
+        .search-icon {
+            font-size: 20px;
+            color: white;
+        }
+
+        /* Enhanced Dropdown Menu Styles */
+        .dropdown-menu {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            min-width: 200px;
+            z-index: 1000;
+            overflow: hidden;
+        }
+
+        .dropdown-btn {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            color: #333;
+            text-decoration: none;
+            transition: background-color 0.3s ease;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .dropdown-btn:last-child {
+            border-bottom: none;
+        }
+
+        .dropdown-btn:hover {
+            background-color: #f8f9fa;
+            color: #007bff;
+        }
+
+        .dropdown-btn i {
+            margin-right: 8px;
+            width: 16px;
+            text-align: center;
+        }
+
+        /* Responsive Navbar */
+        @media (max-width: 900px) {
+            header > div {
+                flex-direction: column;
+                align-items: flex-start !important;
+            }
+            nav ul {
+                gap: 10px !important;
+            }
+            .search-bar {
+                max-width: 98vw !important;
+            }
+        }
+
+        #nav {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            gap: 18px;
+            list-style: none;
+        }
+
+        .hamburger {
+            display: none;
+            flex-direction: column;
+            cursor: pointer;
+            padding: 8px;
+            border: none;
+            background: transparent;
+            transition: 0.3s;
+        }
+
+        @media (max-width: 900px) {
+            .hamburger { display: flex; }
+            #nav {
+                display: none;
+                flex-direction: column !important;
+                align-items: flex-start !important;
+                gap: 0 !important;
+                background: #222;
+                position: absolute;
+                top: 100%;
+                left: 0;
+                width: 100vw;
+                padding: 0;
+                z-index: 1000;
+                box-shadow: 0 4px 16px rgba(0,0,0,0.13);
+            }
+            #nav.show {
+                display: flex !important;
+            }
+            #nav li {
+                width: 100%;
+                border-bottom: 1px solid #333;
+                padding: 12px 18px;
+                text-align: left;
+                position: relative;
+            }
+            #nav li:last-child {
+                border-bottom: none;
+            }
+            nav ul li a {
+                width: 100%;
+                display: block;
+                color: #fff !important;
+                text-decoration: none;
+                text-align: left;
+                font-size: 1em !important;
+                padding: 8px 0;
+            }
+            .nav-icon {
+                font-size: 1.1em !important;
+            }
+            #mail-count, #cart-count, #wishlist-count {
+                position: absolute !important;
+                top: 12px !important;
+                right: 18px !important;
+                z-index: 1001 !important;
+            }
+        }
+
+        /* Footer Styling */
+        footer {
+            background: #333;
+            color: white;
+            padding: 40px 0 20px;
+            margin-top: 50px;
+        }
+
+        .footer-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 30px;
+        }
+
+        .footer-section h3,
+        .footer-section h4 {
+            color: #007bff;
+            margin-bottom: 15px;
+        }
+
+        .footer-section ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .footer-section ul li {
+            margin-bottom: 8px;
+        }
+
+        .footer-section ul li a {
+            color: #ccc;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .footer-section ul li a:hover {
+            color: #007bff;
+        }
+
+        .social-links {
+            display: flex;
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .social-links a {
+            color: #ccc;
+            font-size: 1.5em;
+            transition: color 0.3s ease;
+        }
+
+        .social-links a:hover {
+            color: #007bff;
+        }
+
+        .contact-info p {
+            margin: 8px 0;
+            color: #ccc;
+        }
+
+        .contact-info i {
+            margin-right: 8px;
+            color: #007bff;
+        }
+
+        .footer-bottom {
+            border-top: 1px solid #555;
+            margin-top: 30px;
+            padding-top: 20px;
+            text-align: center;
+            color: #ccc;
+        }
+
+        @media (max-width: 768px) {
+            .footer-container {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+
+            footer {
+                padding: 30px 0 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header style="background-color: #333; color: white; padding: 15px 0; position:relative;">
+        <div style="display:flex; align-items:center; justify-content:space-between; padding:0 15px;">
+            <div style="display:flex; align-items:center;">
+                <h1>Tridex</h1>
+                <span id="username-display"></span>
+            </div>
+
+            <!-- Hamburger icon for mobile -->
+            <button id="hamburger-menu" style="background:none; border:none; cursor:pointer; display:none; padding:10px; z-index:1000;">
+                <div style="width:30px; height:3px; background-color:white; margin:6px 0; transition:0.4s;"></div>
+                <div style="width:30px; height:3px; background-color:white; margin:6px 0; transition:0.4s;"></div>
+                <div style="width:30px; height:3px; background-color:white; margin:6px 0; transition:0.4s;"></div>
+            </button>
+
+            <nav id="main-nav" style="display:flex;">
+                <ul id="nav" style="display:flex; list-style:none; margin:0; padding:0; align-items:center;">
+                    <li class="nav"><a href="index.html">Home</a></li>
+                    <li class="nav"><a href="about.html">About</a></li>
+                    <li class="nav"><a href="more.html">More</a></li>
+                    <li class="nav"><a href="contact.html">Contact Us</a></li>
+                    <li>
+                        <a href="#" class="nav-icon" id="userIcon" style="position: relative;">
+                            <img id="nav-profile-picture" src="" alt="Profile" style="width: 28px; height: 28px; border-radius: 50%; object-fit: cover; display: none; border: 2px solid #fff;">
+                            <span id="nav-profile-placeholder" style="font-size: 1.3em;">👤</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="nav-icon" id="mailIcon" title="Mailbox">
+                            &#9993;
+                            <span id="mail-count">0</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="wishlist.html" class="nav-icon wishlist-nav-btn" id="wishlistIcon" title="My Wishlist" style="color: #e74c3c;">
+                            <i class="fas fa-heart" style="color: #e74c3c; font-size: 1.2em;"></i>
+                            <span id="wishlist-count" style="display: none;">0</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="cart.html" class="nav-icon" id="cartIcon" title="Cart">
+                            🛒<span id="cart-count">0</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+        <form class="search-bar" id="search-form" style="position: relative;">
+            <input type="text" id="search-input" placeholder="Search...">
+            <button type="submit">
+                <span class="search-icon">🔍</span>
+            </button>
+        </form>
+        <div class="dropdown-menu" id="userDropdown" style="display:none;">
+            <a href="login.html" class="dropdown-btn">Login</a>
+            <a href="signup.html" class="dropdown-btn">Sign Up</a>
+        </div>
+    </header>
+
+    <!-- Breadcrumb -->
+    <div class="breadcrumb">
+        <div class="breadcrumb-container">
+            <nav class="breadcrumb-nav">
+                <a href="index.html">Home</a>
+                <span class="breadcrumb-separator"><i class="fas fa-chevron-right"></i></span>
+                <span class="breadcrumb-current">Wishlist</span>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="wishlist-page">
+            <!-- Wishlist Header -->
+            <div class="wishlist-header">
+                <h1><i class="fas fa-heart"></i> My Wishlist</h1>
+            </div>
+
+            <!-- Wishlists Container -->
+            <div id="wishlists-container">
+                <!-- Wishlists will be loaded here dynamically -->
+            </div>
+        </div>
+    </main>
+
+    <!-- Loading Overlay -->
+    <div id="wishlist-loading" style="display: none;">
+        <div class="wishlist-loading-spinner"></div>
+        <p>Loading your wishlist...</p>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-container">
+            <div class="footer-section">
+                <h3>Tridex</h3>
+                <p>Your trusted e-commerce platform for quality products and exceptional service.</p>
+                <div class="social-links">
+                    <a href="#" title="Facebook"><i class="fab fa-facebook"></i></a>
+                    <a href="#" title="Twitter"><i class="fab fa-twitter"></i></a>
+                    <a href="#" title="Instagram"><i class="fab fa-instagram"></i></a>
+                    <a href="#" title="LinkedIn"><i class="fab fa-linkedin"></i></a>
+                </div>
+            </div>
+            
+            <div class="footer-section">
+                <h4>Quick Links</h4>
+                <ul>
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="products.html">Products</a></li>
+                    <li><a href="about.html">About Us</a></li>
+                    <li><a href="contact.html">Contact</a></li>
+                </ul>
+            </div>
+            
+            <div class="footer-section">
+                <h4>Customer Service</h4>
+                <ul>
+                    <li><a href="help.html">Help Center</a></li>
+                    <li><a href="shipping.html">Shipping Info</a></li>
+                    <li><a href="returns.html">Returns</a></li>
+                    <li><a href="privacy.html">Privacy Policy</a></li>
+                </ul>
+            </div>
+            
+            <div class="footer-section">
+                <h4>Contact Info</h4>
+                <div class="contact-info">
+                    <p><i class="fas fa-envelope"></i> tridex1332@gmail.com</p>
+                    <p><i class="fas fa-phone"></i> +91 8589838547</p>
+                    <p><i class="fas fa-map-marker-alt"></i> India</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer-bottom">
+            <p>&copy; 2024 Tridex. All rights reserved. | CEO & Owner: Adharsh</p>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="js/custom-popups.js"></script>
+    
+    <script>
+        // Get base URL function
+        function getBaseUrl() {
+            return window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+                ? 'http://localhost:3000'
+                : 'https://tridex-backend.onrender.com';
+        }
+
+        // Page-specific initialization
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check if user is logged in
+            const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+            const username = localStorage.getItem('username');
+
+            if (!isLoggedIn) {
+                // Redirect to login if not logged in
+                window.location.href = 'login.html?redirect=wishlist.html';
+                return;
+            }
+
+            // Update user navigation
+            updateUserNavigation();
+
+            // Initialize responsive navigation
+            initResponsiveNavigation();
+
+            // Update counts
+            updateWishlistCount();
+            updateCartCount();
+            updateMailCount();
+
+            // Initialize wishlist functionality after ensuring script is loaded
+            initializeWishlistManager();
+        });
+
+        // Update user navigation
+        function updateUserNavigation() {
+            const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+            const username = localStorage.getItem('username');
+
+            if (isLoggedIn && username) {
+                // Update username display
+                const usernameDisplay = document.getElementById('username-display');
+                if (usernameDisplay) {
+                    const verifiedUsers = JSON.parse(localStorage.getItem('verifiedUsers') || '[]');
+                    usernameDisplay.innerHTML =
+                        `Welcome, <span style="text-transform:uppercase; letter-spacing:0.5px; font-weight:500;">${username}</span> ${verifiedUsers.includes(username) ? '<span title="Verified" style="color:#1da1f2; font-size:1.1em;">✓</span>' : ''}`;
+                }
+
+                // Setup profile dropdown
+                setupProfileDropdown();
+            }
+        }
+
+        // Setup profile dropdown
+        function setupProfileDropdown() {
+            const userIcon = document.getElementById('userIcon');
+            const dropdown = document.getElementById('userDropdown');
+
+            if (userIcon && dropdown) {
+                // Create logged-in user dropdown menu
+                dropdown.innerHTML = `
+                    <a href="profile.html" class="dropdown-btn">
+                        <i class="fas fa-user"></i> My Profile
+                    </a>
+                    <a href="orders.html" class="dropdown-btn">
+                        <i class="fas fa-box"></i> My Orders
+                    </a>
+                    <a href="wishlist.html" class="dropdown-btn" style="background-color: #f8f9fa; color: #007bff;">
+                        <i class="fas fa-heart"></i> Wishlist
+                        <span id="dropdown-wishlist-count" style="display: none; background: #e74c3c; color: white; border-radius: 50%; padding: 2px 6px; font-size: 10px; margin-left: 5px;">0</span>
+                    </a>
+                    <div style="border-top: 1px solid #eee; margin: 5px 0;"></div>
+                    <a href="#" class="dropdown-btn" id="dropdown-logout">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </a>
+                `;
+
+                // Handle profile icon click
+                userIcon.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+                });
+
+                // Handle logout
+                const logoutBtn = document.getElementById('dropdown-logout');
+                if (logoutBtn) {
+                    logoutBtn.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        // Clear all login data
+                        localStorage.removeItem('token');
+                        localStorage.removeItem('isLoggedIn');
+                        localStorage.removeItem('username');
+                        localStorage.removeItem('currentUser');
+                        localStorage.removeItem('userId');
+                        localStorage.removeItem('verified');
+                        localStorage.removeItem('isGoogleUser');
+
+                        // Redirect to login page
+                        window.location.href = 'login.html';
+                    });
+                }
+
+                // Close dropdown when clicking outside
+                document.addEventListener('click', function(e) {
+                    if (!userIcon.contains(e.target) && !dropdown.contains(e.target)) {
+                        dropdown.style.display = 'none';
+                    }
+                });
+            }
+        }
+
+        // Initialize responsive navigation
+        function initResponsiveNavigation() {
+            const hamburger = document.getElementById('hamburger-menu');
+            const nav = document.getElementById('nav');
+
+            if (hamburger && nav) {
+                hamburger.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    nav.classList.toggle('show');
+
+                    // Animate hamburger icon
+                    const divs = hamburger.querySelectorAll('div');
+                    if (nav.classList.contains('show')) {
+                        divs[0].style.transform = 'rotate(-45deg) translate(-5px, 6px)';
+                        divs[1].style.opacity = '0';
+                        divs[2].style.transform = 'rotate(45deg) translate(-5px, -6px)';
+                    } else {
+                        divs[0].style.transform = 'none';
+                        divs[1].style.opacity = '1';
+                        divs[2].style.transform = 'none';
+                    }
+                });
+
+                // Close navigation when clicking outside
+                document.addEventListener('click', function(event) {
+                    if (!hamburger.contains(event.target) && !nav.contains(event.target) && nav.classList.contains('show')) {
+                        nav.classList.remove('show');
+
+                        // Reset hamburger icon
+                        const divs = hamburger.querySelectorAll('div');
+                        divs[0].style.transform = 'none';
+                        divs[1].style.opacity = '1';
+                        divs[2].style.transform = 'none';
+                    }
+                });
+            }
+        }
+
+        // Update wishlist count
+        function updateWishlistCount() {
+            const isLoggedIn = localStorage.getItem('isLoggedIn');
+            const username = localStorage.getItem('username');
+
+            if (!isLoggedIn || !username) {
+                const wishlistCountElements = document.querySelectorAll('#wishlist-count, #dropdown-wishlist-count');
+                wishlistCountElements.forEach(element => {
+                    if (element) element.style.display = 'none';
+                });
+                return;
+            }
+
+            // Get wishlist count from localStorage or fetch from server
+            let wishlistCount = 0;
+            try {
+                const wishlistData = localStorage.getItem('userWishlists');
+                if (wishlistData) {
+                    const wishlists = JSON.parse(wishlistData);
+                    wishlistCount = wishlists.reduce((total, wishlist) => total + (wishlist.items ? wishlist.items.length : 0), 0);
+                }
+            } catch (e) {
+                console.error('Error parsing wishlist data:', e);
+            }
+
+            // Update wishlist count in navigation
+            const wishlistCountElements = document.querySelectorAll('#wishlist-count, #dropdown-wishlist-count');
+            wishlistCountElements.forEach(element => {
+                if (element) {
+                    element.textContent = wishlistCount;
+                    element.style.display = wishlistCount > 0 ? 'inline-flex' : 'none';
+                }
+            });
+        }
+
+        // Update cart count
+        function updateCartCount() {
+            const isLoggedIn = localStorage.getItem('isLoggedIn');
+            const username = localStorage.getItem('username');
+
+            if (!isLoggedIn || !username) {
+                const cartCount = document.getElementById('cart-count');
+                if (cartCount) cartCount.style.display = 'none';
+                return;
+            }
+
+            let cart = [];
+            try {
+                cart = JSON.parse(localStorage.getItem('cart')) || [];
+            } catch (e) {
+                cart = [];
+            }
+
+            const cartCount = document.getElementById('cart-count');
+            if (cartCount) {
+                cartCount.textContent = cart.length || '';
+                cartCount.style.display = cart.length ? 'inline-block' : 'none';
+            }
+        }
+
+        // Update mail count
+        function updateMailCount() {
+            const isLoggedIn = localStorage.getItem('isLoggedIn');
+            const username = localStorage.getItem('username');
+
+            if (!isLoggedIn || !username) {
+                const mailCount = document.getElementById('mail-count');
+                if (mailCount) mailCount.style.display = 'none';
+                return;
+            }
+
+            // Simple mail count logic
+            const mailCount = document.getElementById('mail-count');
+            if (mailCount) {
+                mailCount.textContent = '0';
+                mailCount.style.display = 'none';
+            }
+        }
+
+        // Initialize wishlist functionality
+        function initializeWishlistManager() {
+            // Load wishlist script and initialize
+            const script = document.createElement('script');
+            script.src = 'js/wishlist.js?v=' + Date.now(); // Cache busting
+            script.onload = function() {
+                // Initialize wishlist manager after script loads
+                if (typeof WishlistManager !== 'undefined') {
+                    window.wishlistManager = new WishlistManager();
+
+                    // Load user wishlists
+                    wishlistManager.loadUserWishlists();
+
+                    console.log('✅ WishlistManager initialized successfully');
+                } else {
+                    console.error('❌ WishlistManager not found after loading script');
+                }
+            };
+            script.onerror = function() {
+                console.error('❌ Failed to load js/wishlist.js');
+            };
+            document.head.appendChild(script);
+        }
+    </script>
+</body>
+</html>

@@ -153,6 +153,7 @@
                 if (data.success) {
                     // Save user data to localStorage
                     localStorage.setItem('token', data.token);
+                    localStorage.setItem('userId', data.userId);
                     localStorage.setItem('username', data.username);
                     localStorage.setItem('currentUser', data.username);
                     localStorage.setItem('isLoggedIn', 'true');
@@ -1053,6 +1054,7 @@
 
                     // Regular login flow
                     localStorage.setItem('token', result.token);
+                    localStorage.setItem('userId', result.userId);
                     // Store isAdmin as a string for consistent checking
                     localStorage.setItem('isAdmin', result.isAdmin ? 'true' : 'false');
                     localStorage.setItem('username', result.username || userInput);

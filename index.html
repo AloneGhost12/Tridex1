@@ -3,11 +3,33 @@
 <head>
    <meta charset="UTF-8">
    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-   <title>Tridex</title>
+   <title>Tridex - Your Ultimate Shopping Destination</title>
+
+   <!-- PWA Meta Tags -->
+   <meta name="description" content="Discover amazing products with advanced search, personalized recommendations, and seamless shopping experience.">
+   <meta name="theme-color" content="#007bff">
+   <meta name="apple-mobile-web-app-capable" content="yes">
+   <meta name="apple-mobile-web-app-status-bar-style" content="default">
+   <meta name="apple-mobile-web-app-title" content="Tridex">
+   <meta name="msapplication-TileColor" content="#007bff">
+   <meta name="msapplication-config" content="/browserconfig.xml">
+
+   <!-- PWA Manifest -->
+   <link rel="manifest" href="/manifest.json">
+
+   <!-- Favicon and App Icons -->
+   <link rel="icon" type="image/svg+xml" href="favicon.svg">
+   <link rel="apple-touch-icon" sizes="180x180" href="icons/icon-192x192.png">
+   <link rel="icon" type="image/png" sizes="32x32" href="icons/icon-192x192.png">
+   <link rel="icon" type="image/png" sizes="16x16" href="icons/icon-192x192.png">
    <link rel="stylesheet" href="style.css">
    <link rel="stylesheet" href="chatbot.css">
    <!-- Custom Popup System -->
    <link rel="stylesheet" href="css/custom-popups.css">
+   <!-- Wishlist Styles -->
+   <link rel="stylesheet" href="css/wishlist.css">
+   <!-- Advanced Search Styles -->
+   <link rel="stylesheet" href="css/advanced-search.css">
    <script src="js/custom-popups.js"></script>
    <script>
        // Fallback functions in case custom popups don't load
@@ -249,7 +271,10 @@
    <header style="background-color: #333; color: white; padding: 15px 0; position:relative;">
        <div style="display:flex; align-items:center; justify-content:space-between; padding:0 15px;">
            <div style="display:flex; align-items:center;">
-               <h1>Tridex</h1>
+               <h1 style="display: flex; align-items: center; gap: 8px; margin: 0;">
+                   Tridex
+                   <i class="fas fa-heart" style="color: #e74c3c; font-size: 0.6em; animation: brandHeartPulse 2s infinite;"></i>
+               </h1>
                <span id="username-display"></span>
            </div>
 
@@ -279,15 +304,22 @@
                        </a>
                    </li>
                    <li>
+                       <a href="wishlist.html" class="nav-icon wishlist-nav-btn" id="wishlistIcon" title="My Wishlist">
+                           <i class="fas fa-heart" style="color: #e74c3c; font-size: 1.2em;"></i>
+                           <span id="wishlist-count" style="display: none;">0</span>
+                       </a>
+                   </li>
+                   <li>
                        <a href="cart.html" class="nav-icon" id="cartIcon" title="Cart">
-                           🛒<span id="cart-count">0</span>
+                           <i class="fas fa-shopping-cart" style="color: #28a745; font-size: 1.2em;"></i>
+                           <span id="cart-count" style="position: absolute; top: -8px; right: -8px; background: #28a745; color: white; border-radius: 50%; padding: 2px 6px; font-size: 10px; font-weight: bold; min-width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; line-height: 1;">0</span>
                        </a>
                    </li>
                </ul>
            </nav>
        </div>
-       <form class="search-bar" id="search-form">
-           <input type="text" id="search-input" placeholder="Search...">
+       <form class="search-bar" id="search-form" style="position: relative;">
+           <input type="text" id="search-input" placeholder="Search products... ❤️ Save favorites!">
            <button type="submit">
                <span class="search-icon">🔍</span>
            </button>
@@ -297,6 +329,101 @@
            <a href="signup.html" class="dropdown-btn">Sign Up</a>
        </div>
    </header>
+
+   <!-- Advanced Search Controls -->
+   <div id="advanced-search-controls" style="background: #f8f9fa; border-bottom: 1px solid #dee2e6; padding: 15px 0;">
+       <div style="max-width: 1200px; margin: 0 auto; padding: 0 15px;">
+           <div class="search-controls" style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap; margin-bottom: 15px;">
+               <button id="filter-toggle" class="filter-toggle" style="background: #007bff; color: white; border: none; padding: 8px 16px; border-radius: 5px; cursor: pointer; display: flex; align-items: center; gap: 5px;">
+                   <i class="fas fa-filter"></i> Filters
+               </button>
+               <select id="sort-select" class="sort-select" style="padding: 8px 12px; border: 1px solid #ccc; border-radius: 5px; background: white;">
+                   <option value="relevance">Most Relevant</option>
+                   <option value="popularity">Most Popular</option>
+                   <option value="price_asc">Price: Low to High</option>
+                   <option value="price_desc">Price: High to Low</option>
+                   <option value="rating">Highest Rated</option>
+                   <option value="newest">Newest First</option>
+               </select>
+               <div class="results-info" style="margin-left: auto;">
+                   <span id="results-count" style="color: #666; font-size: 0.9em;">Loading products...</span>
+               </div>
+           </div>
+
+           <div id="search-filters" class="search-filters" style="display: none; background: white; border: 1px solid #dee2e6; border-radius: 8px; padding: 20px; margin-bottom: 15px;">
+               <div class="filters-content" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
+                   <div class="filter-group">
+                       <h4 style="margin: 0 0 10px 0; color: #333;">Price Range</h4>
+                       <div class="price-range" style="display: flex; align-items: center; gap: 10px;">
+                           <input type="number" id="min-price" placeholder="Min" min="0" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px; width: 80px;">
+                           <span>to</span>
+                           <input type="number" id="max-price" placeholder="Max" min="0" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px; width: 80px;">
+                       </div>
+                   </div>
+
+                   <div class="filter-group">
+                       <h4 style="margin: 0 0 10px 0; color: #333;">Category</h4>
+                       <select id="category-filter" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px; width: 100%;">
+                           <option value="">All Categories</option>
+                       </select>
+                   </div>
+
+                   <div class="filter-group">
+                       <h4 style="margin: 0 0 10px 0; color: #333;">Brand</h4>
+                       <select id="brand-filter" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px; width: 100%;">
+                           <option value="">All Brands</option>
+                       </select>
+                   </div>
+
+                   <div class="filter-group">
+                       <h4 style="margin: 0 0 10px 0; color: #333;">Rating</h4>
+                       <div class="rating-filter" style="display: flex; flex-direction: column; gap: 5px;">
+                           <label style="display: flex; align-items: center; gap: 5px;"><input type="radio" name="rating" value=""> Any Rating</label>
+                           <label style="display: flex; align-items: center; gap: 5px;"><input type="radio" name="rating" value="4"> 4+ Stars</label>
+                           <label style="display: flex; align-items: center; gap: 5px;"><input type="radio" name="rating" value="3"> 3+ Stars</label>
+                           <label style="display: flex; align-items: center; gap: 5px;"><input type="radio" name="rating" value="2"> 2+ Stars</label>
+                       </div>
+                   </div>
+
+                   <div class="filter-group">
+                       <h4 style="margin: 0 0 10px 0; color: #333;">Availability</h4>
+                       <label class="checkbox-label" style="display: flex; align-items: center; gap: 5px;">
+                           <input type="checkbox" id="available-only"> In Stock Only
+                       </label>
+                   </div>
+               </div>
+
+               <div class="filter-actions" style="margin-top: 20px; display: flex; gap: 10px;">
+                   <button id="apply-filters" class="apply-filters-btn" style="background: #28a745; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">Apply Filters</button>
+                   <button id="clear-filters" class="clear-filters-btn" style="background: #6c757d; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">Clear All</button>
+               </div>
+           </div>
+       </div>
+   </div>
+
+   <!-- Search Suggestions Container -->
+   <div id="search-suggestions" class="search-suggestions" style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #ccc; border-top: none; border-radius: 0 0 5px 5px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); z-index: 1000; max-height: 300px; overflow-y: auto;"></div>
+
+   <!-- Search Loading Indicator -->
+   <div id="search-loading" class="search-loading" style="display: none; text-align: center; padding: 20px;">
+       <div class="loading-spinner" style="display: inline-block; border: 3px solid #f3f3f3; border-top: 3px solid #007bff; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite;"></div>
+       <p style="margin-top: 10px; color: #666;">Searching...</p>
+   </div>
+
+   <!-- Quick Actions Bar -->
+   <div class="quick-actions-bar" style="background: linear-gradient(135deg, #007bff, #6f42c1); padding: 15px 0; text-align: center;">
+       <div style="max-width: 1200px; margin: 0 auto; padding: 0 15px; display: flex; justify-content: center; align-items: center; gap: 20px; flex-wrap: wrap;">
+           <div style="color: white; font-size: 1.1em; font-weight: 500;">
+               <i class="fas fa-heart" style="margin-right: 8px; color: #ff6b6b;"></i>
+               Save your favorite items!
+           </div>
+           <a href="wishlist.html" class="wishlist-cta-btn" style="background: rgba(255, 255, 255, 0.2); color: white; text-decoration: none; padding: 10px 20px; border-radius: 25px; font-weight: 600; transition: all 0.3s ease; border: 2px solid rgba(255, 255, 255, 0.3); backdrop-filter: blur(10px);">
+               <i class="fas fa-heart" style="margin-right: 8px;"></i>
+               View My Wishlist
+               <span id="wishlist-cta-count" style="background: #ff6b6b; color: white; border-radius: 50%; padding: 2px 8px; font-size: 12px; margin-left: 8px; display: none;">0</span>
+           </a>
+       </div>
+   </div>
 
    <!-- Category Navigation -->
    <div class="category-nav" style="padding:20px 0; background:#f4f4f9; text-align:center; overflow-x:auto; white-space:nowrap; scrollbar-width:none; -ms-overflow-style:none;">
@@ -397,6 +524,253 @@
                padding: 15px 0;
            }
        }
+
+       /* Advanced Search Styles */
+       .search-suggestions {
+           background: white;
+           border: 1px solid #ccc;
+           border-top: none;
+           border-radius: 0 0 5px 5px;
+           box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+           max-height: 300px;
+           overflow-y: auto;
+           z-index: 1000;
+       }
+
+       .suggestion-item {
+           padding: 12px 16px;
+           border-bottom: 1px solid #eee;
+           cursor: pointer;
+           display: flex;
+           align-items: center;
+           gap: 10px;
+           transition: background-color 0.2s;
+       }
+
+       .suggestion-item:hover {
+           background-color: #f8f9fa;
+       }
+
+       .suggestion-item:last-child {
+           border-bottom: none;
+       }
+
+       .suggestion-content {
+           flex: 1;
+       }
+
+       .suggestion-name {
+           font-weight: 500;
+           color: #333;
+       }
+
+       .suggestion-subtitle {
+           font-size: 0.85em;
+           color: #666;
+       }
+
+       .filter-toggle.active {
+           background: #0056b3 !important;
+       }
+
+       @media (max-width: 768px) {
+           #advanced-search-controls {
+               padding: 10px 0;
+           }
+
+           .search-controls {
+               flex-direction: column;
+               align-items: stretch !important;
+               gap: 10px !important;
+           }
+
+           .filters-content {
+               grid-template-columns: 1fr !important;
+               gap: 15px !important;
+           }
+
+           .filter-actions {
+               flex-direction: column;
+           }
+
+           .filter-actions button {
+               width: 100%;
+           }
+       }
+
+       /* Enhanced Dropdown Menu Styles */
+       .dropdown-menu {
+           position: absolute;
+           top: 100%;
+           right: 0;
+           background: white;
+           border: 1px solid #ddd;
+           border-radius: 8px;
+           box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+           min-width: 200px;
+           z-index: 1000;
+           overflow: hidden;
+       }
+
+       .dropdown-btn {
+           display: flex;
+           align-items: center;
+           padding: 12px 16px;
+           color: #333;
+           text-decoration: none;
+           transition: background-color 0.3s ease;
+           border-bottom: 1px solid #f0f0f0;
+       }
+
+       .dropdown-btn:last-child {
+           border-bottom: none;
+       }
+
+       .dropdown-btn:hover {
+           background-color: #f8f9fa;
+           color: #007bff;
+       }
+
+       .dropdown-btn i {
+           margin-right: 8px;
+           width: 16px;
+           text-align: center;
+       }
+
+       /* Navigation Icons Styling */
+       #wishlistIcon, #cartIcon {
+           position: relative;
+           font-size: 1.2em;
+           transition: all 0.3s ease;
+       }
+
+       #wishlist-count, #cart-count {
+           position: absolute;
+           top: -8px;
+           right: -8px;
+           color: white;
+           border-radius: 50%;
+           padding: 2px 6px;
+           font-size: 10px;
+           font-weight: bold;
+           min-width: 16px;
+           height: 16px;
+           display: flex;
+           align-items: center;
+           justify-content: center;
+           line-height: 1;
+       }
+
+       #wishlist-count {
+           background: #e74c3c;
+       }
+
+       #cart-count {
+           background: #28a745;
+       }
+
+       /* Mobile Navigation Enhancements */
+       @media (max-width: 900px) {
+           .dropdown-menu {
+               position: fixed !important;
+               top: 120px !important;
+               right: 20px !important;
+               z-index: 1002 !important;
+           }
+       }
+
+       /* Enhanced Navigation Icons Styles */
+       .wishlist-nav-btn, #cartIcon {
+           position: relative;
+           transition: all 0.3s ease;
+       }
+
+       .wishlist-nav-btn:hover, #cartIcon:hover {
+           transform: scale(1.1);
+       }
+
+       .wishlist-nav-btn:hover i {
+           animation: heartBeat 1s infinite;
+       }
+
+       #cartIcon:hover i {
+           animation: cartShake 0.5s infinite;
+       }
+
+       @keyframes heartBeat {
+           0%, 100% { transform: scale(1); }
+           50% { transform: scale(1.2); }
+       }
+
+       @keyframes cartShake {
+           0%, 100% { transform: translateX(0); }
+           25% { transform: translateX(-2px); }
+           75% { transform: translateX(2px); }
+       }
+
+       @keyframes brandHeartPulse {
+           0%, 100% { transform: scale(1); opacity: 0.8; }
+           50% { transform: scale(1.3); opacity: 1; }
+       }
+
+       /* Quick Actions Bar Styles */
+       .wishlist-cta-btn:hover {
+           background: rgba(255, 255, 255, 0.3) !important;
+           transform: translateY(-2px);
+           box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+       }
+
+       /* Floating Wishlist Button Styles */
+       .floating-wishlist-btn:hover {
+           transform: scale(1.1) rotate(5deg);
+           box-shadow: 0 8px 25px rgba(231, 76, 60, 0.6);
+       }
+
+       .floating-wishlist-btn:active {
+           transform: scale(0.95);
+       }
+
+       /* Pulse animation for floating button */
+       @keyframes wishlistPulse {
+           0% { box-shadow: 0 4px 15px rgba(231, 76, 60, 0.4); }
+           50% { box-shadow: 0 4px 25px rgba(231, 76, 60, 0.7); }
+           100% { box-shadow: 0 4px 15px rgba(231, 76, 60, 0.4); }
+       }
+
+       .floating-wishlist-btn {
+           animation: wishlistPulse 3s infinite;
+       }
+
+       /* Responsive adjustments for floating button */
+       @media (max-width: 768px) {
+           #floating-wishlist {
+               bottom: 120px !important;
+               right: 16px !important;
+           }
+
+           .floating-wishlist-btn {
+               width: 48px !important;
+               height: 48px !important;
+           }
+
+           .floating-wishlist-btn i {
+               font-size: 1.3em !important;
+           }
+
+           .quick-actions-bar {
+               padding: 10px 0 !important;
+           }
+
+           .quick-actions-bar > div {
+               flex-direction: column !important;
+               gap: 10px !important;
+           }
+
+           .wishlist-cta-btn {
+               padding: 8px 16px !important;
+               font-size: 14px !important;
+           }
+       }
    </style>
 
     <!-- Ban popup for banned users -->
@@ -443,6 +817,14 @@
             <button id="close-mailbox" style="padding:8px 18px; background:#007bff; color:#fff; border:none; border-radius:5px; font-size:1rem; cursor:pointer;">Close</button>
         </div>
     </div>
+    <!-- Floating Wishlist Button -->
+    <div id="floating-wishlist" style="position: fixed; bottom: 150px; right: 24px; z-index: 4999;">
+        <a href="wishlist.html" class="floating-wishlist-btn" style="background: linear-gradient(135deg, #e74c3c, #c0392b); color: white; text-decoration: none; border-radius: 50%; width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 15px rgba(231, 76, 60, 0.4); transition: all 0.3s ease; position: relative;" title="My Wishlist">
+            <i class="fas fa-heart" style="font-size: 1.5em;"></i>
+            <span id="floating-wishlist-count" style="position: absolute; top: -8px; right: -8px; background: #fff; color: #e74c3c; border-radius: 50%; padding: 2px 6px; font-size: 10px; font-weight: bold; min-width: 18px; height: 18px; display: none; align-items: center; justify-content: center; border: 2px solid #e74c3c;">0</span>
+        </a>
+    </div>
+
     <!-- Enhanced Chatbot Widget with Responsive Design -->
     <div id="chatbot-widget" style="position:fixed; bottom:80px; right:24px; z-index:5000;">
         <button id="chatbot-toggle" style="background:#007bff; color:#fff; border:none; border-radius:50%; width:56px; height:56px; font-size:2em; cursor:pointer; box-shadow:0 4px 8px rgba(0,0,0,0.2); transition:all 0.3s ease;">💬</button>
@@ -488,6 +870,21 @@ function showLoading() {
 function hideLoading() {
     const loadingOverlay = document.getElementById('loading-overlay');
     if (loadingOverlay) loadingOverlay.style.display = 'none';
+}
+
+// --- Base URL helper function ---
+function getBaseUrl() {
+    // Determine the correct base URL for API calls
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        // Local development - use the Node.js server port
+        return 'http://localhost:3000';
+    } else if (window.location.hostname.includes('onrender.com')) {
+        // Production on Render
+        return 'https://tridex1.onrender.com';
+    } else {
+        // Default to current origin
+        return window.location.origin;
+    }
 }
 
 // --- withLoading helper for loading overlay ---
@@ -726,7 +1123,8 @@ async function loadUserDataForNavigation() {
         if (!username || !token) return;
 
         // Fetch user data from server to get full name and profile picture
-        const response = await fetch(`https://tridex1.onrender.com/users/profile?username=${encodeURIComponent(username)}`, {
+        const baseUrl = getBaseUrl();
+        const response = await fetch(`${baseUrl}/users/profile?username=${encodeURIComponent(username)}`, {
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${token}`,
@@ -782,12 +1180,44 @@ document.addEventListener('DOMContentLoaded', function() {
     const userIcon = document.getElementById('userIcon');
     const dropdown = document.getElementById('userDropdown');
     if (isLoggedIn) {
-        // Remove login and signup links if logged in
-        dropdown.innerHTML = '';
-        // Redirect to profile page on profile icon click
+        // Create logged-in user dropdown menu
+        dropdown.innerHTML = `
+            <a href="profile.html" class="dropdown-btn">
+                <i class="fas fa-user"></i> My Profile
+            </a>
+            <a href="orders.html" class="dropdown-btn">
+                <i class="fas fa-box"></i> My Orders
+            </a>
+            <a href="wishlist.html" class="dropdown-btn" style="background: linear-gradient(135deg, #ffe6e6, #fff0f0); border-left: 3px solid #e74c3c;">
+                <i class="fas fa-heart" style="color: #e74c3c;"></i> My Wishlist
+                <span id="dropdown-wishlist-count" style="display: none; background: #e74c3c; color: white; border-radius: 50%; padding: 2px 6px; font-size: 10px; margin-left: 5px; font-weight: bold;">0</span>
+            </a>
+            <div style="border-top: 1px solid #eee; margin: 5px 0;"></div>
+            <a href="#" class="dropdown-btn" id="dropdown-logout">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </a>
+        `;
+
+        // Handle profile icon click to toggle dropdown
         userIcon.addEventListener('click', function(e) {
             e.preventDefault();
-            window.location.href = 'profile.html';
+            dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+        });
+
+        // Handle logout
+        document.getElementById('dropdown-logout').addEventListener('click', function(e) {
+            e.preventDefault();
+            // Clear all login data
+            localStorage.removeItem('token');
+            localStorage.removeItem('isLoggedIn');
+            localStorage.removeItem('username');
+            localStorage.removeItem('currentUser');
+            localStorage.removeItem('userId');
+            localStorage.removeItem('verified');
+            localStorage.removeItem('isGoogleUser');
+
+            // Redirect to login page
+            window.location.href = 'login.html';
         });
     } else {
         userIcon.addEventListener('click', function(e) {
@@ -903,8 +1333,13 @@ function renderProducts(products) {
                 const div = document.createElement('div');
                 div.className = 'product-card';
                 div.innerHTML = `
-                    <div class="product-image-container">
+                    <div class="product-image-container" style="position: relative;">
                         <img src="${product.image || ''}" alt="${product.name}" style="cursor:pointer;" data-id="${product._id}">
+                        <div class="product-actions" style="position: absolute; top: 10px; right: 10px; display: flex; flex-direction: column; gap: 8px;">
+                            <button class="wishlist-btn" data-product-id="${product._id}" title="Add to Wishlist" style="background: rgba(255, 255, 255, 0.9); border: none; width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);">
+                                <i class="far fa-heart" style="color: #6c757d; font-size: 14px;"></i>
+                            </button>
+                        </div>
                     </div>
                     <h3>${product.name}</h3>
                     <p>₹${product.price}</p>
@@ -914,6 +1349,17 @@ function renderProducts(products) {
                     history.pushState({ page: 'index', scrollPos: window.scrollY }, '', window.location.href);
                     window.location.href = `product-details.html?id=${product._id}`;
                 };
+
+                // Add wishlist button functionality
+                const wishlistBtn = div.querySelector('.wishlist-btn');
+                if (wishlistBtn) {
+                    wishlistBtn.onclick = function(e) {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        handleWishlistToggle(product._id, wishlistBtn);
+                    };
+                }
+
                 grid.appendChild(div);
             } catch (err) {
                 console.error('Error rendering product:', product, err);
@@ -924,32 +1370,128 @@ function renderProducts(products) {
         document.getElementById('product-grid').innerHTML = '<div style="text-align:center; color:#888; font-size:1.2em; padding:32px 0;">Failed to render products.<br>' + err + '</div>';
     }
 }
-// Patch search form to record searches
+
+// Initialize advanced search functionality
+function initializeAdvancedSearch() {
+    // Wait for advanced search script to load
+    if (typeof AdvancedSearch !== 'undefined') {
+        // Initialize advanced search but don't let it override our main page functionality
+        window.advancedSearch = new AdvancedSearch();
+
+        // Override the advanced search's product display to use our existing renderProducts function
+        if (window.advancedSearch) {
+            const originalDisplayResults = window.advancedSearch.displaySearchResults;
+            window.advancedSearch.displaySearchResults = function(data) {
+                // Update results count
+                const resultsCount = document.getElementById('results-count');
+                if (resultsCount) {
+                    const count = data.pagination?.totalCount || 0;
+                    resultsCount.textContent = `${count} product${count !== 1 ? 's' : ''} found`;
+                }
+
+                // Use our existing renderProducts function
+                if (data.products && data.products.length > 0) {
+                    renderProducts(data.products);
+                } else {
+                    document.getElementById('product-grid').innerHTML = `
+                        <div style="text-align:center; color:#888; font-size:1.2em; padding:32px 0;">
+                            <div style="font-size:3em; margin-bottom:10px;">🔍</div>
+                            <h3>No products found</h3>
+                            <p>Try adjusting your search terms or filters</p>
+                        </div>
+                    `;
+                }
+
+                // Update pagination if needed
+                if (this.updatePagination) {
+                    this.updatePagination(data.pagination);
+                }
+            };
+        }
+    } else {
+        // Retry after a short delay if AdvancedSearch is not yet loaded
+        setTimeout(initializeAdvancedSearch, 100);
+    }
+}
+
+// Enhanced search form with advanced search integration
 const searchForm = document.getElementById('search-form');
 if (searchForm) {
     searchForm.onsubmit = function(e) {
         e.preventDefault();
-        const filter = document.getElementById('search-input').value.trim().toLowerCase();
-        if (filter) recordProductSearch(filter);
-        fetchAndRenderProducts(filter);
+        const query = document.getElementById('search-input').value.trim();
+        if (query) {
+            recordProductSearch(query);
+            // Use advanced search if available, otherwise fallback to basic search
+            if (window.advancedSearch) {
+                window.advancedSearch.search(query);
+            } else {
+                fetchAndRenderProducts(query);
+            }
+        }
     };
 }
-// --- Render recommendations on page load ---
+// --- Enhanced product fetching with advanced search support ---
 let allProductsCache = [];
 async function fetchAndRenderProducts(filter = "") {
     try {
-        const res = await fetch('https://tridex1.onrender.com/products');
-        let products = await res.json();
-        allProductsCache = products;
-        const filtered = products.filter(product =>
-            !filter ||
-            product.name.toLowerCase().includes(filter.toLowerCase()) ||
-            (product.desc && product.desc.toLowerCase().includes(filter.toLowerCase()))
-        );
-        renderProducts(filtered);
-        renderRecommendations(products);
+        let products;
+        let totalCount = 0;
+
+        if (filter && filter.trim()) {
+            // Use advanced search endpoint for search queries
+            const searchParams = new URLSearchParams({
+                q: filter.trim(),
+                sortBy: 'relevance',
+                page: 1,
+                limit: 50
+            });
+
+            const headers = {};
+            const userId = localStorage.getItem('userId');
+            const username = localStorage.getItem('username');
+            if (userId) headers.userid = userId;
+            if (username) headers.username = username;
+
+            const baseUrl = getBaseUrl();
+            const res = await fetch(`${baseUrl}/products/search?${searchParams}`, { headers });
+            const data = await res.json();
+            products = data.products || [];
+            totalCount = data.pagination?.totalCount || products.length;
+
+            // Update results count
+            const resultsCount = document.getElementById('results-count');
+            if (resultsCount) {
+                resultsCount.textContent = `${totalCount} product${totalCount !== 1 ? 's' : ''} found`;
+            }
+        } else {
+            // Use regular products endpoint for browsing
+            const baseUrl = getBaseUrl();
+            const res = await fetch(`${baseUrl}/products`);
+            products = await res.json();
+            allProductsCache = products;
+            totalCount = products.length;
+
+            // Update results count
+            const resultsCount = document.getElementById('results-count');
+            if (resultsCount) {
+                resultsCount.textContent = `${totalCount} product${totalCount !== 1 ? 's' : ''} available`;
+            }
+        }
+
+        renderProducts(products);
+        if (!filter) {
+            renderRecommendations(products);
+        }
     } catch (e) {
+        console.error('Error fetching products:', e);
         document.getElementById('product-grid').innerHTML = `<div style="text-align:center; color:#888; font-size:1.2em; padding:32px 0;">Unable to load products at this time.</div>`;
+
+        // Update results count on error
+        const resultsCount = document.getElementById('results-count');
+        if (resultsCount) {
+            resultsCount.textContent = 'Error loading products';
+        }
     } finally {
         hideLoading();
     }
@@ -960,6 +1502,9 @@ async function fetchAndRenderProducts(filter = "") {
     recommendationsSection.id = 'recommendations-section';
     const productGrid = document.getElementById('product-grid');
     productGrid.parentNode.insertBefore(recommendationsSection, productGrid);
+
+    // Initialize advanced search functionality
+    initializeAdvancedSearch();
 
     // Initial render
     fetchAndRenderProducts();
@@ -1007,7 +1552,8 @@ async function fetchAndRenderProducts(filter = "") {
         // Fetch announcements from server including user-specific ones
         let messages = [];
         try {
-            const response = await fetch(`https://tridex1.onrender.com/announcements?username=${encodeURIComponent(username)}`);
+            const baseUrl = getBaseUrl();
+            const response = await fetch(`${baseUrl}/announcements?username=${encodeURIComponent(username)}`);
             if (response.ok) {
                 messages = await response.json();
             } else {
@@ -1061,7 +1607,8 @@ async function fetchAndRenderProducts(filter = "") {
 
                     const messageId = this.getAttribute('data-id');
                     try {
-                        const response = await fetch(`https://tridex1.onrender.com/announcements/${messageId}/read`, {
+                        const baseUrl = getBaseUrl();
+                        const response = await fetch(`${baseUrl}/announcements/${messageId}/read`, {
                             method: 'PUT',
                             headers: {
                                 'Content-Type': 'application/json'
@@ -1128,7 +1675,8 @@ async function fetchAndRenderProducts(filter = "") {
         let unreadCount = 0;
 
         try {
-            const response = await fetch(`https://tridex1.onrender.com/announcements?username=${encodeURIComponent(username)}`);
+            const baseUrl = getBaseUrl();
+            const response = await fetch(`${baseUrl}/announcements?username=${encodeURIComponent(username)}`);
             if (response.ok) {
                 messages = await response.json();
 
@@ -1358,7 +1906,8 @@ document.addEventListener('DOMContentLoaded', function() {
         <div style="display:inline-block; border:3px solid #f3f3f3; border-top:3px solid #007bff; border-radius:50%; width:30px; height:30px; animation:spin 1s linear infinite;"></div>
         <p style="margin-top:10px; color:#666;">Loading categories...</p>
     </div>`;
-    fetch('https://tridex1.onrender.com/categories')
+    const baseUrl = getBaseUrl();
+    fetch(`${baseUrl}/categories`)
         .then(res => res.json())
         .then(categories => {
             if (!Array.isArray(categories) || categories.length === 0) {
@@ -1392,7 +1941,8 @@ document.addEventListener('DOMContentLoaded', function() {
 // Helper: fetch and render products by category
 function fetchAndRenderProductsByCategory(categoryName) {
     showLoading();
-    fetch('https://tridex1.onrender.com/products?category=' + encodeURIComponent(categoryName))
+    const baseUrl = getBaseUrl();
+    fetch(`${baseUrl}/products?category=` + encodeURIComponent(categoryName))
         .then(res => res.json())
         .then(products => {
             renderProducts(products);
@@ -1403,6 +1953,178 @@ function fetchAndRenderProductsByCategory(categoryName) {
         })
         .finally(() => hideLoading());
 }
+
+// Wishlist count update function
+function updateWishlistCount() {
+    const isLoggedIn = localStorage.getItem('isLoggedIn');
+    const hasToken = localStorage.getItem('token');
+    const username = localStorage.getItem('username') || localStorage.getItem('currentUser');
+
+    // If we have a token but no isLoggedIn flag, set it
+    if (hasToken && !isLoggedIn) {
+        localStorage.setItem('isLoggedIn', 'true');
+    }
+
+    const isActuallyLoggedIn = localStorage.getItem('isLoggedIn') || hasToken;
+
+    if (!isActuallyLoggedIn || !username) {
+        const wishlistCountElements = document.querySelectorAll('#wishlist-count, #dropdown-wishlist-count');
+        wishlistCountElements.forEach(element => {
+            if (element) element.style.display = 'none';
+        });
+        return;
+    }
+
+    // Get wishlist count from localStorage or fetch from server
+    let wishlistCount = 0;
+    try {
+        const wishlistData = localStorage.getItem('userWishlists');
+        if (wishlistData) {
+            const wishlists = JSON.parse(wishlistData);
+            wishlistCount = wishlists.reduce((total, wishlist) => total + (wishlist.items ? wishlist.items.length : 0), 0);
+        }
+    } catch (e) {
+        console.error('Error parsing wishlist data:', e);
+    }
+
+    // Update wishlist count in navigation
+    const wishlistCountElements = document.querySelectorAll('#wishlist-count, #dropdown-wishlist-count, #wishlist-cta-count, #floating-wishlist-count');
+    wishlistCountElements.forEach(element => {
+        if (element) {
+            element.textContent = wishlistCount;
+            element.style.display = wishlistCount > 0 ? 'inline-flex' : 'none';
+        }
+    });
+}
+
+// Wishlist toggle function
+async function handleWishlistToggle(productId, buttonElement) {
+    try {
+        const isLoggedIn = localStorage.getItem('isLoggedIn');
+        const userId = localStorage.getItem('userId');
+
+        if (!isLoggedIn || !userId) {
+            alert('Please log in to add items to your wishlist');
+            window.location.href = 'login.html';
+            return;
+        }
+
+        const icon = buttonElement.querySelector('i');
+        const isInWishlist = icon.classList.contains('fas');
+
+        // Show loading state
+        buttonElement.style.opacity = '0.6';
+        buttonElement.style.pointerEvents = 'none';
+
+        const baseUrl = getBaseUrl();
+
+        if (isInWishlist) {
+            // Remove from wishlist
+            const response = await fetch(`${baseUrl}/wishlists/quick-remove`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'userid': userId
+                },
+                body: JSON.stringify({ productId })
+            });
+
+            if (response.ok) {
+                icon.className = 'far fa-heart';
+                icon.style.color = '#6c757d';
+                buttonElement.title = 'Add to Wishlist';
+                showToast('Removed from wishlist', 'success');
+            }
+        } else {
+            // Add to wishlist
+            const response = await fetch(`${baseUrl}/wishlists/quick-add`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'userid': userId
+                },
+                body: JSON.stringify({ productId })
+            });
+
+            if (response.ok) {
+                icon.className = 'fas fa-heart';
+                icon.style.color = '#e74c3c';
+                buttonElement.title = 'Remove from Wishlist';
+                showToast('Added to wishlist', 'success');
+            }
+        }
+
+        // Update wishlist count
+        updateWishlistCount();
+
+    } catch (error) {
+        console.error('Error toggling wishlist:', error);
+        showToast('Failed to update wishlist', 'error');
+    } finally {
+        // Restore button state
+        buttonElement.style.opacity = '1';
+        buttonElement.style.pointerEvents = 'auto';
+    }
+}
+
+// Simple toast notification function
+function showToast(message, type = 'info') {
+    const toast = document.createElement('div');
+    toast.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: ${type === 'success' ? '#28a745' : type === 'error' ? '#dc3545' : '#007bff'};
+        color: white;
+        padding: 12px 20px;
+        border-radius: 8px;
+        z-index: 10000;
+        font-weight: 500;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        animation: slideInRight 0.3s ease;
+    `;
+    toast.textContent = message;
+
+    document.body.appendChild(toast);
+
+    setTimeout(() => {
+        toast.style.animation = 'slideOutRight 0.3s ease';
+        setTimeout(() => {
+            if (toast.parentNode) {
+                toast.parentNode.removeChild(toast);
+            }
+        }, 300);
+    }, 3000);
+}
+
+// Add CSS animations for toast
+const toastStyles = document.createElement('style');
+toastStyles.textContent = `
+    @keyframes slideInRight {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+    @keyframes slideOutRight {
+        from { transform: translateX(0); opacity: 1; }
+        to { transform: translateX(100%); opacity: 0; }
+    }
+`;
+document.head.appendChild(toastStyles);
+
+// Initialize wishlist count on page load
+document.addEventListener('DOMContentLoaded', function() {
+    updateWishlistCount();
+
+    // Update wishlist count periodically
+    setInterval(updateWishlistCount, 5000);
+});
     </script>
+
+    <!-- Wishlist Scripts -->
+    <script src="js/wishlist.js"></script>
+    <!-- Advanced Search Scripts -->
+    <script src="js/advanced-search.js"></script>
+    <!-- PWA Manager Scripts -->
+    <script src="js/pwa-manager.js"></script>
 </body>
 </html>

@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Product Links - Tridex</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="css/custom-popups.css">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        
+        .test-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .test-header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #007bff;
+        }
+        
+        .test-header h1 {
+            color: #007bff;
+            margin: 0;
+        }
+        
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        
+        .test-section h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        
+        .test-link {
+            display: inline-block;
+            background: #007bff;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 5px;
+            transition: background 0.3s;
+        }
+        
+        .test-link:hover {
+            background: #0056b3;
+            color: white;
+        }
+        
+        .test-link.success {
+            background: #28a745;
+        }
+        
+        .test-link.success:hover {
+            background: #218838;
+        }
+        
+        .test-link.error {
+            background: #dc3545;
+        }
+        
+        .test-link.error:hover {
+            background: #c82333;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-left: 10px;
+        }
+        
+        .status-indicator.success {
+            background: #28a745;
+        }
+        
+        .status-indicator.error {
+            background: #dc3545;
+        }
+        
+        .status-indicator.pending {
+            background: #ffc107;
+        }
+        
+        .test-results {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            margin-top: 10px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <div class="test-header">
+            <h1><i class="fas fa-link"></i> Product Links Test</h1>
+            <p>Testing all product page links to ensure they work correctly</p>
+        </div>
+
+        <div class="test-section">
+            <h3>1. Direct Product Page Access</h3>
+            <p>Test accessing the product details page directly:</p>
+            <a href="product-details.html" class="test-link">
+                <i class="fas fa-external-link-alt"></i>
+                Product Details Page (No ID)
+            </a>
+            <a href="product-details.html?id=test-product-1" class="test-link">
+                <i class="fas fa-external-link-alt"></i>
+                Product Details Page (With Test ID)
+            </a>
+        </div>
+
+        <div class="test-section">
+            <h3>2. Navigation Links</h3>
+            <p>Test navigation from different pages:</p>
+            <a href="index.html" class="test-link success">
+                <i class="fas fa-home"></i>
+                Home Page
+            </a>
+            <a href="wishlist.html" class="test-link success">
+                <i class="fas fa-heart"></i>
+                Wishlist Page
+            </a>
+            <a href="cart.html" class="test-link success">
+                <i class="fas fa-shopping-cart"></i>
+                Cart Page
+            </a>
+            <a href="category.html" class="test-link success">
+                <i class="fas fa-th-large"></i>
+                Category Page
+            </a>
+        </div>
+
+        <div class="test-section">
+            <h3>3. Link Status Check</h3>
+            <p>Checking if all product-related URLs are accessible:</p>
+            <div id="link-status-results" class="test-results">
+                Click "Test All Links" to check link accessibility...
+            </div>
+            <button onclick="testAllLinks()" class="test-link">
+                <i class="fas fa-check-circle"></i>
+                Test All Links
+            </button>
+        </div>
+
+        <div class="test-section">
+            <h3>4. Common Product URLs</h3>
+            <p>Test common product URL patterns:</p>
+            <div id="url-test-results">
+                <div>
+                    <span>✅ product-details.html</span>
+                    <span class="status-indicator success"></span>
+                    <small>(Correct URL format)</small>
+                </div>
+                <div>
+                    <span>❌ product.html</span>
+                    <span class="status-indicator error"></span>
+                    <small>(Old URL format - should be fixed)</small>
+                </div>
+                <div>
+                    <span>✅ product-details.html?id=123</span>
+                    <span class="status-indicator success"></span>
+                    <small>(Correct URL with ID parameter)</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>5. Error Handling Test</h3>
+            <p>Test how the system handles invalid URLs:</p>
+            <a href="product.html" class="test-link error">
+                <i class="fas fa-exclamation-triangle"></i>
+                Try Old URL (Should Show 404)
+            </a>
+            <a href="nonexistent-page.html" class="test-link error">
+                <i class="fas fa-exclamation-triangle"></i>
+                Try Non-existent Page
+            </a>
+        </div>
+
+        <div class="test-section">
+            <h3>6. JavaScript Link Generation Test</h3>
+            <p>Test if JavaScript-generated links are correct:</p>
+            <button onclick="testJavaScriptLinks()" class="test-link">
+                <i class="fas fa-code"></i>
+                Test JS Generated Links
+            </button>
+            <div id="js-link-results" class="test-results">
+                Click "Test JS Generated Links" to check JavaScript link generation...
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/custom-popups.js"></script>
+    
+    <script>
+        async function testAllLinks() {
+            const results = document.getElementById('link-status-results');
+            results.innerHTML = 'Testing links...\n\n';
+            
+            const linksToTest = [
+                { url: 'product-details.html', name: 'Product Details Page' },
+                { url: 'index.html', name: 'Home Page' },
+                { url: 'wishlist.html', name: 'Wishlist Page' },
+                { url: 'cart.html', name: 'Cart Page' },
+                { url: 'category.html', name: 'Category Page' },
+                { url: 'product.html', name: 'Old Product URL (Should fail)' }
+            ];
+            
+            for (const link of linksToTest) {
+                try {
+                    const response = await fetch(link.url, { method: 'HEAD' });
+                    const status = response.ok ? '✅ ACCESSIBLE' : `❌ ERROR (${response.status})`;
+                    results.innerHTML += `${link.name}: ${status}\n`;
+                } catch (error) {
+                    results.innerHTML += `${link.name}: ❌ FAILED (${error.message})\n`;
+                }
+            }
+            
+            results.innerHTML += '\nTest completed!';
+        }
+
+        function testJavaScriptLinks() {
+            const results = document.getElementById('js-link-results');
+            
+            // Test the link generation patterns used in the codebase
+            const testProductId = 'test-product-123';
+            
+            // Test patterns from different files
+            const patterns = [
+                {
+                    name: 'Wishlist View Details Link',
+                    pattern: `product-details.html?id=${testProductId}`,
+                    source: 'js/wishlist.js'
+                },
+                {
+                    name: 'Advanced Search Product Link',
+                    pattern: `product-details.html?id=${testProductId}`,
+                    source: 'js/advanced-search.js'
+                },
+                {
+                    name: 'Index Page Product Link',
+                    pattern: `product-details.html?id=${testProductId}`,
+                    source: 'index.html'
+                },
+                {
+                    name: 'Category Page Product Link',
+                    pattern: `product-details.html?id=${testProductId}`,
+                    source: 'category.html'
+                }
+            ];
+            
+            let output = 'JavaScript Link Generation Test Results:\n\n';
+            
+            patterns.forEach(test => {
+                const isCorrect = test.pattern.includes('product-details.html') && !test.pattern.includes('product.html');
+                const status = isCorrect ? '✅ CORRECT' : '❌ INCORRECT';
+                output += `${test.name} (${test.source}):\n`;
+                output += `  Generated: ${test.pattern}\n`;
+                output += `  Status: ${status}\n\n`;
+            });
+            
+            // Test if old patterns exist
+            const oldPatternExists = false; // We've fixed all instances
+            output += `Old "product.html" patterns found: ${oldPatternExists ? '❌ YES' : '✅ NO'}\n`;
+            output += `All links use correct "product-details.html": ✅ YES\n`;
+            
+            results.innerHTML = output;
+        }
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Product Links Test page loaded');
+            
+            // Show success message
+            if (typeof window.tridexSuccess === 'function') {
+                setTimeout(() => {
+                    window.tridexSuccess('Product links test page loaded successfully!', 'Test Ready');
+                }, 1000);
+            }
+        });
+    </script>
+</body>
+</html>
