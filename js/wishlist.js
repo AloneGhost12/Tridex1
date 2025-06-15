@@ -87,15 +87,39 @@ class WishlistManager {
                 console.log('UserId missing, fetching from profile...');
                 try {
                     const baseUrl = this.getBaseUrl();
-                    const profileResponse = await fetch(`${baseUrl}/profile/${username}`);
+                    const token = localStorage.getItem('token');
+                    const profileResponse = await fetch(`${baseUrl}/users/profile?username=${encodeURIComponent(username)}`, {
+                        method: 'GET',
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json',
+                            'X-Username': username
+                        }
+                    });
                     if (profileResponse.ok) {
                         const profileData = await profileResponse.json();
                         userId = profileData._id;
                         localStorage.setItem('userId', userId);
                         console.log('UserId fetched and stored:', userId);
+                    } else {
+                        console.error('Profile fetch failed:', profileResponse.status);
+
+                        // Fallback for admin users - generate a temporary userId
+                        if (username === 'admin' || localStorage.getItem('isAdmin') === 'true') {
+                            userId = 'admin-' + Date.now();
+                            localStorage.setItem('userId', userId);
+                            console.log('Generated temporary admin userId:', userId);
+                        }
                     }
                 } catch (error) {
                     console.error('Failed to fetch userId:', error);
+
+                    // Fallback for admin users - generate a temporary userId
+                    if (username === 'admin' || localStorage.getItem('isAdmin') === 'true') {
+                        userId = 'admin-' + Date.now();
+                        localStorage.setItem('userId', userId);
+                        console.log('Generated temporary admin userId:', userId);
+                    }
                 }
             }
 
@@ -573,6 +597,9 @@ class WishlistManager {
         } else if (window.location.hostname.includes('onrender.com')) {
             // Production on Render
             return 'https://tridex1.onrender.com';
+        } else if (window.location.hostname.includes('github.io')) {
+            // GitHub Pages - point to local server for development
+            return 'http://localhost:3000';
         } else {
             // Default to current origin
             return window.location.origin;
