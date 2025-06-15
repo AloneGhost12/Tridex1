@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Server Connection Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-result {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #results {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Server Connection Test</h1>
+    <p>This page tests the connection to the Tridex server endpoints.</p>
+
+    <div>
+        <button onclick="testCloudinaryConfig()">Test Cloudinary Config</button>
+        <button onclick="testUsers()">Test Users Endpoint</button>
+        <button onclick="testRoot()">Test Root Endpoint</button>
+        <button onclick="testProducts()">Test Products Endpoint</button>
+        <button onclick="testMonthlySales()">Test Monthly Sales</button>
+        <button onclick="testOrders()">Test Orders Endpoint</button>
+        <button onclick="clearResults()">Clear Results</button>
+    </div>
+
+    <div id="results"></div>
+
+    <script>
+        function addResult(message, type = 'info') {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `test-result ${type}`;
+            div.innerHTML = `<strong>${new Date().toLocaleTimeString()}</strong>: ${message}`;
+            results.appendChild(div);
+            results.scrollTop = results.scrollHeight;
+        }
+
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+        }
+
+        async function testCloudinaryConfig() {
+            addResult('Testing Cloudinary config endpoint...', 'info');
+            try {
+                const response = await fetch('http://localhost:3000/cloudinary-config');
+                if (response.ok) {
+                    const data = await response.json();
+                    addResult(`✅ Cloudinary config: ${response.status} - Cloud Name: ${data.cloudName}`, 'success');
+                } else {
+                    addResult(`❌ Cloudinary config failed: ${response.status} ${response.statusText}`, 'error');
+                }
+            } catch (error) {
+                addResult(`❌ Cloudinary config error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testUsers() {
+            addResult('Testing users endpoint...', 'info');
+            try {
+                const response = await fetch('http://localhost:3000/users');
+                if (response.ok) {
+                    const data = await response.json();
+                    addResult(`✅ Users endpoint: ${response.status} - Found ${data.length} users`, 'success');
+                } else {
+                    addResult(`❌ Users endpoint failed: ${response.status} ${response.statusText}`, 'error');
+                }
+            } catch (error) {
+                addResult(`❌ Users endpoint error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testRoot() {
+            addResult('Testing root endpoint...', 'info');
+            try {
+                const response = await fetch('http://localhost:3000/');
+                if (response.ok) {
+                    const data = await response.text();
+                    addResult(`✅ Root endpoint: ${response.status} - ${data}`, 'success');
+                } else {
+                    addResult(`❌ Root endpoint failed: ${response.status} ${response.statusText}`, 'error');
+                }
+            } catch (error) {
+                addResult(`❌ Root endpoint error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testProducts() {
+            addResult('Testing products endpoint...', 'info');
+            try {
+                const response = await fetch('http://localhost:3000/products');
+                if (response.ok) {
+                    const data = await response.json();
+                    addResult(`✅ Products endpoint: ${response.status} - Found ${data.length} products`, 'success');
+                    if (data.length > 0) {
+                        addResult(`First product: ${data[0].name} (ID: ${data[0]._id})`, 'info');
+                    }
+                } else {
+                    addResult(`❌ Products endpoint failed: ${response.status} ${response.statusText}`, 'error');
+                }
+            } catch (error) {
+                addResult(`❌ Products endpoint error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testMonthlySales() {
+            addResult('Testing monthly sales endpoint...', 'info');
+            try {
+                // First get a product ID
+                const productsResponse = await fetch('http://localhost:3000/products');
+                if (!productsResponse.ok) {
+                    addResult('❌ Cannot test monthly sales - products endpoint failed', 'error');
+                    return;
+                }
+
+                const products = await productsResponse.json();
+                if (products.length === 0) {
+                    addResult('❌ Cannot test monthly sales - no products found', 'error');
+                    return;
+                }
+
+                const productId = products[0]._id;
+                addResult(`Testing monthly sales for product: ${products[0].name} (${productId})`, 'info');
+
+                const response = await fetch(`http://localhost:3000/products/${productId}/monthly-sales`);
+                if (response.ok) {
+                    const data = await response.json();
+                    addResult(`✅ Monthly sales endpoint: ${response.status}`, 'success');
+                    addResult(`📊 Sales Data: Total Sold: ${data.totalSold}, Revenue: ₹${data.totalRevenue}, Orders: ${data.orderCount}`, 'info');
+                    addResult(`📅 Month: ${data.month}/${data.year}`, 'info');
+                } else {
+                    addResult(`❌ Monthly sales endpoint failed: ${response.status} ${response.statusText}`, 'error');
+                }
+            } catch (error) {
+                addResult(`❌ Monthly sales endpoint error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testOrders() {
+            addResult('Testing orders endpoint...', 'info');
+            try {
+                const response = await fetch('http://localhost:3000/orders');
+                if (response.ok) {
+                    const data = await response.json();
+                    addResult(`✅ Orders endpoint: ${response.status} - Found ${data.length} orders`, 'success');
+                    if (data.length > 0) {
+                        const recentOrder = data[0];
+                        addResult(`Recent order: ${recentOrder._id} - Status: ${recentOrder.status} - Items: ${recentOrder.items?.length || 0}`, 'info');
+                    }
+                } else {
+                    addResult(`❌ Orders endpoint failed: ${response.status} ${response.statusText}`, 'error');
+                }
+            } catch (error) {
+                addResult(`❌ Orders endpoint error: ${error.message}`, 'error');
+            }
+        }
+
+        // Auto-run tests on page load
+        window.addEventListener('load', function() {
+            addResult('Page loaded, running automatic tests...', 'info');
+            setTimeout(() => {
+                testRoot();
+                setTimeout(() => {
+                    testCloudinaryConfig();
+                    setTimeout(() => {
+                        testUsers();
+                    }, 1000);
+                }, 1000);
+            }, 500);
+        });
+    </script>
+</body>
+</html>

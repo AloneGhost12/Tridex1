@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tridex Favicon Generator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .favicon-preview {
+            display: flex;
+            gap: 20px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        .favicon-size {
+            text-align: center;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        canvas {
+            border: 1px solid #ddd;
+            margin: 10px 0;
+        }
+        .download-btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .download-btn:hover {
+            background: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <h1>Tridex Favicon Generator</h1>
+    <p>This tool generates favicons for the Tridex website in multiple sizes.</p>
+    
+    <div class="favicon-preview">
+        <div class="favicon-size">
+            <h3>16x16 (Browser Tab)</h3>
+            <canvas id="favicon16" width="16" height="16"></canvas>
+            <br>
+            <button class="download-btn" onclick="downloadFavicon('favicon16', 'favicon-16x16.png')">Download PNG</button>
+        </div>
+        
+        <div class="favicon-size">
+            <h3>32x32 (Standard)</h3>
+            <canvas id="favicon32" width="32" height="32"></canvas>
+            <br>
+            <button class="download-btn" onclick="downloadFavicon('favicon32', 'favicon-32x32.png')">Download PNG</button>
+        </div>
+        
+        <div class="favicon-size">
+            <h3>48x48 (Windows)</h3>
+            <canvas id="favicon48" width="48" height="48"></canvas>
+            <br>
+            <button class="download-btn" onclick="downloadFavicon('favicon48', 'favicon-48x48.png')">Download PNG</button>
+        </div>
+    </div>
+    
+    <div style="margin-top: 30px; padding: 20px; background: white; border-radius: 8px;">
+        <h3>Instructions:</h3>
+        <ol>
+            <li>Download the PNG files above</li>
+            <li>Use an online ICO converter to create favicon.ico from the 32x32 PNG</li>
+            <li>Place favicon.ico in your website's root directory</li>
+            <li>Add the favicon links to your HTML files (see code below)</li>
+        </ol>
+        
+        <h3>HTML Code to Add:</h3>
+        <pre style="background: #f8f9fa; padding: 15px; border-radius: 4px; overflow-x: auto;">
+&lt;!-- Favicon Links --&gt;
+&lt;link rel="icon" type="image/x-icon" href="/favicon.ico"&gt;
+&lt;link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png"&gt;
+&lt;link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png"&gt;
+&lt;link rel="icon" type="image/svg+xml" href="/favicon.svg"&gt;
+&lt;link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png"&gt;
+&lt;link rel="manifest" href="/site.webmanifest"&gt;</pre>
+    </div>
+
+    <script>
+        function drawFavicon(canvasId, size) {
+            const canvas = document.getElementById(canvasId);
+            const ctx = canvas.getContext('2d');
+            
+            // Scale factor for different sizes
+            const scale = size / 32;
+            
+            // Clear canvas
+            ctx.clearRect(0, 0, size, size);
+            
+            // Create gradient background
+            const gradient = ctx.createLinearGradient(0, 0, size, size);
+            gradient.addColorStop(0, '#007bff');
+            gradient.addColorStop(0.5, '#0056b3');
+            gradient.addColorStop(1, '#003d82');
+            
+            // Draw background circle
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(size/2, size/2, (size/2) - 1, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            // Draw white border
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+            
+            // Draw T shape
+            ctx.fillStyle = '#ffffff';
+            
+            // Top horizontal bar of T
+            const barWidth = size * 0.5;
+            const barHeight = size * 0.09;
+            const centerX = size / 2;
+            const centerY = size / 2;
+            
+            ctx.fillRect(centerX - barWidth/2, centerY - size*0.19, barWidth, barHeight);
+            
+            // Vertical bar of T
+            const verticalWidth = size * 0.09;
+            const verticalHeight = size * 0.38;
+            ctx.fillRect(centerX - verticalWidth/2, centerY - size*0.19, verticalWidth, verticalHeight);
+            
+            // Small accent dots (only for larger sizes)
+            if (size >= 32) {
+                ctx.beginPath();
+                ctx.arc(centerX - size*0.16, centerY + size*0.06, size*0.03, 0, 2 * Math.PI);
+                ctx.fill();
+                
+                ctx.beginPath();
+                ctx.arc(centerX + size*0.16, centerY + size*0.06, size*0.03, 0, 2 * Math.PI);
+                ctx.fill();
+            }
+        }
+        
+        function downloadFavicon(canvasId, filename) {
+            const canvas = document.getElementById(canvasId);
+            const link = document.createElement('a');
+            link.download = filename;
+            link.href = canvas.toDataURL();
+            link.click();
+        }
+        
+        // Generate favicons when page loads
+        window.onload = function() {
+            drawFavicon('favicon16', 16);
+            drawFavicon('favicon32', 32);
+            drawFavicon('favicon48', 48);
+        };
+    </script>
+</body>
+</html>
