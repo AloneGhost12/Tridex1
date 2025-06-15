@@ -43,22 +43,28 @@ class PWAManager {
     }
 
     async registerServiceWorker() {
+        // Skip service worker registration on GitHub Pages
+        if (window.location.hostname.includes('github.io')) {
+            console.log('[PWA] Skipping Service Worker registration on GitHub Pages');
+            return;
+        }
+
         if ('serviceWorker' in navigator) {
             try {
                 this.swRegistration = await navigator.serviceWorker.register('/sw.js');
                 console.log('[PWA] Service Worker registered:', this.swRegistration);
-                
+
                 // Listen for service worker updates
                 this.swRegistration.addEventListener('updatefound', () => {
                     console.log('[PWA] Service Worker update found');
                     this.showUpdateAvailable();
                 });
-                
+
                 // Check for existing service worker
                 if (this.swRegistration.active) {
                     console.log('[PWA] Service Worker is active');
                 }
-                
+
             } catch (error) {
                 console.error('[PWA] Service Worker registration failed:', error);
             }
