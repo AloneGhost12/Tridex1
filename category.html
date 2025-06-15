@@ -466,10 +466,19 @@
                 }
 
                 // Fetch category details
-                // Use local server for testing, but keep production URL as fallback
-                const baseUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-                    ? 'http://localhost:3000'
-                    : 'https://tridex1.onrender.com';
+                // Use consistent base URL logic
+                function getBaseUrl() {
+                    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                        return 'http://localhost:3000';
+                    } else if (window.location.hostname.includes('onrender.com')) {
+                        return 'https://tridex1.onrender.com';
+                    } else if (window.location.hostname.includes('github.io') || window.location.protocol === 'file:') {
+                        return 'https://tridex1.onrender.com';
+                    } else {
+                        return 'https://tridex1.onrender.com';
+                    }
+                }
+                const baseUrl = getBaseUrl();
 
                 const categoryRes = await fetch(`${baseUrl}/categories/${categoryId}`);
                 if (!categoryRes.ok) {
