@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flash Sale Management - Tridex Admin</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/responsive.css">
+    <link rel="stylesheet" href="css/admin-coupons.css">
+    <link rel="stylesheet" href="css/flash-sale-system.css">
+    <link rel="stylesheet" href="css/admin-flash-sales.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="admin-container">
+        <!-- Admin Header -->
+        <header class="admin-header">
+            <div class="header-content">
+                <h1><i class="fas fa-bolt"></i> Flash Sale Management</h1>
+                <div class="header-actions">
+                    <button id="create-flash-sale-btn" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Create Flash Sale
+                    </button>
+                    <a href="admin.html" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to Admin
+                    </a>
+                </div>
+            </div>
+        </header>
+
+        <!-- Quick Stats -->
+        <div class="stats-section">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-bolt"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="active-sales-count">0</h3>
+                        <p>Active Sales</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="upcoming-sales-count">0</h3>
+                        <p>Upcoming Sales</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="total-revenue">₹0</h3>
+                        <p>Total Revenue</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-shopping-cart"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="total-orders">0</h3>
+                        <p>Total Orders</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filters and Search -->
+        <div class="filters-section">
+            <div class="filters-container">
+                <div class="search-box">
+                    <input type="text" id="search-input" placeholder="Search flash sales by name or description...">
+                    <i class="fas fa-search"></i>
+                </div>
+                <div class="filter-group">
+                    <select id="status-filter">
+                        <option value="all">All Status</option>
+                        <option value="scheduled">Scheduled</option>
+                        <option value="active">Active</option>
+                        <option value="ended">Ended</option>
+                        <option value="cancelled">Cancelled</option>
+                    </select>
+                    <select id="type-filter">
+                        <option value="all">All Types</option>
+                        <option value="flash_sale">Flash Sale</option>
+                        <option value="daily_deal">Daily Deal</option>
+                        <option value="weekend_special">Weekend Special</option>
+                        <option value="clearance">Clearance</option>
+                        <option value="limited_time">Limited Time</option>
+                    </select>
+                    <button id="refresh-btn" class="btn btn-outline">
+                        <i class="fas fa-refresh"></i> Refresh
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Flash Sales Table -->
+        <div class="flash-sales-section">
+            <div class="table-container">
+                <table class="flash-sales-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Type</th>
+                            <th>Status</th>
+                            <th>Start Time</th>
+                            <th>End Time</th>
+                            <th>Products</th>
+                            <th>Revenue</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="flash-sales-tbody">
+                        <!-- Flash sales will be loaded here -->
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Pagination -->
+            <div class="pagination-container">
+                <div class="pagination" id="pagination">
+                    <!-- Pagination buttons will be generated here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading Indicator -->
+        <div id="loading-indicator" class="loading-indicator">
+            <div class="spinner"></div>
+            <p>Loading flash sales...</p>
+        </div>
+
+        <!-- No Flash Sales Message -->
+        <div id="no-flash-sales" class="no-data-message" style="display: none;">
+            <i class="fas fa-bolt"></i>
+            <h3>No Flash Sales Found</h3>
+            <p>Create your first flash sale to boost sales with limited-time offers.</p>
+            <button class="btn btn-primary" onclick="openCreateFlashSaleModal()">
+                <i class="fas fa-plus"></i> Create Flash Sale
+            </button>
+        </div>
+    </div>
+
+    <!-- Create/Edit Flash Sale Modal -->
+    <div id="flash-sale-modal" class="modal">
+        <div class="modal-content large">
+            <div class="modal-header">
+                <h2 id="modal-title">Create New Flash Sale</h2>
+                <button class="close-btn" onclick="closeFlashSaleModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <form id="flash-sale-form" class="flash-sale-form-modal">
+                <div class="form-tabs">
+                    <button type="button" class="tab-btn active" data-tab="basic">Basic Info</button>
+                    <button type="button" class="tab-btn" data-tab="products">Products</button>
+                    <button type="button" class="tab-btn" data-tab="display">Display</button>
+                    <button type="button" class="tab-btn" data-tab="rules">Rules</button>
+                </div>
+
+                <!-- Basic Information Tab -->
+                <div class="tab-content active" id="basic-tab">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="sale-name">Sale Name *</label>
+                            <input type="text" id="sale-name" name="name" required maxlength="100" 
+                                   placeholder="e.g., Weekend Flash Sale, Mega Monday Deal">
+                        </div>
+                        <div class="form-group">
+                            <label for="sale-type">Sale Type *</label>
+                            <select id="sale-type" name="saleType" required>
+                                <option value="flash_sale">Flash Sale</option>
+                                <option value="daily_deal">Daily Deal</option>
+                                <option value="weekend_special">Weekend Special</option>
+                                <option value="clearance">Clearance</option>
+                                <option value="limited_time">Limited Time</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="start-time">Start Time *</label>
+                            <input type="datetime-local" id="start-time" name="startTime" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="end-time">End Time *</label>
+                            <input type="datetime-local" id="end-time" name="endTime" required>
+                        </div>
+                        <div class="form-group full-width">
+                            <label for="description">Description</label>
+                            <textarea id="description" name="description" maxlength="500" 
+                                      placeholder="Brief description of the flash sale"></textarea>
+                        </div>
+                        <div class="form-group checkbox-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="is-featured" name="isFeatured">
+                                <span class="checkmark"></span>
+                                Featured Sale (appears prominently)
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label for="priority">Priority</label>
+                            <input type="number" id="priority" name="priority" value="0" 
+                                   placeholder="Higher numbers = higher priority">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Products Tab -->
+                <div class="tab-content" id="products-tab">
+                    <div class="products-section">
+                        <div class="products-header">
+                            <h3>Sale Products</h3>
+                            <button type="button" id="add-product-btn" class="btn btn-primary">
+                                <i class="fas fa-plus"></i> Add Product
+                            </button>
+                        </div>
+                        <div id="products-list" class="products-list">
+                            <!-- Products will be added here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Display Tab -->
+                <div class="tab-content" id="display-tab">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="banner-title">Banner Title</label>
+                            <input type="text" id="banner-title" name="bannerTitle" maxlength="100" 
+                                   placeholder="e.g., FLASH SALE - 50% OFF!">
+                        </div>
+                        <div class="form-group">
+                            <label for="banner-subtitle">Banner Subtitle</label>
+                            <input type="text" id="banner-subtitle" name="bannerSubtitle" maxlength="200" 
+                                   placeholder="e.g., Limited time offer - Hurry up!">
+                        </div>
+                        <div class="form-group">
+                            <label for="banner-color">Banner Color</label>
+                            <input type="color" id="banner-color" name="bannerColor" value="#ff4444">
+                        </div>
+                        <div class="form-group">
+                            <label for="countdown-style">Countdown Style</label>
+                            <select id="countdown-style" name="countdownStyle">
+                                <option value="digital">Digital</option>
+                                <option value="analog">Analog</option>
+                                <option value="text">Text</option>
+                                <option value="minimal">Minimal</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="urgency-threshold">Urgency Threshold</label>
+                            <input type="number" id="urgency-threshold" name="urgencyThreshold" value="10" min="1" 
+                                   placeholder="Show urgency when items left is below this number">
+                        </div>
+                        <div class="form-group checkbox-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="show-countdown" name="showCountdown" checked>
+                                <span class="checkmark"></span>
+                                Show Countdown Timer
+                            </label>
+                        </div>
+                        <div class="form-group checkbox-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="show-quantity-left" name="showQuantityLeft" checked>
+                                <span class="checkmark"></span>
+                                Show Quantity Left
+                            </label>
+                        </div>
+                        <div class="form-group checkbox-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="show-sold-count" name="showSoldCount">
+                                <span class="checkmark"></span>
+                                Show Sold Count
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Rules Tab -->
+                <div class="tab-content" id="rules-tab">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="min-order-value">Minimum Order Value</label>
+                            <input type="number" id="min-order-value" name="minimumOrderValue" min="0" step="0.01" value="0">
+                        </div>
+                        <div class="form-group">
+                            <label for="max-discount-per-order">Max Discount Per Order</label>
+                            <input type="number" id="max-discount-per-order" name="maxDiscountPerOrder" min="0" step="0.01" 
+                                   placeholder="Leave empty for no limit">
+                        </div>
+                        <div class="form-group full-width">
+                            <label>Eligible User Types</label>
+                            <div class="checkbox-group-multiple">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="eligibleUserTypes" value="all" checked>
+                                    <span class="checkmark"></span>
+                                    All Users
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="eligibleUserTypes" value="new">
+                                    <span class="checkmark"></span>
+                                    New Users
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="eligibleUserTypes" value="existing">
+                                    <span class="checkmark"></span>
+                                    Existing Users
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="eligibleUserTypes" value="premium">
+                                    <span class="checkmark"></span>
+                                    Premium Users
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="eligibleUserTypes" value="verified">
+                                    <span class="checkmark"></span>
+                                    Verified Users
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeFlashSaleModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Save Flash Sale
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Product Selection Modal -->
+    <div id="product-selection-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Add Product to Flash Sale</h2>
+                <button class="close-btn" onclick="closeProductSelectionModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="product-search">
+                    <input type="text" id="product-search-input" placeholder="Search products...">
+                </div>
+                <div id="products-search-results" class="products-search-results">
+                    <!-- Search results will appear here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="delete-modal" class="modal">
+        <div class="modal-content small">
+            <div class="modal-header">
+                <h2>Confirm Delete</h2>
+                <button class="close-btn" onclick="closeDeleteModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete this flash sale? This action cannot be undone.</p>
+                <div class="sale-info">
+                    <strong id="delete-sale-name"></strong>
+                </div>
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn btn-secondary" onclick="closeDeleteModal()">Cancel</button>
+                <button type="button" class="btn btn-danger" onclick="confirmDelete()">
+                    <i class="fas fa-trash"></i> Delete Flash Sale
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/config.js"></script>
+    <script src="js/admin-flash-sales.js"></script>
+</body>
+</html>

@@ -18,6 +18,8 @@ const Wishlist = require('./models/Wishlist');
 const Notification = require('./models/Notification');
 const Coupon = require('./models/Coupon');
 const CouponUsage = require('./models/CouponUsage');
+const FlashSale = require('./models/FlashSale');
+const FlashSalePurchase = require('./models/FlashSalePurchase');
 const { generateProductSummary } = require('./utils/aiSummaryGenerator');
 
 // Load environment variables
@@ -5174,6 +5176,398 @@ app.get('/coupons/:id/usage', async (req, res) => {
     } catch (error) {
         console.error('Error fetching coupon usage:', error);
         res.status(500).json({ message: 'Error fetching coupon usage' });
+    }
+});
+
+// ========== FLASH SALE ROUTES ==========
+
+// Get all flash sales (admin)
+app.get('/flash-sales', async (req, res) => {
+    try {
+        const {
+            page = 1,
+            limit = 20,
+            status = 'all',
+            type = 'all',
+            search = ''
+        } = req.query;
+
+        // Build query
+        const query = {};
+
+        if (status !== 'all') {
+            query.status = status;
+        }
+
+        if (type !== 'all') {
+            query.saleType = type;
+        }
+
+        if (search) {
+            query.$or = [
+                { name: { $regex: search, $options: 'i' } },
+                { description: { $regex: search, $options: 'i' } },
+                { 'display.bannerTitle': { $regex: search, $options: 'i' } }
+            ];
+        }
+
+        const skip = (parseInt(page) - 1) * parseInt(limit);
+
+        const flashSales = await FlashSale.find(query)
+            .populate('createdBy', 'username name')
+            .populate('products.productId', 'name image media price')
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(parseInt(limit));
+
+        const totalFlashSales = await FlashSale.countDocuments(query);
+        const totalPages = Math.ceil(totalFlashSales / parseInt(limit));
+
+        res.json({
+            flashSales,
+            pagination: {
+                currentPage: parseInt(page),
+                totalPages,
+                totalFlashSales,
+                hasNextPage: parseInt(page) < totalPages,
+                hasPrevPage: parseInt(page) > 1
+            }
+        });
+
+    } catch (error) {
+        console.error('Error fetching flash sales:', error);
+        res.status(500).json({ message: 'Error fetching flash sales' });
+    }
+});
+
+// Get active flash sales (public)
+app.get('/flash-sales/active', async (req, res) => {
+    try {
+        const flashSales = await FlashSale.getActiveSales();
+
+        // Update status for all sales
+        for (const sale of flashSales) {
+            await sale.updateStatus();
+        }
+
+        res.json({ flashSales });
+
+    } catch (error) {
+        console.error('Error fetching active flash sales:', error);
+        res.status(500).json({ message: 'Error fetching active flash sales' });
+    }
+});
+
+// Get upcoming flash sales (public)
+app.get('/flash-sales/upcoming', async (req, res) => {
+    try {
+        const flashSales = await FlashSale.getUpcomingSales();
+        res.json({ flashSales });
+
+    } catch (error) {
+        console.error('Error fetching upcoming flash sales:', error);
+        res.status(500).json({ message: 'Error fetching upcoming flash sales' });
+    }
+});
+
+// Get featured flash sales (public)
+app.get('/flash-sales/featured', async (req, res) => {
+    try {
+        const now = new Date();
+        const flashSales = await FlashSale.find({
+            isActive: true,
+            isFeatured: true,
+            startTime: { $lte: now },
+            endTime: { $gt: now }
+        })
+        .populate('products.productId', 'name image media price stock')
+        .sort({ priority: -1, createdAt: -1 })
+        .limit(5);
+
+        res.json({ flashSales });
+
+    } catch (error) {
+        console.error('Error fetching featured flash sales:', error);
+        res.status(500).json({ message: 'Error fetching featured flash sales' });
+    }
+});
+
+// Get flash sale by ID
+app.get('/flash-sales/:id', async (req, res) => {
+    try {
+        const flashSale = await FlashSale.findById(req.params.id)
+            .populate('products.productId', 'name image media price stock category brand')
+            .populate('createdBy', 'username name');
+
+        if (!flashSale) {
+            return res.status(404).json({ message: 'Flash sale not found' });
+        }
+
+        // Update status
+        await flashSale.updateStatus();
+
+        res.json({ flashSale });
+
+    } catch (error) {
+        console.error('Error fetching flash sale:', error);
+        res.status(500).json({ message: 'Error fetching flash sale' });
+    }
+});
+
+// Create new flash sale (admin)
+app.post('/flash-sales', async (req, res) => {
+    try {
+        const flashSaleData = req.body;
+
+        // Add created by
+        flashSaleData.createdBy = req.body.createdBy || localStorage.getItem('userId') || '000000000000000000000000';
+
+        // Set default eligible user types if not provided
+        if (!flashSaleData.rules) {
+            flashSaleData.rules = {};
+        }
+        if (!flashSaleData.rules.eligibleUserTypes) {
+            flashSaleData.rules.eligibleUserTypes = ['all'];
+        }
+
+        const newFlashSale = new FlashSale(flashSaleData);
+        const savedFlashSale = await newFlashSale.save();
+
+        res.status(201).json({
+            message: 'Flash sale created successfully',
+            flashSale: savedFlashSale
+        });
+
+    } catch (error) {
+        console.error('Error creating flash sale:', error);
+        res.status(500).json({ message: 'Error creating flash sale' });
+    }
+});
+
+// Update flash sale (admin)
+app.put('/flash-sales/:id', async (req, res) => {
+    try {
+        const flashSaleId = req.params.id;
+        const updateData = req.body;
+
+        // Remove fields that shouldn't be updated
+        delete updateData._id;
+        delete updateData.createdAt;
+        delete updateData.analytics;
+
+        const updatedFlashSale = await FlashSale.findByIdAndUpdate(
+            flashSaleId,
+            { ...updateData, updatedAt: new Date() },
+            { new: true }
+        ).populate('createdBy', 'username name');
+
+        if (!updatedFlashSale) {
+            return res.status(404).json({ message: 'Flash sale not found' });
+        }
+
+        res.json({
+            message: 'Flash sale updated successfully',
+            flashSale: updatedFlashSale
+        });
+
+    } catch (error) {
+        console.error('Error updating flash sale:', error);
+        res.status(500).json({ message: 'Error updating flash sale' });
+    }
+});
+
+// Delete flash sale (admin)
+app.delete('/flash-sales/:id', async (req, res) => {
+    try {
+        const flashSaleId = req.params.id;
+
+        const deletedFlashSale = await FlashSale.findByIdAndDelete(flashSaleId);
+
+        if (!deletedFlashSale) {
+            return res.status(404).json({ message: 'Flash sale not found' });
+        }
+
+        res.json({ message: 'Flash sale deleted successfully' });
+
+    } catch (error) {
+        console.error('Error deleting flash sale:', error);
+        res.status(500).json({ message: 'Error deleting flash sale' });
+    }
+});
+
+// Get flash sale analytics
+app.get('/flash-sales/:id/analytics', async (req, res) => {
+    try {
+        const flashSaleId = req.params.id;
+
+        const flashSale = await FlashSale.findById(flashSaleId);
+        if (!flashSale) {
+            return res.status(404).json({ message: 'Flash sale not found' });
+        }
+
+        const analytics = await FlashSalePurchase.getFlashSaleAnalytics(flashSaleId);
+        const hourlyDistribution = await FlashSalePurchase.getHourlyDistribution(flashSaleId);
+        const topProducts = await FlashSalePurchase.getTopProducts(flashSaleId);
+
+        res.json({
+            flashSale: {
+                name: flashSale.name,
+                status: flashSale.status,
+                startTime: flashSale.startTime,
+                endTime: flashSale.endTime
+            },
+            analytics,
+            hourlyDistribution,
+            topProducts
+        });
+
+    } catch (error) {
+        console.error('Error fetching flash sale analytics:', error);
+        res.status(500).json({ message: 'Error fetching analytics' });
+    }
+});
+
+// Check user purchase eligibility for flash sale product
+app.post('/flash-sales/:id/check-eligibility', async (req, res) => {
+    try {
+        const { productId, userId, quantity = 1 } = req.body;
+        const flashSaleId = req.params.id;
+
+        const flashSale = await FlashSale.findById(flashSaleId);
+        if (!flashSale) {
+            return res.status(404).json({ message: 'Flash sale not found' });
+        }
+
+        // Check if sale is active
+        if (!flashSale.isCurrentlyActive) {
+            return res.status(400).json({
+                eligible: false,
+                message: 'Flash sale is not currently active'
+            });
+        }
+
+        // Find product in sale
+        const saleProduct = flashSale.products.find(p =>
+            p.productId.toString() === productId.toString()
+        );
+
+        if (!saleProduct || !saleProduct.isActive) {
+            return res.status(400).json({
+                eligible: false,
+                message: 'Product is not part of this flash sale'
+            });
+        }
+
+        // Check quantity availability
+        if (saleProduct.totalQuantity !== null &&
+            saleProduct.remainingQuantity < quantity) {
+            return res.status(400).json({
+                eligible: false,
+                message: 'Insufficient quantity available',
+                available: saleProduct.remainingQuantity
+            });
+        }
+
+        // Check user purchase limits
+        if (userId && saleProduct.maxPerUser !== null) {
+            const userPurchaseCount = await FlashSalePurchase.getUserPurchaseCount(
+                flashSaleId, userId, productId
+            );
+
+            if (userPurchaseCount + quantity > saleProduct.maxPerUser) {
+                return res.status(400).json({
+                    eligible: false,
+                    message: `Maximum ${saleProduct.maxPerUser} items per user`,
+                    userPurchased: userPurchaseCount
+                });
+            }
+        }
+
+        res.json({
+            eligible: true,
+            salePrice: saleProduct.salePrice,
+            originalPrice: saleProduct.originalPrice,
+            discountPercentage: saleProduct.discountPercentage,
+            remainingQuantity: saleProduct.remainingQuantity,
+            timeRemaining: flashSale.timeRemaining
+        });
+
+    } catch (error) {
+        console.error('Error checking eligibility:', error);
+        res.status(500).json({ message: 'Error checking eligibility' });
+    }
+});
+
+// Record flash sale purchase
+app.post('/flash-sales/:id/purchase', async (req, res) => {
+    try {
+        const {
+            productId,
+            userId,
+            username,
+            orderId,
+            quantity,
+            sessionId,
+            source = 'direct'
+        } = req.body;
+
+        const flashSaleId = req.params.id;
+
+        const flashSale = await FlashSale.findById(flashSaleId);
+        if (!flashSale) {
+            return res.status(404).json({ message: 'Flash sale not found' });
+        }
+
+        const saleProduct = flashSale.products.find(p =>
+            p.productId.toString() === productId.toString()
+        );
+
+        if (!saleProduct) {
+            return res.status(400).json({ message: 'Product not found in flash sale' });
+        }
+
+        // Calculate timing information
+        const now = new Date();
+        const timeFromSaleStart = now.getTime() - flashSale.startTime.getTime();
+        const timeToSaleEnd = flashSale.endTime.getTime() - now.getTime();
+
+        // Create purchase record
+        const purchase = new FlashSalePurchase({
+            flashSaleId,
+            productId,
+            userId,
+            username,
+            orderId,
+            quantity,
+            originalPrice: saleProduct.originalPrice,
+            salePrice: saleProduct.salePrice,
+            discountAmount: (saleProduct.originalPrice - saleProduct.salePrice) * quantity,
+            totalAmount: saleProduct.salePrice * quantity,
+            timeFromSaleStart,
+            timeToSaleEnd,
+            sessionId,
+            ipAddress: req.ip,
+            userAgent: req.headers['user-agent'],
+            source
+        });
+
+        await purchase.save();
+
+        // Update flash sale quantities and analytics
+        await flashSale.updateProductQuantity(productId, quantity);
+
+        res.json({
+            message: 'Purchase recorded successfully',
+            purchase: {
+                id: purchase._id,
+                discountAmount: purchase.discountAmount,
+                totalAmount: purchase.totalAmount
+            }
+        });
+
+    } catch (error) {
+        console.error('Error recording purchase:', error);
+        res.status(500).json({ message: 'Error recording purchase' });
     }
 });
 

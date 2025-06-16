@@ -11,6 +11,8 @@
     <link rel="stylesheet" href="css/forms-responsive.css">
     <link rel="stylesheet" href="css/ecommerce-responsive.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <!-- Coupon System Styles -->
+    <link rel="stylesheet" href="css/coupon-system.css">
     <!-- Include responsive behavior script -->
     <script src="js/responsive.js" defer></script>
     <!-- Include navigation state management script -->
@@ -346,6 +348,47 @@
     <div class="cart-container">
         <h1 class="cart-title">Your Shopping Cart</h1>
         <div id="cart-items"></div>
+
+        <!-- Coupon Section -->
+        <div class="coupon-section" id="coupon-section" style="display: none;">
+            <h3>🎫 Have a Coupon?</h3>
+
+            <!-- Coupon Input Form -->
+            <form id="coupon-form" class="coupon-form">
+                <input type="text" id="coupon-input" class="coupon-input" placeholder="Enter coupon code" style="text-transform: uppercase;">
+                <button type="submit" class="apply-coupon-btn">Apply Coupon</button>
+            </form>
+
+            <!-- Message Display -->
+            <div id="coupon-message" class="coupon-message"></div>
+
+            <!-- Applied Coupons -->
+            <div id="applied-coupons"></div>
+
+            <!-- Available Coupons -->
+            <div style="margin-top: 20px;">
+                <h4>Available Offers</h4>
+                <div id="available-coupons"></div>
+            </div>
+        </div>
+
+        <!-- Cart Totals -->
+        <div class="cart-totals" id="cart-totals" style="display: none;">
+            <div class="total-row">
+                <span>Subtotal:</span>
+                <span id="cart-subtotal">₹0</span>
+            </div>
+            <div class="total-row">
+                <span>Discount:</span>
+                <span id="total-discount" class="total-discount">₹0</span>
+            </div>
+            <div class="total-row" style="font-weight: bold; font-size: 1.2em; border-top: 2px solid #eee; padding-top: 10px;">
+                <span>Total:</span>
+                <span id="final-total">₹0</span>
+            </div>
+            <div id="total-savings" class="total-savings"></div>
+        </div>
+
         <div class="cart-total" id="cart-total"></div>
         <div class="cart-actions" id="cart-actions"></div>
         <div style="text-align:center; margin-top:30px;">
@@ -401,8 +444,28 @@
                     </div>
                 `;
             }).join('');
-            cartTotalDiv.textContent = `Total: ₹${total}`;
+            // Show coupon section and new totals layout when cart has items
+            document.getElementById('coupon-section').style.display = 'block';
+            document.getElementById('cart-totals').style.display = 'block';
+
+            // Update the new totals layout
+            document.getElementById('cart-subtotal').textContent = `₹${total}`;
+            document.getElementById('final-total').textContent = `₹${total}`;
+
+            // Hide old total display
+            cartTotalDiv.style.display = 'none';
+
             cartActionsDiv.innerHTML = `<button onclick="proceedToCheckout()">Proceed to Checkout</button>`;
+
+            // Initialize coupon system with cart data
+            if (window.couponSystem) {
+                const cartItems = cart.map(item => ({
+                    productId: item.id || item._id,
+                    quantity: 1,
+                    price: parseFloat(item.price)
+                }));
+                window.couponSystem.setCartData(cartItems, total);
+            }
 
             // Remove button logic with animation
             document.querySelectorAll('.cart-remove-btn').forEach(btn => {
@@ -557,5 +620,8 @@
         // Initialize the cart
         renderCart();
     </script>
+
+    <!-- Coupon System Script -->
+    <script src="js/coupon-system.js"></script>
 </body>
 </html>

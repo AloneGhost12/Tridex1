@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Demo: New Features - Tridex</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/coupon-system.css">
+    <link rel="stylesheet" href="css/flash-sale-system.css">
+    <style>
+        .demo-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+        }
+        .demo-section {
+            background: white;
+            border-radius: 8px;
+            padding: 30px;
+            margin: 30px 0;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .demo-title {
+            color: #333;
+            border-bottom: 3px solid #007bff;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .demo-description {
+            background: #f8f9fa;
+            padding: 15px;
+            border-left: 4px solid #007bff;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+        .demo-cart {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .demo-product {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        .demo-product:last-child {
+            border-bottom: none;
+        }
+        .admin-links {
+            background: #e9ecef;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .admin-links h4 {
+            margin-top: 0;
+            color: #495057;
+        }
+        .admin-link {
+            display: inline-block;
+            background: #007bff;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 6px;
+            margin: 5px 10px 5px 0;
+            transition: background 0.3s ease;
+        }
+        .admin-link:hover {
+            background: #0056b3;
+            color: white;
+        }
+        .status-indicator {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .status-working {
+            background: #d4edda;
+            color: #155724;
+        }
+        .status-demo {
+            background: #fff3cd;
+            color: #856404;
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-container">
+        <h1 style="text-align: center; color: #333; margin-bottom: 10px;">🚀 Tridex New Features Demo</h1>
+        <p style="text-align: center; color: #666; margin-bottom: 40px;">
+            Live demonstration of Phase 2C features: Coupons and Flash Sales
+        </p>
+
+        <!-- Admin Access Section -->
+        <div class="admin-links">
+            <h4>🔧 Admin Management (Create Coupons & Flash Sales)</h4>
+            <a href="admin-coupons.html" class="admin-link" target="_blank">
+                🎫 Manage Coupons
+            </a>
+            <a href="admin-flash-sales.html" class="admin-link" target="_blank">
+                ⚡ Manage Flash Sales
+            </a>
+            <p style="margin: 10px 0 0 0; font-size: 14px; color: #666;">
+                Use these admin panels to create coupons and flash sales that will appear below.
+            </p>
+        </div>
+
+        <!-- Flash Sales Demo -->
+        <div class="demo-section">
+            <h2 class="demo-title">⚡ Flash Sales System</h2>
+            <div class="demo-description">
+                <strong>What it does:</strong> Shows time-limited sales with countdown timers, limited quantities, and special pricing.
+                <br><strong>Status:</strong> <span class="status-indicator status-working">✅ Working</span>
+            </div>
+            
+            <div class="flash-sales-section">
+                <div class="flash-sales-header">
+                    <h3>Active Flash Sales</h3>
+                    <p>Limited time offers with countdown timers</p>
+                </div>
+                <div id="flash-sales-container">
+                    <!-- Flash sales will load here automatically -->
+                </div>
+            </div>
+            
+            <div style="margin-top: 20px; padding: 15px; background: #e3f2fd; border-radius: 6px;">
+                <strong>How to test:</strong>
+                <ol>
+                    <li>Click "⚡ Manage Flash Sales" above</li>
+                    <li>Create a new flash sale with some products</li>
+                    <li>Set start time to "now" and end time to "tomorrow"</li>
+                    <li>Refresh this page to see your flash sale appear</li>
+                </ol>
+            </div>
+        </div>
+
+        <!-- Coupon System Demo -->
+        <div class="demo-section">
+            <h2 class="demo-title">🎫 Coupon System</h2>
+            <div class="demo-description">
+                <strong>What it does:</strong> Allows users to apply discount coupons and see available offers.
+                <br><strong>Status:</strong> <span class="status-indicator status-working">✅ Working</span>
+            </div>
+
+            <!-- Demo Cart -->
+            <div class="demo-cart">
+                <h4>Demo Shopping Cart</h4>
+                <div class="demo-product">
+                    <span>Sample Product 1</span>
+                    <span>₹500</span>
+                </div>
+                <div class="demo-product">
+                    <span>Sample Product 2</span>
+                    <span>₹300</span>
+                </div>
+                <div class="demo-product" style="font-weight: bold; border-top: 2px solid #ddd; padding-top: 10px;">
+                    <span>Subtotal:</span>
+                    <span id="demo-subtotal">₹800</span>
+                </div>
+            </div>
+
+            <!-- Coupon Section -->
+            <div class="coupon-section">
+                <h4>Apply Coupon</h4>
+                
+                <!-- Coupon Input Form -->
+                <form id="coupon-form" class="coupon-form">
+                    <input type="text" id="coupon-input" class="coupon-input" placeholder="Enter coupon code (try: DEMO10)">
+                    <button type="submit" class="apply-coupon-btn">Apply Coupon</button>
+                </form>
+                
+                <!-- Message Display -->
+                <div id="coupon-message" class="coupon-message"></div>
+                
+                <!-- Applied Coupons -->
+                <div id="applied-coupons"></div>
+                
+                <!-- Available Coupons -->
+                <div style="margin-top: 20px;">
+                    <h4>Available Offers</h4>
+                    <div id="available-coupons">
+                        <!-- Available coupons will load here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Updated Totals -->
+            <div class="cart-totals">
+                <div class="total-row">
+                    <span>Subtotal:</span>
+                    <span id="cart-subtotal">₹800</span>
+                </div>
+                <div class="total-row">
+                    <span>Discount:</span>
+                    <span id="total-discount" class="total-discount">₹0</span>
+                </div>
+                <div class="total-row" style="font-weight: bold; font-size: 1.2em; border-top: 2px solid #eee; padding-top: 10px;">
+                    <span>Total:</span>
+                    <span id="final-total">₹800</span>
+                </div>
+                <div id="total-savings" class="total-savings"></div>
+            </div>
+            
+            <div style="margin-top: 20px; padding: 15px; background: #e8f5e8; border-radius: 6px;">
+                <strong>How to test:</strong>
+                <ol>
+                    <li>Click "🎫 Manage Coupons" above</li>
+                    <li>Create a coupon with code "DEMO10" and 10% discount</li>
+                    <li>Come back and type "DEMO10" in the coupon box above</li>
+                    <li>Click "Apply Coupon" to see the discount applied</li>
+                </ol>
+            </div>
+        </div>
+
+        <!-- Integration Guide -->
+        <div class="demo-section">
+            <h2 class="demo-title">📋 How to Add to Your Pages</h2>
+            <div class="demo-description">
+                <strong>Quick Integration:</strong> Copy and paste these code snippets to add features to any page.
+            </div>
+
+            <h4>1. Add CSS Files (in &lt;head&gt;):</h4>
+            <pre style="background: #f8f9fa; padding: 15px; border-radius: 6px; overflow-x: auto;"><code>&lt;link rel="stylesheet" href="css/coupon-system.css"&gt;
+&lt;link rel="stylesheet" href="css/flash-sale-system.css"&gt;</code></pre>
+
+            <h4>2. Add HTML Containers:</h4>
+            <pre style="background: #f8f9fa; padding: 15px; border-radius: 6px; overflow-x: auto;"><code>&lt;!-- For Flash Sales --&gt;
+&lt;div id="flash-sales-container"&gt;&lt;/div&gt;
+
+&lt;!-- For Coupons --&gt;
+&lt;div id="available-coupons"&gt;&lt;/div&gt;
+&lt;div id="applied-coupons"&gt;&lt;/div&gt;</code></pre>
+
+            <h4>3. Add JavaScript Files (before &lt;/body&gt;):</h4>
+            <pre style="background: #f8f9fa; padding: 15px; border-radius: 6px; overflow-x: auto;"><code>&lt;script src="js/flash-sale-system.js"&gt;&lt;/script&gt;
+&lt;script src="js/coupon-system.js"&gt;&lt;/script&gt;</code></pre>
+
+            <div style="margin-top: 20px; padding: 15px; background: #fff3cd; border-radius: 6px;">
+                <strong>✅ Already Added To:</strong>
+                <ul style="margin: 10px 0;">
+                    <li>✅ <strong>index.html</strong> - Homepage now shows flash sales and available coupons</li>
+                    <li>✅ <strong>cart.html</strong> - Cart page now has coupon input and discount calculation</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Status Section -->
+        <div class="demo-section">
+            <h2 class="demo-title">📊 Feature Status</h2>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
+                <div style="padding: 20px; background: #d4edda; border-radius: 8px;">
+                    <h4 style="margin: 0 0 10px 0; color: #155724;">✅ Coupon System</h4>
+                    <p style="margin: 0; font-size: 14px;">Fully working with admin panel, validation, and cart integration.</p>
+                </div>
+                <div style="padding: 20px; background: #d4edda; border-radius: 8px;">
+                    <h4 style="margin: 0 0 10px 0; color: #155724;">✅ Flash Sales</h4>
+                    <p style="margin: 0; font-size: 14px;">Countdown timers, limited quantities, and automatic pricing.</p>
+                </div>
+                <div style="padding: 20px; background: #fff3cd; border-radius: 8px;">
+                    <h4 style="margin: 0 0 10px 0; color: #856404;">⏳ Next: Bulk Pricing</h4>
+                    <p style="margin: 0; font-size: 14px;">Quantity-based discounts for B2B customers.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/config.js"></script>
+    <script src="js/flash-sale-system.js"></script>
+    <script src="js/coupon-system.js"></script>
+    
+    <script>
+        // Initialize demo cart data for coupon system
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set demo cart data
+            const demoCartItems = [
+                { productId: 'demo1', quantity: 1, price: 500 },
+                { productId: 'demo2', quantity: 1, price: 300 }
+            ];
+            const demoCartTotal = 800;
+            
+            // Initialize coupon system with demo data
+            if (window.couponSystem) {
+                window.couponSystem.setCartData(demoCartItems, demoCartTotal);
+            }
+            
+            // Update demo totals when coupons are applied
+            const originalUpdateCartTotals = window.couponSystem?.updateCartTotals;
+            if (originalUpdateCartTotals) {
+                window.couponSystem.updateCartTotals = function() {
+                    originalUpdateCartTotals.call(this);
+                    // Also update demo subtotal display
+                    document.getElementById('demo-subtotal').textContent = `₹${demoCartTotal}`;
+                };
+            }
+        });
+    </script>
+</body>
+</html>
