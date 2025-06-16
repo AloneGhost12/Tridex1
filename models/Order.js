@@ -122,6 +122,43 @@ const OrderSchema = new mongoose.Schema({
         required: true,
         default: 0
     },
+
+    // Coupon and discount information
+    coupons: [{
+        couponId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Coupon',
+            required: true
+        },
+        code: {
+            type: String,
+            required: true
+        },
+        discountAmount: {
+            type: Number,
+            required: true,
+            min: 0
+        },
+        discountType: {
+            type: String,
+            required: true,
+            enum: ['percentage', 'fixed', 'buy_x_get_y', 'free_shipping']
+        }
+    }],
+
+    // Total discount applied
+    totalDiscount: {
+        type: Number,
+        default: 0,
+        min: 0
+    },
+
+    // Subtotal before discounts
+    subtotal: {
+        type: Number,
+        required: true
+    },
+
     notes: {
         type: String,
         required: false

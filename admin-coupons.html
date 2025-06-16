@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coupon Management - Tridex Admin</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/responsive.css">
+    <link rel="stylesheet" href="css/coupon-system.css">
+    <link rel="stylesheet" href="css/admin-coupons.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="admin-container">
+        <!-- Admin Header -->
+        <header class="admin-header">
+            <div class="header-content">
+                <h1><i class="fas fa-ticket-alt"></i> Coupon Management</h1>
+                <div class="header-actions">
+                    <button id="create-coupon-btn" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Create New Coupon
+                    </button>
+                    <a href="admin.html" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to Admin
+                    </a>
+                </div>
+            </div>
+        </header>
+
+        <!-- Filters and Search -->
+        <div class="filters-section">
+            <div class="filters-container">
+                <div class="search-box">
+                    <input type="text" id="search-input" placeholder="Search coupons by code, name, or description...">
+                    <i class="fas fa-search"></i>
+                </div>
+                <div class="filter-group">
+                    <select id="status-filter">
+                        <option value="all">All Status</option>
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                    </select>
+                    <select id="type-filter">
+                        <option value="all">All Types</option>
+                        <option value="percentage">Percentage</option>
+                        <option value="fixed">Fixed Amount</option>
+                        <option value="buy_x_get_y">Buy X Get Y</option>
+                        <option value="free_shipping">Free Shipping</option>
+                    </select>
+                    <button id="refresh-btn" class="btn btn-outline">
+                        <i class="fas fa-refresh"></i> Refresh
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Coupons Table -->
+        <div class="coupons-section">
+            <div class="table-container">
+                <table class="coupons-table">
+                    <thead>
+                        <tr>
+                            <th>Code</th>
+                            <th>Name</th>
+                            <th>Type</th>
+                            <th>Value</th>
+                            <th>Usage</th>
+                            <th>Status</th>
+                            <th>Expires</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="coupons-tbody">
+                        <!-- Coupons will be loaded here -->
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Pagination -->
+            <div class="pagination-container">
+                <div class="pagination" id="pagination">
+                    <!-- Pagination buttons will be generated here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading Indicator -->
+        <div id="loading-indicator" class="loading-indicator">
+            <div class="spinner"></div>
+            <p>Loading coupons...</p>
+        </div>
+
+        <!-- No Coupons Message -->
+        <div id="no-coupons" class="no-data-message" style="display: none;">
+            <i class="fas fa-ticket-alt"></i>
+            <h3>No Coupons Found</h3>
+            <p>Create your first coupon to get started with discount management.</p>
+            <button class="btn btn-primary" onclick="openCreateCouponModal()">
+                <i class="fas fa-plus"></i> Create Coupon
+            </button>
+        </div>
+    </div>
+
+    <!-- Create/Edit Coupon Modal -->
+    <div id="coupon-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modal-title">Create New Coupon</h2>
+                <button class="close-btn" onclick="closeCouponModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <form id="coupon-form" class="coupon-form-modal">
+                <div class="form-grid">
+                    <!-- Basic Information -->
+                    <div class="form-section">
+                        <h3>Basic Information</h3>
+                        <div class="form-group">
+                            <label for="coupon-code">Coupon Code *</label>
+                            <input type="text" id="coupon-code" name="code" required maxlength="20" 
+                                   placeholder="e.g., SAVE20, WELCOME10" style="text-transform: uppercase;">
+                        </div>
+                        <div class="form-group">
+                            <label for="coupon-name">Coupon Name *</label>
+                            <input type="text" id="coupon-name" name="name" required maxlength="100" 
+                                   placeholder="e.g., Welcome Discount, Summer Sale">
+                        </div>
+                        <div class="form-group">
+                            <label for="coupon-description">Description</label>
+                            <textarea id="coupon-description" name="description" maxlength="500" 
+                                      placeholder="Brief description of the coupon"></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Discount Configuration -->
+                    <div class="form-section">
+                        <h3>Discount Configuration</h3>
+                        <div class="form-group">
+                            <label for="discount-type">Discount Type *</label>
+                            <select id="discount-type" name="discountType" required>
+                                <option value="percentage">Percentage Discount</option>
+                                <option value="fixed">Fixed Amount Discount</option>
+                                <option value="buy_x_get_y">Buy X Get Y</option>
+                                <option value="free_shipping">Free Shipping</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="discount-value">Discount Value *</label>
+                            <input type="number" id="discount-value" name="discountValue" required min="0" step="0.01">
+                        </div>
+                        <div class="form-group" id="max-discount-group">
+                            <label for="max-discount">Maximum Discount Amount</label>
+                            <input type="number" id="max-discount" name="maxDiscountAmount" min="0" step="0.01" 
+                                   placeholder="Leave empty for no limit">
+                        </div>
+                    </div>
+
+                    <!-- Usage Limits -->
+                    <div class="form-section">
+                        <h3>Usage Limits</h3>
+                        <div class="form-group">
+                            <label for="min-order-value">Minimum Order Value</label>
+                            <input type="number" id="min-order-value" name="minimumOrderValue" min="0" step="0.01" value="0">
+                        </div>
+                        <div class="form-group">
+                            <label for="usage-limit">Total Usage Limit</label>
+                            <input type="number" id="usage-limit" name="usageLimit" min="1" 
+                                   placeholder="Leave empty for unlimited">
+                        </div>
+                        <div class="form-group">
+                            <label for="usage-limit-per-user">Usage Limit Per User</label>
+                            <input type="number" id="usage-limit-per-user" name="usageLimitPerUser" min="1" value="1">
+                        </div>
+                    </div>
+
+                    <!-- Validity Period -->
+                    <div class="form-section">
+                        <h3>Validity Period</h3>
+                        <div class="form-group">
+                            <label for="start-date">Start Date</label>
+                            <input type="datetime-local" id="start-date" name="startDate">
+                        </div>
+                        <div class="form-group">
+                            <label for="end-date">End Date *</label>
+                            <input type="datetime-local" id="end-date" name="endDate" required>
+                        </div>
+                    </div>
+
+                    <!-- Settings -->
+                    <div class="form-section">
+                        <h3>Settings</h3>
+                        <div class="form-group checkbox-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="is-public" name="isPublic" checked>
+                                <span class="checkmark"></span>
+                                Public (visible to all users)
+                            </label>
+                        </div>
+                        <div class="form-group checkbox-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="auto-apply" name="autoApply">
+                                <span class="checkmark"></span>
+                                Auto-apply when conditions are met
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label for="priority">Priority</label>
+                            <input type="number" id="priority" name="priority" value="0" 
+                                   placeholder="Higher numbers = higher priority">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeCouponModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Save Coupon
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="delete-modal" class="modal">
+        <div class="modal-content small">
+            <div class="modal-header">
+                <h2>Confirm Delete</h2>
+                <button class="close-btn" onclick="closeDeleteModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete this coupon? This action cannot be undone.</p>
+                <div class="coupon-info">
+                    <strong id="delete-coupon-code"></strong> - <span id="delete-coupon-name"></span>
+                </div>
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn btn-secondary" onclick="closeDeleteModal()">Cancel</button>
+                <button type="button" class="btn btn-danger" onclick="confirmDelete()">
+                    <i class="fas fa-trash"></i> Delete Coupon
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/config.js"></script>
+    <script src="js/admin-coupons.js"></script>
+</body>
+</html>
