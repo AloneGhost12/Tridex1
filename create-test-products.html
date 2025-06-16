@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Test Products - Tridex</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px;
+        }
+        .button:hover {
+            background: #0056b3;
+        }
+        .button.success {
+            background: #28a745;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 5px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .result.success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .result.error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .result.info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🛍️ Create Test Products for Flash Sales</h1>
+        <p>This will create sample products that you can use in your flash sales.</p>
+        
+        <button class="button" onclick="createAllTestProducts()">Create 5 Test Products</button>
+        <button class="button" onclick="checkExistingProducts()">Check Existing Products</button>
+        
+        <div id="result" class="result" style="display: none;"></div>
+    </div>
+
+    <script>
+        const baseUrl = 'http://localhost:3000';
+
+        function showResult(content, type = 'info') {
+            const element = document.getElementById('result');
+            element.className = `result ${type}`;
+            element.textContent = content;
+            element.style.display = 'block';
+        }
+
+        async function checkExistingProducts() {
+            try {
+                showResult('Checking existing products...', 'info');
+                
+                const response = await fetch(`${baseUrl}/products`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    if (data.length === 0) {
+                        showResult('❌ No products found in database!\nClick "Create 5 Test Products" to add some.', 'error');
+                    } else {
+                        let result = `✅ Found ${data.length} existing products:\n\n`;
+                        data.forEach((product, index) => {
+                            result += `${index + 1}. ${product.name}\n`;
+                            result += `   ID: ${product._id}\n`;
+                            result += `   Price: $${product.price}\n\n`;
+                        });
+                        result += `\nYou can use these product IDs in your flash sales!`;
+                        showResult(result, 'success');
+                    }
+                } else {
+                    showResult(`❌ Error checking products: ${response.status}\n${JSON.stringify(data, null, 2)}`, 'error');
+                }
+            } catch (error) {
+                showResult(`❌ Error: ${error.message}\n\nMake sure your server is running on http://localhost:3000`, 'error');
+            }
+        }
+
+        async function createAllTestProducts() {
+            const testProducts = [
+                {
+                    name: 'Wireless Bluetooth Headphones',
+                    desc: 'High-quality wireless headphones with noise cancellation',
+                    price: 79.99,
+                    stock: 50,
+                    image: 'https://via.placeholder.com/300x300?text=Headphones'
+                },
+                {
+                    name: 'Smart Fitness Watch',
+                    desc: 'Track your fitness goals with this advanced smartwatch',
+                    price: 199.99,
+                    stock: 30,
+                    image: 'https://via.placeholder.com/300x300?text=Smart+Watch'
+                },
+                {
+                    name: 'Portable Phone Charger',
+                    desc: 'Fast-charging portable battery pack for all devices',
+                    price: 29.99,
+                    stock: 100,
+                    image: 'https://via.placeholder.com/300x300?text=Charger'
+                },
+                {
+                    name: 'Gaming Mechanical Keyboard',
+                    desc: 'RGB backlit mechanical keyboard for gaming enthusiasts',
+                    price: 129.99,
+                    stock: 25,
+                    image: 'https://via.placeholder.com/300x300?text=Keyboard'
+                },
+                {
+                    name: 'HD Webcam for Streaming',
+                    desc: '1080p HD webcam perfect for video calls and streaming',
+                    price: 59.99,
+                    stock: 40,
+                    image: 'https://via.placeholder.com/300x300?text=Webcam'
+                }
+            ];
+
+            try {
+                showResult('Creating test products...', 'info');
+                
+                let results = 'Creating 5 test products:\n\n';
+                let successCount = 0;
+                let createdProducts = [];
+
+                for (let i = 0; i < testProducts.length; i++) {
+                    const product = testProducts[i];
+                    
+                    try {
+                        const response = await fetch(`${baseUrl}/products`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify(product)
+                        });
+                        
+                        const data = await response.json();
+                        
+                        if (response.ok) {
+                            results += `✅ ${product.name}\n`;
+                            results += `   ID: ${data.product._id}\n`;
+                            results += `   Price: $${data.product.price}\n\n`;
+                            successCount++;
+                            createdProducts.push(data.product);
+                        } else {
+                            results += `❌ Failed to create ${product.name}: ${data.message}\n\n`;
+                        }
+                    } catch (error) {
+                        results += `❌ Error creating ${product.name}: ${error.message}\n\n`;
+                    }
+                }
+
+                results += `\n🎉 Successfully created ${successCount} out of ${testProducts.length} products!\n\n`;
+                
+                if (successCount > 0) {
+                    results += `📋 PRODUCT IDs FOR FLASH SALES:\n`;
+                    createdProducts.forEach((product, index) => {
+                        results += `${index + 1}. ${product._id} (${product.name})\n`;
+                    });
+                    results += `\nCopy these IDs to use in your flash sales!`;
+                    
+                    showResult(results, 'success');
+                } else {
+                    results += `❌ No products were created. Check your server connection.`;
+                    showResult(results, 'error');
+                }
+
+            } catch (error) {
+                showResult(`❌ Error creating products: ${error.message}\n\nMake sure your server is running on http://localhost:3000`, 'error');
+            }
+        }
+
+        // Auto-check existing products on page load
+        window.addEventListener('load', () => {
+            checkExistingProducts();
+        });
+    </script>
+</body>
+</html>

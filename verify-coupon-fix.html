@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify Coupon Fix</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .status { padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        .test-result { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 3px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>🔧 Coupon System Fix Verification</h1>
+    
+    <div id="config-test" class="test-result">
+        <h3>📋 Config Test</h3>
+        <div id="config-status">Testing...</div>
+    </div>
+
+    <div id="api-test" class="test-result">
+        <h3>🌐 API Test</h3>
+        <div id="api-status">Testing...</div>
+    </div>
+
+    <div id="coupon-system-test" class="test-result">
+        <h3>🎫 Coupon System Test</h3>
+        <div id="coupon-status">Testing...</div>
+    </div>
+
+    <script src="js/config.js"></script>
+    <script src="js/coupon-system.js"></script>
+    <script>
+        async function runTests() {
+            // Test 1: Config
+            const configDiv = document.getElementById('config-status');
+            if (typeof CONFIG !== 'undefined') {
+                configDiv.innerHTML = `
+                    <div class="status success">✅ CONFIG loaded successfully</div>
+                    <pre>isDevelopment: ${CONFIG.isDevelopment}
+Base URL: ${CONFIG.isDevelopment ? CONFIG.endpoints.development.base : CONFIG.endpoints.production.base}</pre>
+                `;
+            } else {
+                configDiv.innerHTML = '<div class="status error">❌ CONFIG not loaded</div>';
+            }
+
+            // Test 2: API
+            const apiDiv = document.getElementById('api-status');
+            try {
+                const baseUrl = CONFIG.isDevelopment ? CONFIG.endpoints.development.base : CONFIG.endpoints.production.base;
+                const response = await fetch(`${baseUrl}/coupons/public`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    apiDiv.innerHTML = `
+                        <div class="status success">✅ API working (${response.status})</div>
+                        <pre>URL: ${baseUrl}/coupons/public
+Coupons found: ${data.coupons?.length || 0}
+${data.coupons?.map(c => `- ${c.code}: ${c.discountValue}${c.discountType === 'percentage' ? '%' : '₹'} OFF`).join('\n') || 'No coupons'}</pre>
+                    `;
+                } else {
+                    apiDiv.innerHTML = `<div class="status error">❌ API error: ${response.status}</div>`;
+                }
+            } catch (error) {
+                apiDiv.innerHTML = `<div class="status error">❌ API request failed: ${error.message}</div>`;
+            }
+
+            // Test 3: Coupon System
+            const couponDiv = document.getElementById('coupon-status');
+            setTimeout(() => {
+                if (window.couponSystem) {
+                    const baseUrl = window.couponSystem.getBaseUrl();
+                    couponDiv.innerHTML = `
+                        <div class="status success">✅ Coupon System initialized</div>
+                        <pre>Base URL: ${baseUrl}
+Available coupons: ${window.couponSystem.availableCoupons?.length || 0}</pre>
+                    `;
+                } else {
+                    couponDiv.innerHTML = '<div class="status error">❌ Coupon System not initialized</div>';
+                }
+            }, 1000);
+        }
+
+        document.addEventListener('DOMContentLoaded', runTests);
+    </script>
+</body>
+</html>

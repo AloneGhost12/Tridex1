@@ -5,16 +5,19 @@
 
 class CouponSystem {
     constructor() {
+        console.log('🎫 Initializing Coupon System...');
         this.appliedCoupons = [];
         this.availableCoupons = [];
         this.cartTotal = 0;
         this.cartItems = [];
         this.userId = localStorage.getItem('userId');
-        
+
+        console.log('🔑 User ID from localStorage:', this.userId);
         this.init();
     }
 
     init() {
+        console.log('🚀 Starting coupon system initialization...');
         this.setupEventListeners();
         this.loadAvailableCoupons();
         this.loadCartData();
@@ -62,26 +65,62 @@ class CouponSystem {
 
             console.log('🎫 Loading available coupons from:', `${baseUrl}/coupons/public`);
             console.log('📤 Request headers:', headers);
-            const response = await fetch(`${baseUrl}/coupons/public`, { headers });
+
+            const response = await fetch(`${baseUrl}/coupons/public`, {
+                headers,
+                method: 'GET',
+                mode: 'cors',
+                credentials: 'include'
+            });
+
+            console.log('📡 Response status:', response.status);
+            console.log('📡 Response ok:', response.ok);
 
             if (!response.ok) {
+                const errorText = await response.text();
+                console.error('❌ Response error text:', errorText);
                 throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
 
             const data = await response.json();
             console.log('📦 Received coupon data:', data);
 
+            if (!data || typeof data !== 'object') {
+                throw new Error('Invalid response format');
+            }
+
             this.availableCoupons = data.coupons || [];
             console.log(`✅ Loaded ${this.availableCoupons.length} available coupons`);
 
-            this.displayAvailableCoupons();
+            try {
+                this.displayAvailableCoupons();
+                console.log('✅ Coupons displayed successfully');
+            } catch (displayError) {
+                console.error('❌ Error displaying coupons:', displayError);
+                throw new Error(`Failed to display coupons: ${displayError.message}`);
+            }
 
         } catch (error) {
             console.error('❌ Error loading available coupons:', error);
+            console.error('❌ Error stack:', error.stack);
+
             // Show error message to user
             const container = document.getElementById('available-coupons');
             if (container) {
-                container.innerHTML = '<p style="color: #dc3545; text-align: center;">Unable to load available offers. Please try again later.</p>';
+                container.innerHTML = `
+                    <p style="color: #dc3545; text-align: center;">
+                        Unable to load available offers. Please try again later.
+                    </p>
+                    <p style="color: #6c757d; text-align: center; font-size: 0.8em;">
+                        Error: ${error.message}
+                    </p>
+                    <button onclick="window.couponSystem.loadAvailableCoupons()"
+                            style="background: #007bff; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; margin-top: 10px;">
+                        Retry Loading Coupons
+                    </button>
+                `;
+            } else {
+                console.warn('⚠️ Available coupons container not found in DOM');
             }
         }
     }
@@ -91,7 +130,9 @@ class CouponSystem {
         console.log('🎨 Displaying coupons in container:', container);
 
         if (!container) {
-            console.warn('⚠️ Available coupons container not found!');
+            console.warn('⚠️ Available coupons container not found! Available containers:');
+            const allContainers = document.querySelectorAll('[id*="coupon"]');
+            console.log('Available coupon-related elements:', allContainers);
             return;
         }
 
@@ -115,7 +156,7 @@ class CouponSystem {
                 <div class="coupon-details">
                     <h4>${coupon.name}</h4>
                     <p>${coupon.description || 'No description available'}</p>
-                    ${coupon.minimumOrderValue > 0 ? 
+                    ${coupon.minimumOrderValue > 0 ?
                         `<p class="min-order">Min order: ₹${coupon.minimumOrderValue}</p>` : ''
                     }
                     <p class="expiry">Expires: ${new Date(coupon.endDate).toLocaleDateString()}</p>
@@ -127,6 +168,7 @@ class CouponSystem {
         `).join('');
 
         container.innerHTML = couponsHTML;
+        console.log('✅ Coupons displayed successfully');
     }
 
     getDiscountText(coupon) {
@@ -351,14 +393,56 @@ class CouponSystem {
         console.warn('⚠️ CONFIG not found, falling back to production URL');
         return 'https://tridex1.onrender.com';
     }
+
+    // Debug method to manually trigger coupon loading
+    debug() {
+        console.log('🔍 Coupon System Debug Info:');
+        console.log('- Applied Coupons:', this.appliedCoupons);
+        console.log('- Available Coupons:', this.availableCoupons);
+        console.log('- Cart Total:', this.cartTotal);
+        console.log('- Cart Items:', this.cartItems);
+        console.log('- User ID:', this.userId);
+        console.log('- Base URL:', this.getBaseUrl());
+
+        const container = document.getElementById('available-coupons');
+        console.log('- Available Coupons Container:', container);
+
+        console.log('🔄 Retrying coupon load...');
+        this.loadAvailableCoupons();
+    }
 }
 
 // Initialize coupon system when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
+    console.log('📄 DOM Content Loaded - Initializing Coupon System');
     if (typeof window.couponSystem === 'undefined') {
-        window.couponSystem = new CouponSystem();
+        try {
+            window.couponSystem = new CouponSystem();
+            console.log('✅ Coupon System initialized successfully');
+        } catch (error) {
+            console.error('❌ Failed to initialize Coupon System:', error);
+        }
+    } else {
+        console.log('ℹ️ Coupon System already exists');
     }
 });
+
+// Also try to initialize after a delay if DOM is already loaded
+if (document.readyState === 'loading') {
+    console.log('📄 Document still loading, waiting for DOMContentLoaded');
+} else {
+    console.log('📄 Document already loaded, initializing immediately');
+    setTimeout(() => {
+        if (typeof window.couponSystem === 'undefined') {
+            try {
+                window.couponSystem = new CouponSystem();
+                console.log('✅ Coupon System initialized successfully (delayed)');
+            } catch (error) {
+                console.error('❌ Failed to initialize Coupon System (delayed):', error);
+            }
+        }
+    }, 100);
+}
 
 // Export for use in other modules
 if (typeof module !== 'undefined' && module.exports) {

@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Coupon API</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: #f9f9f9;
+        }
+        .result {
+            background: #fff;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+            border-left: 4px solid #007bff;
+        }
+        .error {
+            border-left-color: #dc3545;
+            background: #f8d7da;
+        }
+        .success {
+            border-left-color: #28a745;
+            background: #d4edda;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        pre {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <h1>Debug Coupon API</h1>
+
+    <div class="test-section">
+        <h3>Test 1: Direct API Call</h3>
+        <button onclick="testDirectAPI()">Test /coupons/public</button>
+        <div id="direct-api-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>Test 2: Fetch with Headers</h3>
+        <button onclick="testWithHeaders()">Test with Headers</button>
+        <div id="headers-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>Test 3: Coupon Validation</h3>
+        <button onclick="testValidation()">Test Validation</button>
+        <div id="validation-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>Test 4: Check CONFIG</h3>
+        <button onclick="checkConfig()">Check CONFIG</button>
+        <div id="config-result"></div>
+    </div>
+
+    <script>
+        const CONFIG = {
+            isDevelopment: true,
+            endpoints: {
+                development: {
+                    base: 'http://localhost:3000'
+                },
+                production: {
+                    base: 'https://tridex1.onrender.com'
+                }
+            }
+        };
+
+        function getBaseUrl() {
+            if (typeof CONFIG !== 'undefined' && CONFIG.endpoints) {
+                return CONFIG.isDevelopment ? CONFIG.endpoints.development.base : CONFIG.endpoints.production.base;
+            }
+            return 'https://tridex1.onrender.com';
+        }
+
+        async function testDirectAPI() {
+            const resultDiv = document.getElementById('direct-api-result');
+            resultDiv.innerHTML = '<p>Testing...</p>';
+
+            try {
+                const baseUrl = getBaseUrl();
+                console.log('Testing URL:', `${baseUrl}/coupons/public`);
+                
+                const response = await fetch(`${baseUrl}/coupons/public`);
+                console.log('Response:', response);
+                
+                const data = await response.json();
+                console.log('Data:', data);
+
+                resultDiv.innerHTML = `
+                    <div class="result success">
+                        <h4>Success!</h4>
+                        <p>Status: ${response.status}</p>
+                        <p>Coupons found: ${data.coupons?.length || 0}</p>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    </div>
+                `;
+            } catch (error) {
+                console.error('Error:', error);
+                resultDiv.innerHTML = `
+                    <div class="result error">
+                        <h4>Error!</h4>
+                        <p>${error.message}</p>
+                        <pre>${error.stack}</pre>
+                    </div>
+                `;
+            }
+        }
+
+        async function testWithHeaders() {
+            const resultDiv = document.getElementById('headers-result');
+            resultDiv.innerHTML = '<p>Testing...</p>';
+
+            try {
+                const baseUrl = getBaseUrl();
+                const headers = {
+                    'Content-Type': 'application/json'
+                };
+
+                const userId = localStorage.getItem('userId');
+                if (userId) {
+                    headers.userid = userId;
+                }
+
+                const response = await fetch(`${baseUrl}/coupons/public`, {
+                    method: 'GET',
+                    headers: headers,
+                    mode: 'cors',
+                    credentials: 'include'
+                });
+                
+                const data = await response.json();
+
+                resultDiv.innerHTML = `
+                    <div class="result success">
+                        <h4>Success with Headers!</h4>
+                        <p>Status: ${response.status}</p>
+                        <p>Headers sent: ${JSON.stringify(headers, null, 2)}</p>
+                        <p>Coupons found: ${data.coupons?.length || 0}</p>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    </div>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="result error">
+                        <h4>Error with Headers!</h4>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        async function testValidation() {
+            const resultDiv = document.getElementById('validation-result');
+            resultDiv.innerHTML = '<p>Testing...</p>';
+
+            try {
+                const baseUrl = getBaseUrl();
+                const response = await fetch(`${baseUrl}/coupons/validate`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        code: 'HELLO'
+                    })
+                });
+                
+                const data = await response.json();
+
+                resultDiv.innerHTML = `
+                    <div class="result ${response.ok ? 'success' : 'error'}">
+                        <h4>Validation Test</h4>
+                        <p>Status: ${response.status}</p>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    </div>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="result error">
+                        <h4>Validation Error!</h4>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        function checkConfig() {
+            const resultDiv = document.getElementById('config-result');
+            
+            resultDiv.innerHTML = `
+                <div class="result">
+                    <h4>CONFIG Check</h4>
+                    <p>CONFIG exists: ${typeof CONFIG !== 'undefined'}</p>
+                    <p>Base URL: ${getBaseUrl()}</p>
+                    <p>Is Development: ${CONFIG?.isDevelopment}</p>
+                    <p>User ID in localStorage: ${localStorage.getItem('userId') || 'None'}</p>
+                    <pre>${JSON.stringify(CONFIG, null, 2)}</pre>
+                </div>
+            `;
+        }
+
+        // Auto-run tests on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('Page loaded, running auto-tests...');
+            checkConfig();
+            setTimeout(testDirectAPI, 1000);
+        });
+    </script>
+</body>
+</html>

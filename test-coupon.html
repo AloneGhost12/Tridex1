@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Coupon Validation</title>
+    <script src="js/config.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            white-space: pre-wrap;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎫 Coupon Validation Test</h1>
+        <p>Test the coupon validation endpoint directly</p>
+        
+        <form id="test-form">
+            <div class="form-group">
+                <label for="coupon-code">Coupon Code:</label>
+                <input type="text" id="coupon-code" value="WELCOME10" placeholder="Enter coupon code">
+            </div>
+            
+            <div class="form-group">
+                <label for="cart-total">Cart Total (₹):</label>
+                <input type="number" id="cart-total" value="1000" placeholder="Enter cart total">
+            </div>
+            
+            <div class="form-group">
+                <label for="user-id">User ID (optional):</label>
+                <input type="text" id="user-id" placeholder="Enter user ID">
+            </div>
+            
+            <button type="submit">Test Coupon Validation</button>
+        </form>
+        
+        <div id="result"></div>
+        
+        <hr style="margin: 30px 0;">
+        
+        <h2>🔧 Debug Information</h2>
+        <div id="debug-info"></div>
+    </div>
+
+    <script>
+        // Display debug information
+        function showDebugInfo() {
+            const debugDiv = document.getElementById('debug-info');
+            const baseUrl = getBaseUrl();
+            
+            debugDiv.innerHTML = `
+                <div class="info">
+                    <strong>Environment Detection:</strong><br>
+                    Current Host: ${window.location.hostname}<br>
+                    Current Protocol: ${window.location.protocol}<br>
+                    Is Development: ${CONFIG.isDevelopment}<br>
+                    API Base URL: ${baseUrl}<br>
+                    Validation Endpoint: ${baseUrl}/coupons/validate
+                </div>
+            `;
+        }
+        
+        // Get base URL function (same as in other files)
+        function getBaseUrl() {
+            if (typeof CONFIG !== 'undefined' && CONFIG.endpoints) {
+                return CONFIG.isDevelopment ? CONFIG.endpoints.development.base : CONFIG.endpoints.production.base;
+            }
+            return 'https://tridex1.onrender.com';
+        }
+        
+        // Test coupon validation
+        async function testCouponValidation(code, cartTotal, userId) {
+            const baseUrl = getBaseUrl();
+            const endpoint = `${baseUrl}/coupons/validate`;
+            
+            const requestData = {
+                code: code,
+                cartItems: [
+                    {
+                        productId: "68242495b3de326770cdbb3e", // Real product ID (Shoes)
+                        quantity: 1,
+                        price: cartTotal
+                    }
+                ],
+                cartTotal: cartTotal,
+                userId: userId || undefined
+            };
+            
+            try {
+                console.log('Making request to:', endpoint);
+                console.log('Request data:', requestData);
+                
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(requestData)
+                });
+                
+                console.log('Response status:', response.status);
+                console.log('Response headers:', response.headers);
+                
+                const data = await response.json();
+                console.log('Response data:', data);
+                
+                return {
+                    success: response.ok,
+                    status: response.status,
+                    data: data
+                };
+                
+            } catch (error) {
+                console.error('Request failed:', error);
+                return {
+                    success: false,
+                    error: error.message
+                };
+            }
+        }
+        
+        // Handle form submission
+        document.getElementById('test-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const code = document.getElementById('coupon-code').value;
+            const cartTotal = parseFloat(document.getElementById('cart-total').value);
+            const userId = document.getElementById('user-id').value;
+            const resultDiv = document.getElementById('result');
+            
+            if (!code) {
+                resultDiv.innerHTML = '<div class="error">Please enter a coupon code</div>';
+                return;
+            }
+            
+            if (!cartTotal || cartTotal <= 0) {
+                resultDiv.innerHTML = '<div class="error">Please enter a valid cart total</div>';
+                return;
+            }
+            
+            resultDiv.innerHTML = `
+                <div class="info">
+                    <strong>Testing coupon validation...</strong><br>
+                    Endpoint: ${getBaseUrl()}/coupons/validate<br>
+                    Code: ${code}<br>
+                    Cart Total: ₹${cartTotal}<br>
+                    User ID: ${userId || 'Not provided'}
+                </div>
+            `;
+
+            const result = await testCouponValidation(code, cartTotal, userId);
+            
+            if (result.success) {
+                resultDiv.innerHTML = `
+                    <div class="success">
+                        <strong>✅ Success!</strong><br>
+                        Status: ${result.status}<br>
+                        Request Data: ${JSON.stringify({code, cartTotal, userId}, null, 2)}<br><br>
+                        Server Response: ${JSON.stringify(result.data, null, 2)}
+                    </div>
+                `;
+            } else {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <strong>❌ Failed!</strong><br>
+                        Status: ${result.status}<br>
+                        ${result.error ? `Network Error: ${result.error}<br>` : ''}
+                        ${result.data ? `Server Response: ${JSON.stringify(result.data, null, 2)}` : 'No response data'}
+                    </div>
+                `;
+            }
+        });
+        
+        // Initialize debug info on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            showDebugInfo();
+        });
+    </script>
+</body>
+</html>
