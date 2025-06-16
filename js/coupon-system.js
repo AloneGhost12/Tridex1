@@ -265,7 +265,7 @@ class CouponSystem {
         if (typeof CONFIG !== 'undefined' && CONFIG.endpoints) {
             return CONFIG.isDevelopment ? CONFIG.endpoints.development.base : CONFIG.endpoints.production.base;
         }
-        return 'https://tridex-backend.onrender.com';
+        return 'https://tridex1.onrender.com';
     }
 }
 
