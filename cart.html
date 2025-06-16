@@ -395,6 +395,10 @@
             <button onclick="window.location.href='index.html'" class="continue-shopping-btn">Continue Shopping</button>
         </div>
     </div>
+
+    <!-- Coupon System Script - Load before cart script -->
+    <script src="js/coupon-system.js"></script>
+
     <script>
         // Define cart as a global variable so it's accessible to all functions
         let cart = [];
@@ -423,6 +427,13 @@
                 cartItemsDiv.innerHTML = '<div class="cart-empty">Your cart is empty.</div>';
                 cartTotalDiv.textContent = '';
                 cartActionsDiv.innerHTML = '';
+
+                // Hide coupon section when cart is empty
+                const couponSection = document.getElementById('coupon-section');
+                if (couponSection) {
+                    couponSection.style.display = 'none';
+                }
+
                 return;
             }
             let total = 0;
@@ -445,7 +456,10 @@
                 `;
             }).join('');
             // Show coupon section and new totals layout when cart has items
-            document.getElementById('coupon-section').style.display = 'block';
+            const couponSection = document.getElementById('coupon-section');
+            if (couponSection) {
+                couponSection.style.display = 'block';
+            }
             document.getElementById('cart-totals').style.display = 'block';
 
             // Update the new totals layout
@@ -620,8 +634,5 @@
         // Initialize the cart
         renderCart();
     </script>
-
-    <!-- Coupon System Script -->
-    <script src="js/coupon-system.js"></script>
 </body>
 </html>
