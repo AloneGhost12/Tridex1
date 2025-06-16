@@ -4,6 +4,8 @@ const bcrypt = require('bcrypt');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const fileUpload = require('express-fileupload');
+const session = require('express-session');
+const MongoStore = require('connect-mongo');
 const { OAuth2Client } = require('google-auth-library');
 const User = require('./models/User'); // Make sure the path is correct
 const Product = require('./models/Product');
@@ -20,6 +22,7 @@ const Coupon = require('./models/Coupon');
 const CouponUsage = require('./models/CouponUsage');
 const FlashSale = require('./models/FlashSale');
 const FlashSalePurchase = require('./models/FlashSalePurchase');
+const Cart = require('./models/Cart');
 const { generateProductSummary } = require('./utils/aiSummaryGenerator');
 
 // Load environment variables
@@ -64,8 +67,8 @@ app.use(cors({
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Username', 'X-Requested-With', 'Accept', 'Origin', 'userid', 'username', 'sessionid'],
     exposedHeaders: ['Content-Type', 'Authorization'],
-    // Don't use credentials with wildcard origin
-    credentials: false
+    // Enable credentials for session management
+    credentials: true
 }));
 
 // Pre-flight requests
@@ -103,6 +106,23 @@ app.use((req, res, next) => {
 
     next();
 });
+
+// Session configuration
+app.use(session({
+    secret: process.env.SESSION_SECRET || 'tridex-session-secret-key-change-in-production',
+    resave: false,
+    saveUninitialized: false,
+    store: MongoStore.create({
+        mongoUrl: process.env.MONGODB_URI || 'mongodb+srv://adharsh:adharsh@cluster0.ixhqj.mongodb.net/tridex?retryWrites=true&w=majority',
+        touchAfter: 24 * 3600 // lazy session update
+    }),
+    cookie: {
+        secure: process.env.NODE_ENV === 'production', // Use secure cookies in production
+        httpOnly: true,
+        maxAge: 1000 * 60 * 60 * 24 * 7 // 7 days
+    }
+}));
+
 app.use(express.json());
 
 // Handle legacy product.html redirects
@@ -297,7 +317,14 @@ app.post('/login', async (req, res) => {
         }
 
         console.log('Login successful for user:', user.username);
-        // Respond with token and user info
+
+        // Set up session
+        req.session.userId = user._id;
+        req.session.username = user.username;
+        req.session.isAdmin = user.isAdmin || false;
+        req.session.verified = user.verified || false;
+
+        // Respond with user info
         res.status(200).json({
             message: 'Login successful!',
             userId: user._id,
@@ -305,7 +332,7 @@ app.post('/login', async (req, res) => {
             username: user.username,
             verified: user.verified || false,
             isBanned: false,
-            token: 'fake-jwt-token-' + Date.now()
+            token: 'session-token-' + Date.now() // For backward compatibility
         });
 
     } catch (err) {
@@ -315,6 +342,48 @@ app.post('/login', async (req, res) => {
             error: err.message,
             stack: process.env.NODE_ENV === 'production' ? null : err.stack
         });
+    }
+});
+
+// Get current user session
+app.get('/auth/session', (req, res) => {
+    try {
+        if (req.session && req.session.userId) {
+            res.json({
+                userId: req.session.userId,
+                username: req.session.username,
+                isLoggedIn: true
+            });
+        } else {
+            res.status(401).json({
+                message: 'No active session',
+                isLoggedIn: false
+            });
+        }
+    } catch (error) {
+        console.error('Error getting session:', error);
+        res.status(500).json({ message: 'Error getting session' });
+    }
+});
+
+// Logout endpoint
+app.post('/logout', (req, res) => {
+    try {
+        if (req.session) {
+            req.session.destroy((err) => {
+                if (err) {
+                    console.error('Error destroying session:', err);
+                    return res.status(500).json({ message: 'Error logging out' });
+                }
+                res.clearCookie('connect.sid'); // Clear session cookie
+                res.json({ message: 'Logged out successfully' });
+            });
+        } else {
+            res.json({ message: 'No active session' });
+        }
+    } catch (error) {
+        console.error('Error during logout:', error);
+        res.status(500).json({ message: 'Error logging out' });
     }
 });
 
@@ -1424,6 +1493,39 @@ app.get('/products', async (req, res) => {
     } catch (err) {
         console.error('Error fetching products:', err);
         res.status(500).json({ message: 'Error fetching products' });
+    }
+});
+
+// Get a single product by ID
+app.get('/products/:id', async (req, res) => {
+    try {
+        console.log('Fetching product with ID:', req.params.id);
+
+        // Check if MongoDB is connected
+        if (mongoose.connection.readyState !== 1) {
+            console.log('MongoDB not connected');
+            return res.status(503).json({
+                message: 'Database service temporarily unavailable'
+            });
+        }
+
+        const product = await Product.findById(req.params.id)
+            .populate('category')
+            .populate('parentProduct');
+
+        if (!product) {
+            console.log('Product not found:', req.params.id);
+            return res.status(404).json({ message: 'Product not found' });
+        }
+
+        console.log('Product found:', product.name);
+        res.json(product);
+    } catch (err) {
+        console.error('Error fetching product:', err);
+        if (err.name === 'CastError') {
+            return res.status(400).json({ message: 'Invalid product ID format' });
+        }
+        res.status(500).json({ message: 'Error fetching product' });
     }
 });
 
@@ -4733,7 +4835,6 @@ app.get('/coupons/public', async (req, res) => {
         };
 
         const coupons = await Coupon.find(query)
-            .select('code name description discountType discountValue maxDiscountAmount minimumOrderValue endDate')
             .sort({ priority: -1, createdAt: -1 });
 
         // Filter coupons applicable to user if userId provided
@@ -4747,11 +4848,34 @@ app.get('/coupons/public', async (req, res) => {
                         // Check usage limit per user
                         const userUsageCount = await CouponUsage.getUserUsageCount(coupon._id, userId);
                         if (userUsageCount < coupon.usageLimitPerUser) {
-                            applicableCoupons.push(coupon);
+                            applicableCoupons.push({
+                                _id: coupon._id,
+                                code: coupon.code,
+                                name: coupon.name,
+                                description: coupon.description,
+                                discountType: coupon.discountType,
+                                discountValue: coupon.discountValue,
+                                maxDiscountAmount: coupon.maxDiscountAmount,
+                                minimumOrderValue: coupon.minimumOrderValue,
+                                endDate: coupon.endDate
+                            });
                         }
                     }
                 }
             }
+        } else {
+            // If no userId, return all public coupons with selected fields only
+            applicableCoupons = coupons.map(coupon => ({
+                _id: coupon._id,
+                code: coupon.code,
+                name: coupon.name,
+                description: coupon.description,
+                discountType: coupon.discountType,
+                discountValue: coupon.discountValue,
+                maxDiscountAmount: coupon.maxDiscountAmount,
+                minimumOrderValue: coupon.minimumOrderValue,
+                endDate: coupon.endDate
+            }));
         }
 
         res.json({ coupons: applicableCoupons });
@@ -5117,6 +5241,30 @@ app.delete('/coupons/:id', async (req, res) => {
     }
 });
 
+// Get single coupon by ID (admin only)
+app.get('/coupons/:id', async (req, res) => {
+    try {
+        const couponId = req.params.id;
+
+        const coupon = await Coupon.findById(couponId)
+            .populate('createdBy', 'username name')
+            .populate('applicableCategories', 'name')
+            .populate('applicableProducts', 'name')
+            .populate('excludedCategories', 'name')
+            .populate('excludedProducts', 'name');
+
+        if (!coupon) {
+            return res.status(404).json({ message: 'Coupon not found' });
+        }
+
+        res.json(coupon);
+
+    } catch (error) {
+        console.error('Error fetching coupon:', error);
+        res.status(500).json({ message: 'Error fetching coupon' });
+    }
+});
+
 // Get coupon usage statistics
 app.get('/coupons/:id/usage', async (req, res) => {
     try {
@@ -5136,7 +5284,7 @@ app.get('/coupons/:id/usage', async (req, res) => {
 
         // Calculate total discount given
         const usageStats = await CouponUsage.aggregate([
-            { $match: { couponId: mongoose.Types.ObjectId(couponId) } },
+            { $match: { couponId: new mongoose.Types.ObjectId(couponId) } },
             {
                 $group: {
                     _id: null,
@@ -5243,18 +5391,46 @@ app.get('/flash-sales', async (req, res) => {
 // Get active flash sales (public)
 app.get('/flash-sales/active', async (req, res) => {
     try {
-        const flashSales = await FlashSale.getActiveSales();
-
-        // Update status for all sales
-        for (const sale of flashSales) {
+        // First, update all flash sale statuses
+        const allFlashSales = await FlashSale.find({ isActive: true });
+        for (const sale of allFlashSales) {
             await sale.updateStatus();
         }
 
+        // Then get active sales
+        const flashSales = await FlashSale.getActiveSales();
+
+        console.log(`Found ${flashSales.length} active flash sales`);
         res.json({ flashSales });
 
     } catch (error) {
         console.error('Error fetching active flash sales:', error);
         res.status(500).json({ message: 'Error fetching active flash sales' });
+    }
+});
+
+// Force update all flash sale statuses (admin utility)
+app.post('/flash-sales/update-statuses', async (req, res) => {
+    try {
+        const flashSales = await FlashSale.find({ isActive: true });
+        let updated = 0;
+
+        for (const sale of flashSales) {
+            const oldStatus = sale.status;
+            await sale.updateStatus();
+            if (sale.status !== oldStatus) {
+                updated++;
+            }
+        }
+
+        res.json({
+            message: `Updated ${updated} flash sale statuses`,
+            total: flashSales.length
+        });
+
+    } catch (error) {
+        console.error('Error updating flash sale statuses:', error);
+        res.status(500).json({ message: 'Error updating flash sale statuses' });
     }
 });
 
@@ -5707,6 +5883,131 @@ app.post('/api/notifications/test', async (req, res) => {
     } catch (error) {
         console.error('Error sending test notification:', error);
         res.status(500).json({ message: 'Error sending notification' });
+    }
+});
+
+// ========== CART MANAGEMENT ENDPOINTS ==========
+
+// Add item to cart
+app.post('/cart/add', async (req, res) => {
+    try {
+        if (!req.session || !req.session.userId) {
+            return res.status(401).json({ message: 'User not logged in' });
+        }
+
+        const { productId, quantity = 1, isFlashSale = false, flashSalePrice, originalPrice, discountPercentage } = req.body;
+        const userId = req.session.userId;
+
+        // Validate product exists
+        const product = await Product.findById(productId);
+        if (!product) {
+            return res.status(404).json({ message: 'Product not found' });
+        }
+
+        // Find or create cart for user
+        let cart = await Cart.findOne({ userId });
+        if (!cart) {
+            cart = new Cart({ userId, items: [] });
+        }
+
+        // Check if item already exists in cart
+        const existingItemIndex = cart.items.findIndex(item =>
+            item.productId.toString() === productId && item.isFlashSale === isFlashSale
+        );
+
+        if (existingItemIndex > -1) {
+            // Update quantity
+            cart.items[existingItemIndex].quantity += quantity;
+        } else {
+            // Add new item
+            const cartItem = {
+                productId,
+                quantity,
+                price: isFlashSale ? flashSalePrice : product.price,
+                isFlashSale,
+                originalPrice: isFlashSale ? originalPrice : product.price,
+                discountPercentage: isFlashSale ? discountPercentage : 0,
+                addedAt: new Date()
+            };
+            cart.items.push(cartItem);
+        }
+
+        await cart.save();
+        res.json({ message: 'Item added to cart', cart });
+
+    } catch (error) {
+        console.error('Error adding to cart:', error);
+        res.status(500).json({ message: 'Error adding to cart' });
+    }
+});
+
+// Get user's cart
+app.get('/cart', async (req, res) => {
+    try {
+        if (!req.session || !req.session.userId) {
+            return res.status(401).json({ message: 'User not logged in' });
+        }
+
+        const cart = await Cart.findOne({ userId: req.session.userId })
+            .populate('items.productId', 'name image price desc');
+
+        if (!cart) {
+            return res.json({ items: [], total: 0 });
+        }
+
+        // Calculate total
+        const total = cart.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+
+        res.json({
+            items: cart.items,
+            total,
+            itemCount: cart.items.length
+        });
+
+    } catch (error) {
+        console.error('Error getting cart:', error);
+        res.status(500).json({ message: 'Error getting cart' });
+    }
+});
+
+// Remove item from cart
+app.delete('/cart/remove/:productId', async (req, res) => {
+    try {
+        if (!req.session || !req.session.userId) {
+            return res.status(401).json({ message: 'User not logged in' });
+        }
+
+        const { productId } = req.params;
+        const cart = await Cart.findOne({ userId: req.session.userId });
+
+        if (!cart) {
+            return res.status(404).json({ message: 'Cart not found' });
+        }
+
+        cart.items = cart.items.filter(item => item.productId.toString() !== productId);
+        await cart.save();
+
+        res.json({ message: 'Item removed from cart', cart });
+
+    } catch (error) {
+        console.error('Error removing from cart:', error);
+        res.status(500).json({ message: 'Error removing from cart' });
+    }
+});
+
+// Clear cart
+app.delete('/cart/clear', async (req, res) => {
+    try {
+        if (!req.session || !req.session.userId) {
+            return res.status(401).json({ message: 'User not logged in' });
+        }
+
+        await Cart.findOneAndDelete({ userId: req.session.userId });
+        res.json({ message: 'Cart cleared' });
+
+    } catch (error) {
+        console.error('Error clearing cart:', error);
+        res.status(500).json({ message: 'Error clearing cart' });
     }
 });
 

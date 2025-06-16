@@ -368,25 +368,43 @@ class AdminFlashSaleManager {
         try {
             const baseUrl = this.getBaseUrl();
             const response = await fetch(`${baseUrl}/products/${productId}`);
+
+            if (!response.ok) {
+                console.error(`Product fetch failed: ${response.status} ${response.statusText}`);
+                if (response.status === 404) {
+                    alert('Product not found. Please select a different product.');
+                    console.error('Product ID does not exist:', productId);
+                } else {
+                    alert(`Error loading product: ${response.status}`);
+                }
+                return;
+            }
+
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                alert('Invalid response from server. Please try again.');
+                return;
+            }
+
             const product = await response.json();
 
-            if (response.ok) {
-                this.selectedProducts.push({
-                    productId: product._id,
-                    productData: product,
-                    originalPrice: product.price,
-                    salePrice: product.price * 0.8, // Default 20% discount
-                    totalQuantity: null,
-                    maxPerUser: null,
-                    isActive: true,
-                    priority: 0
-                });
+            this.selectedProducts.push({
+                productId: product._id,
+                productData: product,
+                originalPrice: product.price,
+                salePrice: product.price * 0.8, // Default 20% discount
+                totalQuantity: null,
+                maxPerUser: null,
+                isActive: true,
+                priority: 0
+            });
 
-                this.updateProductsList();
-            }
+            this.updateProductsList();
+            alert('Product added successfully!');
 
         } catch (error) {
             console.error('Error adding product:', error);
+            alert('Failed to add product. Please try again.');
         }
     }
 
@@ -471,6 +489,26 @@ class AdminFlashSaleManager {
             return CONFIG.isDevelopment ? CONFIG.endpoints.development.base : CONFIG.endpoints.production.base;
         }
         return 'https://tridex1.onrender.com';
+    }
+
+    showMessage(message, type = 'info') {
+        // Create or update message display
+        let messageContainer = document.getElementById('admin-flash-sale-message');
+        if (!messageContainer) {
+            messageContainer = document.createElement('div');
+            messageContainer.id = 'admin-flash-sale-message';
+            messageContainer.className = 'admin-message';
+            document.body.appendChild(messageContainer);
+        }
+
+        messageContainer.className = `admin-message ${type}`;
+        messageContainer.textContent = message;
+        messageContainer.style.display = 'block';
+
+        // Auto-hide after 5 seconds
+        setTimeout(() => {
+            messageContainer.style.display = 'none';
+        }, 5000);
     }
 
     showLoading(show) {

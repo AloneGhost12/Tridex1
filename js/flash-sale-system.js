@@ -8,15 +8,66 @@ class FlashSaleSystem {
         this.activeTimers = new Map();
         this.flashSales = [];
         this.updateInterval = 1000; // 1 second
-        this.userId = localStorage.getItem('userId');
-        
-        this.init();
+        this.userId = null; // Will be fetched from server session
+
+        // Don't auto-init in constructor to avoid double initialization
     }
 
-    init() {
+    async init() {
+        console.log('Flash Sale System initializing...');
+
+        // Get user session from server instead of localStorage
+        await this.loadUserSession();
+
         this.loadActiveFlashSales();
         this.setupEventListeners();
         this.startGlobalTimer();
+        console.log('Flash Sale System initialized successfully');
+    }
+
+    async loadUserSession() {
+        try {
+            const baseUrl = this.getBaseUrl();
+            const response = await fetch(`${baseUrl}/auth/session`, {
+                credentials: 'include' // Include cookies for session
+            });
+
+            if (response.ok) {
+                const sessionData = await response.json();
+                this.userId = sessionData.userId;
+                console.log('User session loaded:', this.userId);
+            } else {
+                console.log('No active user session');
+                this.userId = null;
+            }
+        } catch (error) {
+            console.error('Error loading user session:', error);
+            this.userId = null;
+        }
+    }
+
+    // Test function to verify connection
+    async testConnection() {
+        try {
+            const baseUrl = this.getBaseUrl();
+            console.log('Testing connection to:', `${baseUrl}/flash-sales/active`);
+
+            const response = await fetch(`${baseUrl}/flash-sales/active`);
+            console.log('Response status:', response.status);
+            console.log('Response ok:', response.ok);
+
+            if (response.ok) {
+                const data = await response.json();
+                console.log('Test successful! Data:', data);
+                return { success: true, data };
+            } else {
+                console.error('Test failed with status:', response.status);
+                return { success: false, error: `HTTP ${response.status}` };
+            }
+        } catch (error) {
+            console.error('Test failed with error:', error);
+            return { success: false, error: error.message };
+        }
     }
 
     setupEventListeners() {
@@ -48,15 +99,30 @@ class FlashSaleSystem {
     async loadActiveFlashSales() {
         try {
             const baseUrl = this.getBaseUrl();
+            console.log('Loading flash sales from:', `${baseUrl}/flash-sales/active`);
+
             const response = await fetch(`${baseUrl}/flash-sales/active`);
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
             const data = await response.json();
+            console.log('Flash sales data received:', data);
 
             this.flashSales = data.flashSales || [];
+            console.log('Active flash sales:', this.flashSales.length);
+
             this.displayFlashSales();
             this.updateAllTimers();
 
         } catch (error) {
             console.error('Error loading flash sales:', error);
+            // Show fallback message
+            const container = document.getElementById('flash-sales-container');
+            if (container) {
+                container.innerHTML = '<p class="no-flash-sales">Unable to load flash sales at the moment.</p>';
+            }
         }
     }
 
@@ -76,15 +142,21 @@ class FlashSaleSystem {
 
     displayFlashSales() {
         const container = document.getElementById('flash-sales-container');
-        if (!container) return;
+        if (!container) {
+            console.error('Flash sales container not found!');
+            return;
+        }
+
+        console.log('Displaying flash sales:', this.flashSales.length);
 
         if (this.flashSales.length === 0) {
-            container.innerHTML = '<p class="no-flash-sales">No active flash sales at the moment.</p>';
+            container.innerHTML = '<p class="no-flash-sales" style="text-align: center; color: rgba(255,255,255,0.8); padding: 20px;">No active flash sales at the moment.</p>';
             return;
         }
 
         const flashSalesHTML = this.flashSales.map(sale => this.renderFlashSale(sale)).join('');
         container.innerHTML = flashSalesHTML;
+        console.log('Flash sales HTML rendered successfully');
     }
 
     renderFlashSale(sale) {
@@ -310,26 +382,44 @@ class FlashSaleSystem {
     }
 
     async addToCartWithFlashSalePrice(productId, quantity, flashSaleData) {
-        // This would integrate with your existing cart system
-        // For now, we'll store flash sale info in localStorage
-        const cart = JSON.parse(localStorage.getItem('cart')) || [];
-        
-        const cartItem = {
-            productId,
-            quantity,
-            isFlashSale: true,
-            flashSalePrice: flashSaleData.salePrice,
-            originalPrice: flashSaleData.originalPrice,
-            discountPercentage: flashSaleData.discountPercentage,
-            addedAt: new Date().toISOString()
-        };
+        try {
+            const baseUrl = this.getBaseUrl();
 
-        cart.push(cartItem);
-        localStorage.setItem('cart', JSON.stringify(cart));
+            // Add to cart via server API instead of localStorage
+            const response = await fetch(`${baseUrl}/cart/add`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'include', // Include session cookies
+                body: JSON.stringify({
+                    productId,
+                    quantity,
+                    isFlashSale: true,
+                    flashSalePrice: flashSaleData.salePrice,
+                    originalPrice: flashSaleData.originalPrice,
+                    discountPercentage: flashSaleData.discountPercentage
+                })
+            });
 
-        // Update cart UI if it exists
-        if (typeof updateCartDisplay === 'function') {
-            updateCartDisplay();
+            if (response.ok) {
+                console.log('Flash sale item added to cart via server');
+
+                // Update cart UI if it exists
+                if (typeof updateCartDisplay === 'function') {
+                    updateCartDisplay();
+                }
+
+                // Update cart count
+                if (typeof updateCartCount === 'function') {
+                    updateCartCount();
+                }
+            } else {
+                throw new Error(`Failed to add to cart: ${response.status}`);
+            }
+        } catch (error) {
+            console.error('Error adding flash sale item to cart:', error);
+            throw error;
         }
     }
 
@@ -379,17 +469,37 @@ class FlashSaleSystem {
     }
 
     getBaseUrl() {
-        if (typeof CONFIG !== 'undefined' && CONFIG.endpoints) {
-            return CONFIG.isDevelopment ? CONFIG.endpoints.development.base : CONFIG.endpoints.production.base;
+        // Use the same logic as the main site
+        if (typeof getBaseUrl === 'function') {
+            return getBaseUrl();
         }
-        return 'https://tridex1.onrender.com';
+
+        // Fallback logic
+        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+            return 'http://localhost:3000';
+        } else if (window.location.hostname.includes('onrender.com')) {
+            return 'https://tridex1.onrender.com';
+        } else if (window.location.hostname.includes('github.io') || window.location.protocol === 'file:') {
+            return 'https://tridex1.onrender.com';
+        } else {
+            return 'https://tridex1.onrender.com';
+        }
     }
 }
 
 // Initialize flash sale system when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
     if (typeof window.flashSaleSystem === 'undefined') {
+        console.log('Initializing Flash Sale System...');
         window.flashSaleSystem = new FlashSaleSystem();
+        window.flashSaleSystem.init();
+
+        // Expose test function globally for debugging
+        window.testFlashSales = () => window.flashSaleSystem.testConnection();
+
+        console.log('Flash Sale System ready! Use testFlashSales() in console to test connection.');
+    } else {
+        console.log('Flash Sale System already initialized');
     }
 });
 
