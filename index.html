@@ -36,6 +36,9 @@
    <link rel="stylesheet" href="css/forms-responsive.css">
    <link rel="stylesheet" href="css/ecommerce-responsive.css">
    <link rel="stylesheet" href="css/master-responsive.css">
+   <!-- Flash Sale and Coupon System Styles -->
+   <link rel="stylesheet" href="css/flash-sale-system.css">
+   <link rel="stylesheet" href="css/coupon-system.css">
    <!-- Mobile App-like UI Styles -->
    <link rel="stylesheet" href="css/mobile-app-ui.css">
    <!-- Dynamic Content Styles -->
@@ -453,6 +456,33 @@
            </div>
        </div>
    </div>
+
+   <!-- Flash Sales Section -->
+   <section class="flash-sales-section" style="background: linear-gradient(135deg, #ff4444, #ff6666); margin: 20px 0; border-radius: 12px; overflow: hidden;">
+       <div style="max-width: 1200px; margin: 0 auto; padding: 20px;">
+           <div class="flash-sales-header" style="text-align: center; margin-bottom: 20px;">
+               <h2 style="color: white; font-size: 28px; margin: 0 0 10px 0; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);">
+                   ⚡ Flash Sales
+               </h2>
+               <p style="color: rgba(255,255,255,0.9); margin: 0; font-size: 16px;">Limited time offers - Don't miss out!</p>
+           </div>
+           <div id="flash-sales-container">
+               <!-- Flash sales will be loaded here -->
+           </div>
+       </div>
+   </section>
+
+   <!-- Available Coupons Section -->
+   <section class="coupons-section" style="background: #f8f9fa; padding: 30px 0; margin: 20px 0;">
+       <div style="max-width: 1200px; margin: 0 auto; padding: 0 20px;">
+           <h2 style="text-align: center; color: #333; margin-bottom: 20px; font-size: 24px;">
+               🎫 Current Offers & Coupons
+           </h2>
+           <div id="available-coupons">
+               <!-- Available coupons will be loaded here -->
+           </div>
+       </div>
+   </section>
 
    <section class="product-grid" id="product-grid">
        <!-- Product cards will be rendered here by JS -->
@@ -2160,5 +2190,9 @@ document.addEventListener('DOMContentLoaded', function() {
     <script src="js/smart-search.js"></script>
     <!-- Dynamic Content Engine Scripts -->
     <script src="js/dynamic-content-engine.js"></script>
+    <!-- Flash Sale System Scripts -->
+    <script src="js/flash-sale-system.js"></script>
+    <!-- Coupon System Scripts -->
+    <script src="js/coupon-system.js"></script>
 </body>
 </html>

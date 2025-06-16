@@ -271,6 +271,8 @@
         <button class="admin-nav-btn" id="show-reviews-btn" title="Review Management"><i class="fas fa-star"></i> Reviews</button>
         <button class="admin-nav-btn" id="show-orders-btn" title="Order Management"><i class="fas fa-shipping-fast"></i> Orders</button>
         <button class="admin-nav-btn" id="show-analytics-btn" title="Sales Analytics"><i class="fas fa-chart-bar"></i> Analytics</button>
+        <button class="admin-nav-btn" id="show-coupons-btn" title="Coupon Management"><i class="fas fa-ticket-alt"></i> Coupons</button>
+        <button class="admin-nav-btn" id="show-flash-sales-btn" title="Flash Sale Management"><i class="fas fa-bolt"></i> Flash Sales</button>
         <button class="admin-nav-btn" id="show-mail-btn" title="Send Announcement"><i class="fas fa-envelope"></i> Mail</button>
         <button class="admin-nav-btn" id="show-contact-btn" title="Contact Messages"><i class="fas fa-phone"></i> Messages</button>
     </div>
@@ -2893,6 +2895,16 @@
         // Reviews button - redirect to admin-reviews.html
         document.getElementById('show-reviews-btn').onclick = function() {
             window.location.href = 'admin-reviews.html';
+        };
+
+        // Coupons button - redirect to admin-coupons.html
+        document.getElementById('show-coupons-btn').onclick = function() {
+            window.location.href = 'admin-coupons.html';
+        };
+
+        // Flash Sales button - redirect to admin-flash-sales.html
+        document.getElementById('show-flash-sales-btn').onclick = function() {
+            window.location.href = 'admin-flash-sales.html';
         };
 
         function showLoading() {
