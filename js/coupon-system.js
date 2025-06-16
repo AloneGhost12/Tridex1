@@ -17,6 +17,7 @@ class CouponSystem {
     init() {
         this.setupEventListeners();
         this.loadAvailableCoupons();
+        this.loadCartData();
     }
 
     setupEventListeners() {
@@ -161,18 +162,31 @@ class CouponSystem {
         try {
             this.showMessage('Validating coupon...', 'info');
 
+            // Prepare request data
+            const requestData = {
+                code: couponCode,
+                userId: this.userId
+            };
+
+            // Only include cart data if available and valid
+            if (this.cartItems && this.cartItems.length > 0 && this.cartTotal > 0) {
+                requestData.cartItems = this.cartItems;
+                requestData.cartTotal = this.cartTotal;
+                console.log('🛒 Including cart data in coupon validation:', {
+                    itemCount: this.cartItems.length,
+                    total: this.cartTotal
+                });
+            } else {
+                console.log('⚠️ No cart data available, validating coupon without cart context');
+            }
+
             const baseUrl = this.getBaseUrl();
             const response = await fetch(`${baseUrl}/coupons/validate`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({
-                    code: couponCode,
-                    cartItems: this.cartItems,
-                    cartTotal: this.cartTotal,
-                    userId: this.userId
-                })
+                body: JSON.stringify(requestData)
             });
 
             const data = await response.json();
@@ -269,9 +283,45 @@ class CouponSystem {
         return this.appliedCoupons;
     }
 
+    async loadCartData() {
+        // Try to load cart data from server if user is logged in
+        if (this.userId && this.userId.length === 24 && /^[0-9a-fA-F]{24}$/.test(this.userId)) {
+            try {
+                const baseUrl = this.getBaseUrl();
+                const response = await fetch(`${baseUrl}/cart`, {
+                    credentials: 'include' // Include session cookies
+                });
+
+                if (response.ok) {
+                    const cartData = await response.json();
+                    if (cartData.items && cartData.items.length > 0) {
+                        this.cartItems = cartData.items.map(item => ({
+                            productId: item.productId._id || item.productId,
+                            quantity: item.quantity,
+                            price: item.price
+                        }));
+                        this.cartTotal = cartData.total;
+                        console.log('🛒 Loaded cart data from server:', {
+                            itemCount: this.cartItems.length,
+                            total: this.cartTotal
+                        });
+                    }
+                } else {
+                    console.log('📭 No cart data available from server');
+                }
+            } catch (error) {
+                console.log('⚠️ Could not load cart data from server:', error.message);
+            }
+        }
+    }
+
     setCartData(cartItems, cartTotal) {
         this.cartItems = cartItems;
         this.cartTotal = cartTotal;
+        console.log('🛒 Cart data updated manually:', {
+            itemCount: this.cartItems.length,
+            total: this.cartTotal
+        });
     }
 
     showMessage(message, type = 'info') {

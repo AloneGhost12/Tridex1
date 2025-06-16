@@ -58,6 +58,12 @@
    <!-- Include enhanced chatbot scripts -->
    <script src="chatbot.js" defer></script>
    <script src="chatbot-ai.js" defer></script>
+   <!-- Include authentication manager -->
+   <script src="js/auth-manager.js" defer></script>
+   <!-- Include migration helper -->
+   <script src="js/migration-helper.js" defer></script>
+   <!-- Include flash sale system -->
+   <script src="js/flash-sale-system.js" defer></script>
    <style>
        /* Responsive Navbar */
        @media (max-width: 900px) {
@@ -1159,10 +1165,20 @@ document.addEventListener('DOMContentLoaded', function() {
 // Fix: define verifiedUsers as an empty array to prevent JS errors
 const verifiedUsers = [];
 
-// Show/hide buttons based on login status
-const isLoggedIn = localStorage.getItem('isLoggedIn') || localStorage.getItem('token');
-// Get username from localStorage
-const username = localStorage.getItem('username') || localStorage.getItem('currentUser');
+// Show/hide buttons based on login status - now handled by AuthManager
+// Wait for AuthManager to initialize
+let isLoggedIn = false;
+let username = null;
+
+// Check if AuthManager is available
+if (window.authManager) {
+    isLoggedIn = window.authManager.isUserLoggedIn();
+    username = window.authManager.getUsername();
+} else {
+    // Fallback to localStorage for backward compatibility during transition
+    isLoggedIn = localStorage.getItem('isLoggedIn') || localStorage.getItem('token');
+    username = localStorage.getItem('username') || localStorage.getItem('currentUser');
+}
 
 // Debug login status
 console.log('Login Status Debug:', {
@@ -2266,6 +2282,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
             console.log('✅ Simple fixes applied - cart and profile should work now!');
         });
+
+        // Flash Sale System will auto-initialize via its own DOMContentLoaded listener
     </script>
 </body>
 </html>
