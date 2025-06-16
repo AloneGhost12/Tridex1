@@ -36,6 +36,8 @@
    <link rel="stylesheet" href="css/forms-responsive.css">
    <link rel="stylesheet" href="css/ecommerce-responsive.css">
    <link rel="stylesheet" href="css/master-responsive.css">
+   <!-- Mobile App-like UI Styles -->
+   <link rel="stylesheet" href="css/mobile-app-ui.css">
    <script src="js/custom-popups.js"></script>
    <script>
        // Fallback functions in case custom popups don't load
@@ -319,6 +321,11 @@
                        <a href="cart.html" class="nav-icon" id="cartIcon" title="Cart">
                            <i class="fas fa-shopping-cart" style="color: #28a745; font-size: 1.2em;"></i>
                            <span id="cart-count" style="position: absolute; top: -8px; right: -8px; background: #28a745; color: white; border-radius: 50%; padding: 2px 6px; font-size: 10px; font-weight: bold; min-width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; line-height: 1;">0</span>
+                       </a>
+                   </li>
+                   <li>
+                       <a href="#" class="nav-icon" id="notificationIcon" title="Notification Settings" onclick="pushNotificationManager.showNotificationPanel()">
+                           <i class="fas fa-bell" style="color: #ffc107; font-size: 1.2em;"></i>
                        </a>
                    </li>
                </ul>
@@ -2135,5 +2142,11 @@ document.addEventListener('DOMContentLoaded', function() {
     <script src="js/advanced-search.js"></script>
     <!-- PWA Manager Scripts -->
     <script src="js/pwa-manager.js"></script>
+    <!-- Push Notification Scripts -->
+    <script src="js/push-notifications.js"></script>
+    <!-- Offline Manager Scripts -->
+    <script src="js/offline-manager.js"></script>
+    <!-- Mobile Gestures Scripts -->
+    <script src="js/mobile-gestures.js"></script>
 </body>
 </html>
