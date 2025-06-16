@@ -50,29 +50,60 @@ class CouponSystem {
         try {
             const baseUrl = this.getBaseUrl();
             const headers = {};
-            if (this.userId) {
+
+            // Only send userid header if we have a valid user ID (24 character MongoDB ObjectId)
+            if (this.userId && this.userId.length === 24 && /^[0-9a-fA-F]{24}$/.test(this.userId)) {
                 headers.userid = this.userId;
+                console.log('🔑 Including user ID in request:', this.userId);
+            } else if (this.userId) {
+                console.warn('⚠️ Invalid user ID format, skipping user-specific filtering:', this.userId);
             }
 
+            console.log('🎫 Loading available coupons from:', `${baseUrl}/coupons/public`);
+            console.log('📤 Request headers:', headers);
             const response = await fetch(`${baseUrl}/coupons/public`, { headers });
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+
             const data = await response.json();
+            console.log('📦 Received coupon data:', data);
 
             this.availableCoupons = data.coupons || [];
+            console.log(`✅ Loaded ${this.availableCoupons.length} available coupons`);
+
             this.displayAvailableCoupons();
 
         } catch (error) {
-            console.error('Error loading available coupons:', error);
+            console.error('❌ Error loading available coupons:', error);
+            // Show error message to user
+            const container = document.getElementById('available-coupons');
+            if (container) {
+                container.innerHTML = '<p style="color: #dc3545; text-align: center;">Unable to load available offers. Please try again later.</p>';
+            }
         }
     }
 
     displayAvailableCoupons() {
         const container = document.getElementById('available-coupons');
-        if (!container) return;
+        console.log('🎨 Displaying coupons in container:', container);
+
+        if (!container) {
+            console.warn('⚠️ Available coupons container not found!');
+            return;
+        }
 
         if (this.availableCoupons.length === 0) {
+            console.log('📭 No coupons to display');
             container.innerHTML = '<p class="no-coupons">No coupons available at the moment.</p>';
             return;
         }
+
+        console.log(`🎫 Displaying ${this.availableCoupons.length} coupons`);
+        this.availableCoupons.forEach(coupon => {
+            console.log(`  - ${coupon.code}: ${this.getDiscountText(coupon)}`);
+        });
 
         const couponsHTML = this.availableCoupons.map(coupon => `
             <div class="coupon-card" data-coupon-id="${coupon._id}">
@@ -263,8 +294,11 @@ class CouponSystem {
     getBaseUrl() {
         // Use the same base URL logic as other parts of the application
         if (typeof CONFIG !== 'undefined' && CONFIG.endpoints) {
-            return CONFIG.isDevelopment ? CONFIG.endpoints.development.base : CONFIG.endpoints.production.base;
+            const url = CONFIG.isDevelopment ? CONFIG.endpoints.development.base : CONFIG.endpoints.production.base;
+            console.log(`🔗 Coupon System using ${CONFIG.isDevelopment ? 'development' : 'production'} URL: ${url}`);
+            return url;
         }
+        console.warn('⚠️ CONFIG not found, falling back to production URL');
         return 'https://tridex1.onrender.com';
     }
 }

@@ -7,6 +7,10 @@
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="css/responsive.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <!-- Coupon System Styles -->
+    <link rel="stylesheet" href="css/coupon-system.css">
+    <!-- Include configuration script -->
+    <script src="js/config.js"></script>
     <!-- Include responsive behavior script -->
     <script src="js/responsive.js" defer></script>
     <!-- Include navigation state management script -->
@@ -355,6 +359,30 @@
                         <div id="order-items">
                             <!-- Order items will be rendered here -->
                         </div>
+
+                        <!-- Coupon Section -->
+                        <div class="coupon-section" id="coupon-section" style="margin: 20px 0; background: #f8f9fa; border-radius: 8px; padding: 15px;">
+                            <h3 style="margin: 0 0 15px 0; font-size: 1.1em;">🎫 Have a Coupon?</h3>
+
+                            <!-- Coupon Input Form -->
+                            <form id="coupon-form" class="coupon-form">
+                                <input type="text" id="coupon-input" class="coupon-input" placeholder="Enter coupon code" style="text-transform: uppercase;">
+                                <button type="submit" class="apply-coupon-btn">Apply Coupon</button>
+                            </form>
+
+                            <!-- Message Display -->
+                            <div id="coupon-message" class="coupon-message"></div>
+
+                            <!-- Applied Coupons -->
+                            <div id="applied-coupons"></div>
+
+                            <!-- Available Coupons -->
+                            <div style="margin-top: 15px;">
+                                <h4 style="margin: 0 0 10px 0; font-size: 1em;">Available Offers</h4>
+                                <div id="available-coupons"></div>
+                            </div>
+                        </div>
+
                         <div class="order-total">
                             <div class="order-row">
                                 <span>Subtotal</span>
@@ -368,10 +396,15 @@
                                 <span>Tax</span>
                                 <span id="tax">₹0</span>
                             </div>
+                            <div class="order-row" id="discount-row" style="display: none;">
+                                <span>Discount</span>
+                                <span id="total-discount" class="total-discount">₹0</span>
+                            </div>
                             <div class="order-row order-total-row">
                                 <span>Total</span>
                                 <span id="total">₹0</span>
                             </div>
+                            <div id="total-savings" class="total-savings" style="display: none;"></div>
                         </div>
                     </div>
                 </div>
@@ -386,6 +419,9 @@
 
     <!-- Razorpay Script -->
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+    <!-- Coupon System Script -->
+    <script src="js/coupon-system.js"></script>
 
     <script>
         // Global variables
@@ -418,6 +454,17 @@
 
             // Add event listeners
             setupEventListeners();
+
+            // Initialize coupon system after a short delay to ensure it's loaded
+            setTimeout(() => {
+                if (window.couponSystem) {
+                    console.log('✅ Coupon system initialized for checkout');
+                    // Load available coupons immediately
+                    window.couponSystem.loadAvailableCoupons();
+                } else {
+                    console.log('⚠️ Coupon system not available');
+                }
+            }, 500);
         }
 
         // Load cart items from localStorage
@@ -441,9 +488,26 @@
                 cart = [];
             }
 
-            // Redirect to cart if cart is empty
+            // Add test items if cart is empty (for coupon testing)
             if (cart.length === 0) {
-                window.location.href = 'cart.html';
+                console.log('🛒 Cart is empty, adding test items for coupon testing...');
+                cart = [
+                    {
+                        _id: 'test-product-1',
+                        name: 'Test Product 1',
+                        price: 299,
+                        image: 'https://via.placeholder.com/100x100?text=Product+1'
+                    },
+                    {
+                        _id: 'test-product-2',
+                        name: 'Test Product 2',
+                        price: 399,
+                        image: 'https://via.placeholder.com/100x100?text=Product+2'
+                    }
+                ];
+                // Save test cart
+                localStorage.setItem('cart', JSON.stringify(cart));
+                console.log('✅ Test items added to cart for coupon testing');
             }
         }
 
@@ -478,7 +542,7 @@
             // Calculate tax (5% of subtotal)
             tax = Math.round(subtotal * 0.05);
 
-            // Calculate total
+            // Calculate total (before coupons)
             total = subtotal + shipping + tax;
 
             // Update summary
@@ -486,6 +550,51 @@
             document.getElementById('shipping').textContent = `₹${shipping}`;
             document.getElementById('tax').textContent = `₹${tax}`;
             document.getElementById('total').textContent = `₹${total}`;
+
+            // Initialize coupon system with cart data
+            if (window.couponSystem) {
+                const cartItems = cart.map(item => ({
+                    productId: item._id || item.id,
+                    quantity: 1,
+                    price: parseFloat(item.price)
+                }));
+                window.couponSystem.setCartData(cartItems, subtotal);
+
+                // Override the coupon system's updateCartTotals method for checkout
+                window.couponSystem.updateCartTotals = function() {
+                    const totalDiscount = this.getTotalDiscount();
+                    const finalTotal = Math.max(0, subtotal + shipping + tax - totalDiscount);
+
+                    // Update discount display
+                    const discountElement = document.getElementById('total-discount');
+                    const discountRow = document.getElementById('discount-row');
+                    if (discountElement && discountRow) {
+                        if (totalDiscount > 0) {
+                            discountElement.textContent = `₹${totalDiscount}`;
+                            discountRow.style.display = 'flex';
+                        } else {
+                            discountRow.style.display = 'none';
+                        }
+                    }
+
+                    // Update final total
+                    const finalTotalElement = document.getElementById('total');
+                    if (finalTotalElement) {
+                        finalTotalElement.textContent = `₹${finalTotal}`;
+                        // Update global total variable for payment processing
+                        total = finalTotal;
+                    }
+
+                    // Update savings display
+                    const savingsElement = document.getElementById('total-savings');
+                    if (savingsElement && totalDiscount > 0) {
+                        savingsElement.textContent = `You saved ₹${totalDiscount}!`;
+                        savingsElement.style.display = 'block';
+                    } else if (savingsElement) {
+                        savingsElement.style.display = 'none';
+                    }
+                };
+            }
         }
 
         // Pre-fill user information if logged in
@@ -732,6 +841,10 @@
 
             // Function to process the order with shipping info
             function processOrder(shipping) {
+                // Get applied coupons information
+                const appliedCoupons = window.couponSystem ? window.couponSystem.getAppliedCoupons() : [];
+                const totalDiscount = window.couponSystem ? window.couponSystem.getTotalDiscount() : 0;
+
                 // Get form data
                 const orderData = {
                     user: {
@@ -754,7 +867,17 @@
                     },
                     totalAmount: total,
                     shippingFee: 40, // Fixed shipping fee value
-                    tax: tax
+                    tax: tax,
+                    // Add coupon information
+                    coupons: appliedCoupons.map(coupon => ({
+                        code: coupon.code,
+                        name: coupon.name,
+                        discountType: coupon.discountType,
+                        discountValue: coupon.discountValue,
+                        discount: coupon.discount
+                    })),
+                    totalDiscount: totalDiscount,
+                    subtotal: subtotal
                 };
 
                 // Process based on payment method
@@ -1047,9 +1170,60 @@
             initCheckout();
         });
 
+        // Ensure coupon system is properly initialized
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🔧 DOM loaded, checking coupon system...');
+
+            // Wait for coupon system to load
+            const checkCouponSystem = () => {
+                if (window.couponSystem) {
+                    console.log('✅ Coupon system found, loading available coupons...');
+                    // Load available coupons immediately
+                    window.couponSystem.loadAvailableCoupons();
+                } else {
+                    console.log('⏳ Waiting for coupon system...');
+                    setTimeout(checkCouponSystem, 200);
+                }
+            };
+
+            // Start checking after a short delay
+            setTimeout(checkCouponSystem, 300);
+        });
+
         window.addEventListener('beforeunload', function() {
             showLoading();
         });
+
+        // Debug function for coupon system
+        window.debugCheckoutCoupons = function() {
+            console.log('🔍 Debugging Checkout Coupon System...');
+            console.log('=====================================');
+
+            console.log('📋 System Status:');
+            console.log('- CONFIG available:', typeof CONFIG !== 'undefined');
+            console.log('- CONFIG.isDevelopment:', CONFIG?.isDevelopment);
+            console.log('- Coupon System available:', typeof window.couponSystem !== 'undefined');
+            console.log('- Cart items:', cart.length);
+            console.log('- Subtotal:', subtotal);
+
+            if (window.couponSystem) {
+                console.log('🎫 Coupon System Details:');
+                console.log('- Base URL:', window.couponSystem.getBaseUrl());
+                console.log('- Available coupons:', window.couponSystem.availableCoupons?.length || 0);
+                console.log('- Cart data set:', window.couponSystem.cartItems?.length || 0);
+
+                console.log('🔄 Forcing coupon reload...');
+                window.couponSystem.loadAvailableCoupons();
+            } else {
+                console.log('❌ Coupon system not available');
+            }
+        };
+
+        // Auto-debug after page load
+        setTimeout(() => {
+            console.log('🚀 Auto-running checkout coupon debug...');
+            window.debugCheckoutCoupons();
+        }, 2000);
     </script>
 </body>
 </html>
