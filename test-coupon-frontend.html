@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coupon System Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .coupon-card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+            background: #f9f9f9;
+        }
+        .coupon-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .coupon-code {
+            font-weight: bold;
+            color: #007bff;
+            font-size: 1.2em;
+        }
+        .coupon-type {
+            background: #28a745;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+        .apply-available-coupon {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .apply-available-coupon:hover {
+            background: #0056b3;
+        }
+        .coupon-form {
+            display: flex;
+            gap: 10px;
+            margin: 20px 0;
+        }
+        .coupon-form input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .coupon-form button {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .coupon-message {
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+            display: none;
+        }
+        .coupon-message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .coupon-message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .coupon-message.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .applied-coupon {
+            background: #e7f3ff;
+            border: 1px solid #007bff;
+            border-radius: 4px;
+            padding: 10px;
+            margin: 5px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .remove-coupon-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        .test-button {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Coupon System Test</h1>
+        
+        <!-- Test Cart Data -->
+        <div class="test-section">
+            <h3>Test Cart Data</h3>
+            <button class="test-button" onclick="setTestCartData()">Set Test Cart Data</button>
+            <button class="test-button" onclick="clearCartData()">Clear Cart Data</button>
+            <button class="test-button" onclick="debugCouponSystem()">Debug Coupon System</button>
+            <button class="test-button" onclick="manualLoadCoupons()">Manual Load Coupons</button>
+            <div id="cart-status"></div>
+        </div>
+
+        <!-- Available Coupons -->
+        <div class="container">
+            <h2>Available Coupons</h2>
+            <div id="available-coupons"></div>
+        </div>
+
+        <!-- Apply Coupon Form -->
+        <div class="container">
+            <h2>Apply Coupon</h2>
+            <form id="coupon-form" class="coupon-form">
+                <input type="text" id="coupon-input" placeholder="Enter coupon code" />
+                <button type="submit">Apply Coupon</button>
+            </form>
+            <div id="coupon-message" class="coupon-message"></div>
+        </div>
+
+        <!-- Applied Coupons -->
+        <div class="container">
+            <h2>Applied Coupons</h2>
+            <div id="applied-coupons"></div>
+        </div>
+
+        <!-- Cart Summary -->
+        <div class="container">
+            <h2>Cart Summary</h2>
+            <div>Subtotal: <span id="cart-subtotal">₹0</span></div>
+            <div>Discount: <span id="total-discount">₹0</span></div>
+            <div><strong>Total: <span id="final-total">₹0</span></strong></div>
+            <div id="total-savings" style="color: green; display: none;"></div>
+        </div>
+    </div>
+
+    <!-- Include CONFIG -->
+    <script>
+        const CONFIG = {
+            isDevelopment: true,
+            endpoints: {
+                development: {
+                    base: 'http://localhost:3000'
+                },
+                production: {
+                    base: 'https://tridex1.onrender.com'
+                }
+            }
+        };
+    </script>
+
+    <!-- Include Coupon System -->
+    <script src="js/coupon-system.js"></script>
+
+    <script>
+        // Test functions
+        function setTestCartData() {
+            const testCartItems = [
+                { productId: '507f1f77bcf86cd799439011', quantity: 2, price: 250 },
+                { productId: '507f1f77bcf86cd799439012', quantity: 1, price: 300 }
+            ];
+            const testCartTotal = 800;
+
+            if (window.couponSystem) {
+                window.couponSystem.setCartData(testCartItems, testCartTotal);
+                updateCartStatus();
+            }
+        }
+
+        function clearCartData() {
+            if (window.couponSystem) {
+                window.couponSystem.setCartData([], 0);
+                updateCartStatus();
+            }
+        }
+
+        function updateCartStatus() {
+            const statusDiv = document.getElementById('cart-status');
+            if (window.couponSystem) {
+                statusDiv.innerHTML = `
+                    <p>Cart Items: ${window.couponSystem.cartItems.length}</p>
+                    <p>Cart Total: ₹${window.couponSystem.cartTotal}</p>
+                    <p>Coupon System Status: ✅ Loaded</p>
+                `;
+
+                // Update cart subtotal display
+                document.getElementById('cart-subtotal').textContent = `₹${window.couponSystem.cartTotal}`;
+                document.getElementById('final-total').textContent = `₹${window.couponSystem.cartTotal}`;
+            } else {
+                statusDiv.innerHTML = `<p>Coupon System Status: ❌ Not Loaded</p>`;
+            }
+        }
+
+        function debugCouponSystem() {
+            console.log('🔍 Manual Debug Triggered');
+            if (window.couponSystem) {
+                window.couponSystem.debug();
+            } else {
+                console.error('❌ Coupon System not available');
+                alert('Coupon System not loaded!');
+            }
+        }
+
+        function manualLoadCoupons() {
+            console.log('🔄 Manual Load Triggered');
+            if (window.couponSystem) {
+                window.couponSystem.loadAvailableCoupons();
+            } else {
+                console.error('❌ Coupon System not available');
+                // Try to initialize it
+                try {
+                    window.couponSystem = new CouponSystem();
+                    console.log('✅ Coupon System initialized manually');
+                } catch (error) {
+                    console.error('❌ Failed to initialize Coupon System:', error);
+                    alert('Failed to initialize Coupon System: ' + error.message);
+                }
+            }
+        }
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('📄 Test page DOM loaded');
+            setTimeout(() => {
+                updateCartStatus();
+                console.log('🔍 Checking coupon system after 1 second...');
+                if (!window.couponSystem) {
+                    console.warn('⚠️ Coupon system not loaded automatically, trying manual initialization...');
+                    manualLoadCoupons();
+                }
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

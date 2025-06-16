@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Product Endpoint - Tridex</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        .button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .button:hover {
+            background: #0056b3;
+        }
+        .result {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .result.success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .result.error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .result.info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+        input[type="text"] {
+            padding: 8px;
+            margin: 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            width: 300px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Product Endpoint Diagnostic Tool</h1>
+        <p>This will help us figure out exactly what's wrong with the product endpoint.</p>
+
+        <!-- Test 1: Server Status -->
+        <div class="test-section">
+            <h3>1. Server Status Check</h3>
+            <button class="button" onclick="testServerStatus()">Test Server</button>
+            <div id="server-result" class="result" style="display: none;"></div>
+        </div>
+
+        <!-- Test 2: Products List -->
+        <div class="test-section">
+            <h3>2. Products List (Should Work)</h3>
+            <button class="button" onclick="testProductsList()">Get All Products</button>
+            <div id="products-result" class="result" style="display: none;"></div>
+        </div>
+
+        <!-- Test 3: Individual Product -->
+        <div class="test-section">
+            <h3>3. Individual Product Test (The Problem)</h3>
+            <input type="text" id="test-product-id" placeholder="Enter Product ID" value="">
+            <button class="button" onclick="testIndividualProduct()">Test Individual Product</button>
+            <div id="individual-result" class="result" style="display: none;"></div>
+        </div>
+
+        <!-- Test 4: Raw Response -->
+        <div class="test-section">
+            <h3>4. Raw Response Analysis</h3>
+            <button class="button" onclick="testRawResponse()">Get Raw Response</button>
+            <div id="raw-result" class="result" style="display: none;"></div>
+        </div>
+
+        <!-- Test 5: Create and Test -->
+        <div class="test-section">
+            <h3>5. Create Product and Test</h3>
+            <button class="button" onclick="createAndTest()">Create Product & Test Immediately</button>
+            <div id="create-test-result" class="result" style="display: none;"></div>
+        </div>
+    </div>
+
+    <script>
+        const baseUrl = 'http://localhost:3000';
+
+        function showResult(elementId, content, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.className = `result ${type}`;
+            element.textContent = content;
+            element.style.display = 'block';
+        }
+
+        async function testServerStatus() {
+            try {
+                showResult('server-result', 'Testing server...', 'info');
+                
+                const response = await fetch(`${baseUrl}/`);
+                const text = await response.text();
+                
+                if (response.ok) {
+                    showResult('server-result', `✅ Server is running!\nResponse: ${text}`, 'success');
+                } else {
+                    showResult('server-result', `❌ Server error: ${response.status}\n${text}`, 'error');
+                }
+            } catch (error) {
+                showResult('server-result', `❌ Cannot connect to server: ${error.message}`, 'error');
+            }
+        }
+
+        async function testProductsList() {
+            try {
+                showResult('products-result', 'Getting products list...', 'info');
+                
+                const response = await fetch(`${baseUrl}/products`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    if (data.length === 0) {
+                        showResult('products-result', `⚠️ No products found in database!`, 'error');
+                    } else {
+                        let result = `✅ Found ${data.length} products:\n\n`;
+                        data.slice(0, 3).forEach((product, index) => {
+                            result += `${index + 1}. ${product.name}\n`;
+                            result += `   ID: ${product._id}\n\n`;
+                        });
+                        
+                        // Auto-fill the first product ID
+                        if (data.length > 0) {
+                            document.getElementById('test-product-id').value = data[0]._id;
+                            result += `\n📋 First product ID copied to test field: ${data[0]._id}`;
+                        }
+                        
+                        showResult('products-result', result, 'success');
+                    }
+                } else {
+                    showResult('products-result', `❌ Error: ${response.status}\n${JSON.stringify(data, null, 2)}`, 'error');
+                }
+            } catch (error) {
+                showResult('products-result', `❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testIndividualProduct() {
+            const productId = document.getElementById('test-product-id').value.trim();
+            
+            if (!productId) {
+                showResult('individual-result', '❌ Please enter a Product ID', 'error');
+                return;
+            }
+
+            try {
+                showResult('individual-result', `Testing product: ${productId}...`, 'info');
+                
+                const response = await fetch(`${baseUrl}/products/${productId}`);
+                
+                // Check content type
+                const contentType = response.headers.get('content-type');
+                console.log('Content-Type:', contentType);
+                console.log('Response status:', response.status);
+                console.log('Response headers:', [...response.headers.entries()]);
+                
+                if (contentType && contentType.includes('application/json')) {
+                    const data = await response.json();
+                    
+                    if (response.ok) {
+                        let result = `✅ Product found!\n\n`;
+                        result += `ID: ${data._id}\n`;
+                        result += `Name: ${data.name}\n`;
+                        result += `Price: $${data.price}\n`;
+                        result += `Description: ${data.desc || 'No description'}\n`;
+                        
+                        showResult('individual-result', result, 'success');
+                    } else {
+                        showResult('individual-result', `❌ Product not found: ${response.status}\n${JSON.stringify(data, null, 2)}`, 'error');
+                    }
+                } else {
+                    // It's HTML, not JSON
+                    const text = await response.text();
+                    let result = `❌ Server returned HTML instead of JSON!\n\n`;
+                    result += `Status: ${response.status}\n`;
+                    result += `Content-Type: ${contentType}\n\n`;
+                    result += `HTML Response (first 500 chars):\n${text.substring(0, 500)}...`;
+                    
+                    showResult('individual-result', result, 'error');
+                }
+            } catch (error) {
+                showResult('individual-result', `❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testRawResponse() {
+            const productId = document.getElementById('test-product-id').value.trim();
+            
+            if (!productId) {
+                showResult('raw-result', '❌ Please enter a Product ID first', 'error');
+                return;
+            }
+
+            try {
+                showResult('raw-result', `Getting raw response for: ${productId}...`, 'info');
+                
+                const response = await fetch(`${baseUrl}/products/${productId}`);
+                const text = await response.text();
+                
+                let result = `📊 RAW RESPONSE ANALYSIS:\n\n`;
+                result += `URL: ${baseUrl}/products/${productId}\n`;
+                result += `Status: ${response.status} ${response.statusText}\n`;
+                result += `Content-Type: ${response.headers.get('content-type')}\n`;
+                result += `Content-Length: ${response.headers.get('content-length')}\n\n`;
+                result += `Response Body:\n${text}`;
+                
+                showResult('raw-result', result, 'info');
+            } catch (error) {
+                showResult('raw-result', `❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function createAndTest() {
+            try {
+                showResult('create-test-result', 'Creating test product...', 'info');
+                
+                // Create a product
+                const testProduct = {
+                    name: 'Endpoint Test Product',
+                    desc: 'Created to test the individual product endpoint',
+                    price: 99.99,
+                    stock: 10
+                };
+                
+                const createResponse = await fetch(`${baseUrl}/products`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(testProduct)
+                });
+                
+                const createData = await createResponse.json();
+                
+                if (!createResponse.ok) {
+                    showResult('create-test-result', `❌ Failed to create product: ${JSON.stringify(createData, null, 2)}`, 'error');
+                    return;
+                }
+                
+                const productId = createData.product._id;
+                
+                // Now immediately test the individual endpoint
+                showResult('create-test-result', `✅ Product created: ${productId}\nNow testing individual endpoint...`, 'info');
+                
+                // Wait a moment
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                const testResponse = await fetch(`${baseUrl}/products/${productId}`);
+                const contentType = testResponse.headers.get('content-type');
+                
+                if (contentType && contentType.includes('application/json')) {
+                    const testData = await testResponse.json();
+                    
+                    if (testResponse.ok) {
+                        let result = `🎉 SUCCESS! Individual product endpoint is working!\n\n`;
+                        result += `Created Product ID: ${productId}\n`;
+                        result += `Retrieved Product: ${testData.name}\n`;
+                        result += `Price: $${testData.price}\n\n`;
+                        result += `✅ The endpoint is working correctly!\n`;
+                        result += `The issue might be with the specific product IDs you were testing.`;
+                        
+                        // Update the test field
+                        document.getElementById('test-product-id').value = productId;
+                        
+                        showResult('create-test-result', result, 'success');
+                    } else {
+                        showResult('create-test-result', `❌ Created product but can't retrieve it: ${JSON.stringify(testData, null, 2)}`, 'error');
+                    }
+                } else {
+                    const text = await testResponse.text();
+                    showResult('create-test-result', `❌ Created product but got HTML response:\n${text.substring(0, 500)}`, 'error');
+                }
+                
+            } catch (error) {
+                showResult('create-test-result', `❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        // Auto-run server test on load
+        window.addEventListener('load', () => {
+            testServerStatus();
+        });
+    </script>
+</body>
+</html>
