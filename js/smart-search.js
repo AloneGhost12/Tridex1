@@ -41,7 +41,7 @@ class SmartSearchEngine {
     async loadProductData() {
         try {
             const baseUrl = this.getBaseUrl();
-            const response = await fetch(`${baseUrl}/api/products?limit=200`);
+            const response = await fetch(`${baseUrl}/products?limit=200`);
 
             if (response.ok) {
                 this.productData = await response.json();
