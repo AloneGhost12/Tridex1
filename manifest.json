@@ -1,7 +1,7 @@
 {
   "name": "Tridex - Your Ultimate Shopping Destination",
   "short_name": "Tridex",
-  "description": "Discover amazing products with advanced search, personalized recommendations, and seamless shopping experience.",
+  "description": "Discover amazing products with advanced search and seamless shopping experience.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

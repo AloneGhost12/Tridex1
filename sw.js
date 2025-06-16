@@ -3,10 +3,10 @@
  * Provides offline functionality, caching, and push notifications
  */
 
-const CACHE_NAME = 'tridex-v2.1.0';
-const STATIC_CACHE = 'tridex-static-v2.1.0';
-const DYNAMIC_CACHE = 'tridex-dynamic-v2.1.0';
-const API_CACHE = 'tridex-api-v2.1.0';
+const CACHE_NAME = 'tridex-v2.2.0';
+const STATIC_CACHE = 'tridex-static-v2.2.0';
+const DYNAMIC_CACHE = 'tridex-dynamic-v2.2.0';
+const API_CACHE = 'tridex-api-v2.2.0';
 
 // Files to cache for offline functionality
 const STATIC_FILES = [
@@ -102,8 +102,13 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
     const { request } = event;
     const url = new URL(request.url);
-    
-    // Handle different types of requests
+
+    // Skip service worker for external URLs (like Render server)
+    if (url.origin !== location.origin) {
+        return; // Let the browser handle external requests normally
+    }
+
+    // Handle different types of requests for same-origin only
     if (request.method === 'GET') {
         if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/products')) {
             // API requests - cache with network first strategy
@@ -123,19 +128,37 @@ async function handleApiRequest(request) {
     try {
         // Try network first
         const networkResponse = await fetch(request);
-        
+
         if (networkResponse.ok) {
             // Cache successful responses
             const cache = await caches.open(API_CACHE);
             cache.put(request, networkResponse.clone());
             return networkResponse;
         }
-        
-        // If network fails, try cache
-        return await getCachedResponse(request, API_CACHE);
+
+        // If network response is not ok, try cache
+        const cachedResponse = await getCachedResponse(request, API_CACHE);
+        if (cachedResponse) {
+            return cachedResponse;
+        }
+
+        // Return the network response even if not ok (let the app handle the error)
+        return networkResponse;
     } catch (error) {
         console.log('[SW] Network failed for API request:', error);
-        return await getCachedResponse(request, API_CACHE);
+
+        // Try cache first
+        const cachedResponse = await getCachedResponse(request, API_CACHE);
+        if (cachedResponse) {
+            return cachedResponse;
+        }
+
+        // Return a proper error response
+        return new Response(JSON.stringify({ error: 'Network unavailable' }), {
+            status: 503,
+            statusText: 'Service Unavailable',
+            headers: { 'Content-Type': 'application/json' }
+        });
     }
 }
 
@@ -191,8 +214,19 @@ async function handleDynamicRequest(request) {
 
 // Helper function to get cached response
 async function getCachedResponse(request, cacheName) {
-    const cache = await caches.open(cacheName);
-    return await cache.match(request);
+    try {
+        const cache = await caches.open(cacheName);
+        const response = await cache.match(request);
+
+        // Ensure we return a valid Response object
+        if (response && response instanceof Response) {
+            return response;
+        }
+        return null;
+    } catch (error) {
+        console.log('[SW] Error getting cached response:', error);
+        return null;
+    }
 }
 
 // Push notification event
