@@ -3,10 +3,10 @@
  * Provides offline functionality, caching, and push notifications
  */
 
-const CACHE_NAME = 'tridex-v2.0.0';
-const STATIC_CACHE = 'tridex-static-v2.0.0';
-const DYNAMIC_CACHE = 'tridex-dynamic-v2.0.0';
-const API_CACHE = 'tridex-api-v2.0.0';
+const CACHE_NAME = 'tridex-v2.1.0';
+const STATIC_CACHE = 'tridex-static-v2.1.0';
+const DYNAMIC_CACHE = 'tridex-dynamic-v2.1.0';
+const API_CACHE = 'tridex-api-v2.1.0';
 
 // Files to cache for offline functionality
 const STATIC_FILES = [
@@ -18,6 +18,10 @@ const STATIC_FILES = [
     '/css/wishlist.css',
     '/css/advanced-search.css',
     '/css/responsive.css',
+    '/css/navigation-responsive.css',
+    '/css/forms-responsive.css',
+    '/css/ecommerce-responsive.css',
+    '/css/master-responsive.css',
     '/js/custom-popups.js',
     '/js/wishlist.js',
     '/js/advanced-search.js',
@@ -26,7 +30,9 @@ const STATIC_FILES = [
     '/chatbot.js',
     '/chatbot-ai.js',
     '/manifest.json',
-    '/favicon.svg'
+    '/favicon.svg',
+    '/icons/icon-192x192.png',
+    '/icons/tridex-icon.svg'
 ];
 
 // API endpoints to cache
