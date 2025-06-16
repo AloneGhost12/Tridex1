@@ -1,0 +1,7 @@
+<!-- This is a placeholder. In a real implementation, you would create actual PNG icons -->
+<!-- For now, we'll create an SVG that can be used as a fallback -->
+<svg width="192" height="192" viewBox="0 0 192 192" xmlns="http://www.w3.org/2000/svg">
+  <rect width="192" height="192" fill="#007bff" rx="24"/>
+  <text x="96" y="110" font-family="Arial, sans-serif" font-size="48" font-weight="bold" text-anchor="middle" fill="white">T</text>
+  <circle cx="96" cy="140" r="8" fill="white"/>
+</svg>
