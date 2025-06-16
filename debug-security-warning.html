@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Security Warning Diagnostic - Tridex</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .warning { background-color: #fff3cd; border-color: #ffeaa7; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background-color: #0056b3; }
+        .log {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 3px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .highlight { background-color: yellow; padding: 2px 4px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔒 Security Warning Diagnostic Tool</h1>
+        
+        <div class="section info">
+            <h3>Current Environment Detection</h3>
+            <p><strong>Current URL:</strong> <span id="current-url" class="highlight"></span></p>
+            <p><strong>Protocol:</strong> <span id="protocol" class="highlight"></span></p>
+            <p><strong>Hostname:</strong> <span id="hostname" class="highlight"></span></p>
+            <p><strong>Port:</strong> <span id="port" class="highlight"></span></p>
+            <p><strong>Origin:</strong> <span id="origin" class="highlight"></span></p>
+            <p><strong>Detected Base URL:</strong> <span id="base-url" class="highlight"></span></p>
+        </div>
+
+        <div class="section warning">
+            <h3>⚠️ Common Security Warning Causes</h3>
+            <ul>
+                <li><strong>Mixed Content:</strong> Loading HTTP resources on HTTPS page</li>
+                <li><strong>Invalid SSL:</strong> Self-signed or expired certificates</li>
+                <li><strong>Blocked Resources:</strong> Browser blocking unsafe content</li>
+                <li><strong>CORS Issues:</strong> Cross-origin request problems</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h3>🧪 Security Tests</h3>
+            <button onclick="testMixedContent()">Test Mixed Content</button>
+            <button onclick="testCORS()">Test CORS</button>
+            <button onclick="testSSL()">Test SSL</button>
+            <button onclick="clearLog()">Clear Log</button>
+        </div>
+
+        <div class="section">
+            <h3>📋 Test Results</h3>
+            <div id="test-log" class="log">Click a test button to start diagnostics...</div>
+        </div>
+
+        <div class="section success">
+            <h3>✅ Recommended Solutions</h3>
+            <div id="solutions"></div>
+        </div>
+    </div>
+
+    <script>
+        // Get base URL function (same as your app)
+        function getBaseUrl() {
+            if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                return 'http://localhost:3000';
+            } else if (window.location.hostname.includes('onrender.com')) {
+                return 'https://tridex1.onrender.com';
+            } else if (window.location.hostname.includes('github.io') || window.location.protocol === 'file:') {
+                return 'https://tridex1.onrender.com';
+            } else {
+                return 'https://tridex1.onrender.com';
+            }
+        }
+
+        function log(message, type = 'info') {
+            const logElement = document.getElementById('test-log');
+            const timestamp = new Date().toLocaleTimeString();
+            const prefix = type === 'error' ? '❌' : type === 'success' ? '✅' : type === 'warning' ? '⚠️' : 'ℹ️';
+            logElement.textContent += `[${timestamp}] ${prefix} ${message}\n`;
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+
+        function clearLog() {
+            document.getElementById('test-log').textContent = '';
+        }
+
+        function updateEnvironmentInfo() {
+            document.getElementById('current-url').textContent = window.location.href;
+            document.getElementById('protocol').textContent = window.location.protocol;
+            document.getElementById('hostname').textContent = window.location.hostname;
+            document.getElementById('port').textContent = window.location.port || 'default';
+            document.getElementById('origin').textContent = window.location.origin;
+            document.getElementById('base-url').textContent = getBaseUrl();
+        }
+
+        function analyzeSecurity() {
+            const protocol = window.location.protocol;
+            const baseUrl = getBaseUrl();
+            const solutions = document.getElementById('solutions');
+            
+            let recommendations = [];
+            
+            // Check for mixed content
+            if (protocol === 'https:' && baseUrl.startsWith('http:')) {
+                recommendations.push('🚨 <strong>Mixed Content Detected!</strong> Your page is HTTPS but trying to load HTTP resources.');
+                recommendations.push('💡 <strong>Solution:</strong> Use HTTPS URLs for all resources or serve your site over HTTP.');
+            }
+            
+            if (protocol === 'file:' && baseUrl.includes('localhost')) {
+                recommendations.push('🚨 <strong>File Protocol Issue!</strong> You\'re viewing from file:// but trying to access localhost.');
+                recommendations.push('💡 <strong>Solution:</strong> Either start a local server or use the production server.');
+            }
+            
+            if (window.location.hostname === '' && baseUrl.includes('localhost')) {
+                recommendations.push('🚨 <strong>Local Server Not Running!</strong> Your code expects localhost:3000 but it\'s not accessible.');
+                recommendations.push('💡 <strong>Solution:</strong> Start your Node.js server with "node server.js".');
+            }
+            
+            if (recommendations.length === 0) {
+                recommendations.push('✅ <strong>No obvious security issues detected.</strong>');
+                recommendations.push('💡 The warning might be from browser extensions or antivirus software.');
+            }
+            
+            solutions.innerHTML = recommendations.join('<br><br>');
+        }
+
+        async function testMixedContent() {
+            log('Testing for mixed content issues...');
+            
+            const protocol = window.location.protocol;
+            const baseUrl = getBaseUrl();
+            
+            log(`Current page protocol: ${protocol}`);
+            log(`API base URL: ${baseUrl}`);
+            
+            if (protocol === 'https:' && baseUrl.startsWith('http:')) {
+                log('❌ MIXED CONTENT DETECTED! HTTPS page loading HTTP resources.', 'error');
+                log('This will cause security warnings in browsers.', 'error');
+            } else if (protocol === 'file:' && baseUrl.includes('localhost')) {
+                log('❌ FILE PROTOCOL ISSUE! Trying to access localhost from file://', 'error');
+                log('This will fail because localhost is not accessible from file://', 'error');
+            } else {
+                log('✅ No mixed content issues detected.', 'success');
+            }
+        }
+
+        async function testCORS() {
+            log('Testing CORS and API accessibility...');
+            
+            const baseUrl = getBaseUrl();
+            
+            try {
+                log(`Testing: ${baseUrl}/categories`);
+                const response = await fetch(`${baseUrl}/categories`);
+                
+                if (response.ok) {
+                    log('✅ API accessible - no CORS issues', 'success');
+                } else {
+                    log(`❌ API returned ${response.status}: ${response.statusText}`, 'error');
+                }
+            } catch (error) {
+                if (error.message.includes('CORS')) {
+                    log('❌ CORS error detected', 'error');
+                } else if (error.message.includes('Failed to fetch')) {
+                    log('❌ Network error - server might be down or unreachable', 'error');
+                } else {
+                    log(`❌ Error: ${error.message}`, 'error');
+                }
+            }
+        }
+
+        async function testSSL() {
+            log('Testing SSL/TLS security...');
+            
+            const baseUrl = getBaseUrl();
+            
+            if (baseUrl.startsWith('https:')) {
+                try {
+                    const response = await fetch(baseUrl);
+                    log('✅ HTTPS connection successful', 'success');
+                } catch (error) {
+                    if (error.message.includes('certificate') || error.message.includes('SSL')) {
+                        log('❌ SSL/Certificate error detected', 'error');
+                    } else {
+                        log(`❌ HTTPS test failed: ${error.message}`, 'error');
+                    }
+                }
+            } else {
+                log('ℹ️ Using HTTP - no SSL to test', 'warning');
+            }
+        }
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            updateEnvironmentInfo();
+            analyzeSecurity();
+        });
+    </script>
+</body>
+</html>
