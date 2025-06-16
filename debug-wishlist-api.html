@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Wishlist API - Tridex</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .warning { background-color: #fff3cd; border-color: #ffeaa7; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background-color: #0056b3; }
+        .log {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 3px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        input, select {
+            padding: 8px;
+            margin: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Wishlist API Debug Tool</h1>
+        
+        <div class="test-section info">
+            <h3>Current Environment</h3>
+            <p><strong>Base URL:</strong> <span id="base-url"></span></p>
+            <p><strong>User Info:</strong></p>
+            <ul>
+                <li>Username: <span id="username"></span></li>
+                <li>UserId: <span id="userid"></span></li>
+                <li>IsLoggedIn: <span id="isloggedin"></span></li>
+                <li>IsAdmin: <span id="isadmin"></span></li>
+            </ul>
+        </div>
+
+        <div class="test-section">
+            <h3>Quick Login (for testing)</h3>
+            <input type="text" id="test-username" placeholder="Username (e.g., admin)" value="admin">
+            <input type="text" id="test-userid" placeholder="User ID (optional)" value="">
+            <button onclick="setTestUser()">Set Test User</button>
+            <button onclick="clearUser()">Clear User</button>
+        </div>
+
+        <div class="test-section">
+            <h3>API Tests</h3>
+            <button onclick="testWishlistEndpoint()">🧪 Test Wishlist Endpoint</button>
+            <button onclick="testWithDifferentUserId()">🔄 Test with Different User ID</button>
+            <button onclick="testServerHealth()">❤️ Test Server Health</button>
+            <button onclick="clearLog()">🗑️ Clear Log</button>
+        </div>
+
+        <div class="test-section">
+            <h3>Test Results</h3>
+            <div id="test-log" class="log">Click a test button to start...</div>
+        </div>
+    </div>
+
+    <script>
+        // Get base URL function (consistent with your app)
+        function getBaseUrl() {
+            if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                return 'http://localhost:3000';
+            } else if (window.location.hostname.includes('onrender.com')) {
+                return 'https://tridex1.onrender.com';
+            } else if (window.location.hostname.includes('github.io') || window.location.protocol === 'file:') {
+                return 'https://tridex1.onrender.com';
+            } else {
+                return 'https://tridex1.onrender.com';
+            }
+        }
+
+        function log(message, type = 'info') {
+            const logElement = document.getElementById('test-log');
+            const timestamp = new Date().toLocaleTimeString();
+            const prefix = type === 'error' ? '❌' : type === 'success' ? '✅' : type === 'warning' ? '⚠️' : 'ℹ️';
+            logElement.textContent += `[${timestamp}] ${prefix} ${message}\n`;
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+
+        function clearLog() {
+            document.getElementById('test-log').textContent = '';
+        }
+
+        function updateUserInfo() {
+            document.getElementById('username').textContent = localStorage.getItem('username') || 'Not set';
+            document.getElementById('userid').textContent = localStorage.getItem('userId') || 'Not set';
+            document.getElementById('isloggedin').textContent = localStorage.getItem('isLoggedIn') || 'false';
+            document.getElementById('isadmin').textContent = localStorage.getItem('isAdmin') || 'false';
+        }
+
+        function setTestUser() {
+            const username = document.getElementById('test-username').value;
+            const userid = document.getElementById('test-userid').value;
+            
+            localStorage.setItem('username', username);
+            localStorage.setItem('isLoggedIn', 'true');
+            
+            if (userid) {
+                localStorage.setItem('userId', userid);
+            } else {
+                // Generate a test user ID
+                localStorage.setItem('userId', 'test-' + Date.now());
+            }
+            
+            if (username === 'admin') {
+                localStorage.setItem('isAdmin', 'true');
+            }
+            
+            updateUserInfo();
+            log(`Set test user: ${username}`, 'success');
+        }
+
+        function clearUser() {
+            localStorage.removeItem('username');
+            localStorage.removeItem('userId');
+            localStorage.removeItem('isLoggedIn');
+            localStorage.removeItem('isAdmin');
+            updateUserInfo();
+            log('Cleared user data', 'success');
+        }
+
+        async function testWishlistEndpoint() {
+            const baseUrl = getBaseUrl();
+            const userId = localStorage.getItem('userId');
+            
+            log(`Testing wishlist endpoint: ${baseUrl}/wishlists`);
+            log(`Using userId: ${userId}`);
+            
+            if (!userId) {
+                log('No userId found! Set a test user first.', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${baseUrl}/wishlists`, {
+                    headers: {
+                        'userid': userId
+                    }
+                });
+                
+                log(`Response status: ${response.status}`);
+                log(`Response headers: ${JSON.stringify(Object.fromEntries(response.headers.entries()), null, 2)}`);
+                
+                const contentType = response.headers.get('content-type');
+                
+                if (contentType && contentType.includes('application/json')) {
+                    const data = await response.json();
+                    log(`JSON Response: ${JSON.stringify(data, null, 2)}`, 'success');
+                } else {
+                    const text = await response.text();
+                    log(`Non-JSON Response (first 500 chars): ${text.substring(0, 500)}`, 'warning');
+                    
+                    if (text.includes('<!DOCTYPE') || text.includes('<html')) {
+                        log('Response is HTML - likely an error page', 'error');
+                    }
+                }
+                
+            } catch (error) {
+                log(`Request failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function testWithDifferentUserId() {
+            const testUserIds = [
+                'admin-123',
+                '507f1f77bcf86cd799439011', // Valid MongoDB ObjectId format
+                'test-user-id',
+                'invalid-id'
+            ];
+            
+            const baseUrl = getBaseUrl();
+            
+            for (const testUserId of testUserIds) {
+                log(`\nTesting with userId: ${testUserId}`);
+                
+                try {
+                    const response = await fetch(`${baseUrl}/wishlists`, {
+                        headers: {
+                            'userid': testUserId
+                        }
+                    });
+                    
+                    log(`Status: ${response.status}`);
+                    
+                    if (response.headers.get('content-type')?.includes('application/json')) {
+                        const data = await response.json();
+                        log(`Response: ${JSON.stringify(data)}`, response.ok ? 'success' : 'warning');
+                    } else {
+                        const text = await response.text();
+                        log(`Non-JSON: ${text.substring(0, 100)}...`, 'warning');
+                    }
+                    
+                } catch (error) {
+                    log(`Error: ${error.message}`, 'error');
+                }
+            }
+        }
+
+        async function testServerHealth() {
+            const baseUrl = getBaseUrl();
+            
+            log('Testing server health...');
+            
+            try {
+                const response = await fetch(`${baseUrl}/`);
+                log(`Server root status: ${response.status}`);
+                
+                if (response.ok) {
+                    const text = await response.text();
+                    log(`Server response: ${text.substring(0, 100)}`, 'success');
+                } else {
+                    log('Server root endpoint failed', 'error');
+                }
+                
+            } catch (error) {
+                log(`Server unreachable: ${error.message}`, 'error');
+            }
+        }
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('base-url').textContent = getBaseUrl();
+            updateUserInfo();
+        });
+    </script>
+</body>
+</html>

@@ -135,11 +135,16 @@ class WishlistManager {
             this.showLoading();
 
             const baseUrl = this.getBaseUrl();
+            console.log('Making wishlist API call to:', `${baseUrl}/wishlists`);
+
             const response = await fetch(`${baseUrl}/wishlists`, {
                 headers: {
                     'userid': userId
                 }
             });
+
+            console.log('Wishlist API response status:', response.status);
+            console.log('Wishlist API response headers:', Object.fromEntries(response.headers.entries()));
 
             const data = await this.handleJsonResponse(response);
 
@@ -578,13 +583,19 @@ class WishlistManager {
             return await response.json();
         } else {
             const text = await response.text();
-            console.error('Non-JSON response received:', text.substring(0, 200));
+            console.error('Non-JSON response received. Status:', response.status);
+            console.error('Content-Type:', contentType);
+            console.error('Response text:', text.substring(0, 300));
 
             // Check if it's an HTML error page
             if (text.includes('<!DOCTYPE') || text.includes('<html')) {
-                throw new Error('Server returned an error page. Please check if you are logged in and try again.');
+                if (response.status === 404) {
+                    throw new Error('Wishlist API endpoint not found. The server may be down or the endpoint may not exist.');
+                } else {
+                    throw new Error(`Server returned an error page (${response.status}). Please check if you are logged in and try again.`);
+                }
             } else {
-                throw new Error('Server returned non-JSON response: ' + text.substring(0, 100));
+                throw new Error(`Server returned non-JSON response (${response.status}): ` + text.substring(0, 100));
             }
         }
     }
