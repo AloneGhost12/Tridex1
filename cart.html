@@ -476,11 +476,14 @@
             // Initialize coupon system with cart data
             if (window.couponSystem) {
                 const cartItems = cart.map(item => ({
-                    productId: item.id || item._id,
+                    productId: item._id || item.id, // Use _id first (MongoDB format)
                     quantity: 1,
                     price: parseFloat(item.price)
                 }));
                 window.couponSystem.setCartData(cartItems, total);
+
+                // Debug: Log cart items for coupon validation
+                console.log('Cart items for coupon validation:', cartItems);
             }
 
             // Remove button logic with animation
