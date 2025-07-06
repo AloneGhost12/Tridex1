@@ -604,7 +604,7 @@ class WishlistManager {
         // Determine the correct base URL for API calls
         if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
             // Local development - use the Node.js server port
-            return 'http://localhost:3000';
+            return 'http://localhost:3001';
         } else if (window.location.hostname.includes('onrender.com')) {
             // Production on Render
             return 'https://tridex1.onrender.com';
