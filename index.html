@@ -42,6 +42,8 @@
    <link rel="stylesheet" href="css/coupon-system.css">
    <!-- Mobile App-like UI Styles -->
    <link rel="stylesheet" href="css/mobile-app-ui.css">
+   <!-- Mobile Navigation Fix -->
+   <link rel="stylesheet" href="css/mobile-navigation-fix.css">
    <!-- Dynamic Content Styles -->
    <link rel="stylesheet" href="css/dynamic-content.css">
    <script src="js/custom-popups.js"></script>
@@ -64,6 +66,8 @@
    <script src="js/migration-helper.js" defer></script>
    <!-- Include flash sale system -->
    <script src="js/flash-sale-system.js" defer></script>
+   <!-- Include mobile navigation -->
+   <script src="js/mobile-navigation.js" defer></script>
    <style>
        /* Responsive Navbar */
        @media (max-width: 900px) {
@@ -215,62 +219,7 @@
     transition: 0.3s;
     display: block;
 }
-@media (max-width: 900px) {
-    .hamburger { display: flex; }
-    #nav {
-        display: none;
-        flex-direction: column !important;
-        align-items: flex-start !important;
-        gap: 0 !important;
-        background: #222;
-        position: absolute;
-        top: 60px;
-        left: 0;
-        width: 100vw;
-        padding: 0;
-        z-index: 1000;
-        box-shadow: 0 4px 16px rgba(0,0,0,0.13);
-    }
-    #nav.show {
-        display: flex !important;
-    }
-    #nav li {
-        width: 100%;
-        border-bottom: 1px solid #333;
-        padding: 12px 18px;
-        text-align: left;
-        position: relative; /* Ensure proper positioning for notification badges */
-    }
-    #nav li:last-child {
-        border-bottom: none;
-    }
-    nav ul li a {
-        width: 100%;
-        display: block;
-        color: #fff !important;
-        text-decoration: none;
-        text-align: left;
-        font-size: 1em !important; /* Make nav text and icons smaller */
-        padding: 8px 0;
-    }
-    .nav-icon {
-        font-size: 1.1em !important; /* Make nav icons smaller in hamburger */
-    }
-    /* Ensure notification badges are visible in mobile menu */
-    #mail-count, #cart-count {
-        position: absolute !important;
-        top: 12px !important;
-        right: 18px !important;
-        z-index: 1001 !important;
-    }
-    /* Ensure dropdown menus appear properly in mobile view */
-    .dropdown-menu {
-        position: fixed !important;
-        top: 120px !important;
-        right: 20px !important;
-        z-index: 1002 !important;
-    }
-}
+/* Mobile navigation styles moved to css/mobile-navigation-fix.css */
 @media (max-width: 600px) {
     /* ...existing code... */
     .hamburger { margin-bottom: 8px; }
@@ -288,8 +237,8 @@
             100% { transform: rotate(360deg);}
         }
     </style>
-   <header style="background-color: #333; color: white; padding: 15px 0; position:relative;">
-       <div style="display:flex; align-items:center; justify-content:space-between; padding:0 15px;">
+   <header>
+       <div class="header-container">
            <div style="display:flex; align-items:center;">
                <h1 style="display: flex; align-items: center; gap: 8px; margin: 0;">
                    Tridex
@@ -299,10 +248,10 @@
            </div>
 
            <!-- Hamburger icon for mobile -->
-           <button id="hamburger-menu" style="background:none; border:none; cursor:pointer; display:none; padding:10px; z-index:1000;">
-               <div style="width:30px; height:3px; background-color:white; margin:6px 0; transition:0.4s;"></div>
-               <div style="width:30px; height:3px; background-color:white; margin:6px 0; transition:0.4s;"></div>
-               <div style="width:30px; height:3px; background-color:white; margin:6px 0; transition:0.4s;"></div>
+           <button id="hamburger-menu" aria-label="Toggle navigation menu" aria-expanded="false">
+               <div></div>
+               <div></div>
+               <div></div>
            </button>
 
            <nav id="main-nav" style="display:flex;">
@@ -993,59 +942,7 @@ function updateCartCount() {
     }
 }
 
-// --- Hamburger menu functionality ---
-document.addEventListener('DOMContentLoaded', function() {
-    const hamburger = document.getElementById('hamburger-menu');
-    const nav = document.getElementById('nav');
-
-    // Toggle navigation when hamburger is clicked
-    hamburger.addEventListener('click', function(e) {
-        e.stopPropagation(); // Prevent event from bubbling up
-        nav.classList.toggle('show');
-
-        // Animate hamburger icon to X when menu is open
-        const divs = hamburger.querySelectorAll('div');
-        if (nav.classList.contains('show')) {
-            // X shape when menu is open
-            divs[0].style.transform = 'rotate(-45deg) translate(-5px, 6px)';
-            divs[1].style.opacity = '0';
-            divs[2].style.transform = 'rotate(45deg) translate(-5px, -6px)';
-        } else {
-            // Reset to hamburger shape
-            divs[0].style.transform = 'none';
-            divs[1].style.opacity = '1';
-            divs[2].style.transform = 'none';
-        }
-    });
-
-    // Close navigation when clicking outside
-    document.addEventListener('click', function(event) {
-        if (!hamburger.contains(event.target) && !nav.contains(event.target) && nav.classList.contains('show')) {
-            nav.classList.remove('show');
-
-            // Reset hamburger icon
-            const divs = hamburger.querySelectorAll('div');
-            divs[0].style.transform = 'none';
-            divs[1].style.opacity = '1';
-            divs[2].style.transform = 'none';
-        }
-    });
-
-    // Close navigation when window is resized
-    window.addEventListener('resize', function() {
-        if (window.innerWidth > 992 && nav.classList.contains('show')) {
-            nav.classList.remove('show');
-
-            // Reset hamburger icon
-            const divs = hamburger.querySelectorAll('div');
-            if (divs.length > 0) {
-                divs[0].style.transform = 'none';
-                divs[1].style.opacity = '1';
-                divs[2].style.transform = 'none';
-            }
-        }
-    });
-});
+// Mobile navigation functionality moved to js/mobile-navigation.js
 
 // Ban check logic (must be first in script)
 (function() {

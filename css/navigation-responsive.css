@@ -328,18 +328,20 @@
     #nav {
         width: 240px;
         padding: 60px 10px 10px 10px;
+        background: #111 !important;
+        color: #fff !important;
     }
 
-    .nav {
-        padding: 10px 12px;
-        font-size: 0.9rem;
-    }
-
+    .nav,
     .nav-icon {
-        padding: 10px 12px;
-        font-size: 0.95em;
-        min-width: 36px;
-        min-height: 36px;
+        color: #fff !important;
+        background: transparent !important;
+    }
+
+    .nav:hover,
+    .nav-icon:hover {
+        background: #222 !important;
+        color: #fff !important;
     }
 
     .notification-badge {
@@ -353,6 +355,42 @@
     .dropdown-item {
         padding: 8px 12px;
         font-size: 0.9rem;
+    }
+
+    /* Make dropdown menu more visible on mobile */
+    .dropdown-menu {
+        background: #e00808 !important;
+        border: 2px solid #007bff !important;
+        box-shadow: 0 6px 24px rgba(0,0,0,0.25) !important;
+    }
+    .dropdown-item {
+        color: #222 !important;
+        background: #fff !important;
+        border-bottom: 1px solid #e0e0e0 !important;
+    }
+    .dropdown-item:hover {
+        background: #e6f0ff !important;
+        color: #007bff !important;
+    }
+
+    /* Overlay for freezing background when dropdown is active on mobile */
+    .dropdown-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(0,0,0,0.35);
+        z-index: 999;
+        pointer-events: auto;
+    }
+    .dropdown-overlay.active {
+        display: block;
+    }
+    body.dropdown-open {
+        overflow: hidden !important;
+        touch-action: none;
     }
 }
 
