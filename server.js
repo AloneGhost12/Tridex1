@@ -2264,7 +2264,7 @@ app.put('/products/:id/media', async (req, res) => {
 // ========== ADVANCED SEARCH & FILTERING ENDPOINTS ==========
 
 // Advanced product search with filtering and sorting
-app.get('/products/search', async (req, res) => {
+ app.get('/products/search', async (req, res) => {
     try {
         const {
             q: query,
@@ -2295,15 +2295,30 @@ app.get('/products/search', async (req, res) => {
             tags: tags ? (Array.isArray(tags) ? tags : [tags]) : []
         };
 
-        // Use the advanced search method from Product model
-        const products = await Product.advancedSearch(searchParams);
+        // If query is missing or empty, return all products (no text search)
+        if (!searchParams.query) {
+            delete searchParams.query;
+        }
 
-        // Get total count for pagination
-        const totalQuery = { ...searchParams };
-        delete totalQuery.page;
-        delete totalQuery.limit;
-        const totalProducts = await Product.advancedSearch({ ...totalQuery, limit: 999999 });
-        const totalCount = totalProducts.length;
+        // Use the advanced search method from Product model
+        let products = [];
+        let totalProducts = [];
+        let totalCount = 0;
+        try {
+            products = await Product.advancedSearch(searchParams);
+            // Get total count for pagination
+            const totalQuery = { ...searchParams };
+            delete totalQuery.page;
+            delete totalQuery.limit;
+            totalProducts = await Product.advancedSearch({ ...totalQuery, limit: 999999 });
+            totalCount = totalProducts.length;
+        } catch (searchErr) {
+            console.error('Error in Product.advancedSearch:', searchErr);
+            return res.status(500).json({
+                message: 'Error performing product search',
+                error: process.env.NODE_ENV === 'development' ? searchErr.message : 'Internal server error'
+            });
+        }
 
         // Calculate pagination info
         const totalPages = Math.ceil(totalCount / searchParams.limit);
@@ -4145,75 +4160,9 @@ app.get('/analytics/sales', async (req, res) => {
     }
 });
 
-// ========== REVIEW ROUTES ==========
-
-// Get reviews for a specific product
-app.get('/products/:id/reviews', async (req, res) => {
-    try {
-        const productId = req.params.id;
-
-        // Find all reviews for this product
-        const reviews = await Review.find({ product: productId })
-            .populate('user', 'username name')
-            .populate('replies.user', 'username name')
-            .sort({ createdAt: -1 });
-
-        res.json(reviews);
-    } catch (err) {
-        console.error('Error fetching reviews:', err);
-        res.status(500).json({ message: 'Error fetching reviews' });
-    }
-});
-
-// Create a new review for a product
-app.post('/products/:id/reviews', async (req, res) => {
-    try {
-        const { rating, text, username } = req.body;
-        const productId = req.params.id;
-
-        // Validate input
-        if (!rating || !text || !username) {
-            return res.status(400).json({ message: 'Rating, text, and username are required' });
-        }
-
-        if (rating < 1 || rating > 5) {
-            return res.status(400).json({ message: 'Rating must be between 1 and 5' });
-        }
-
-        // Find the user
-        const user = await User.findOne({ username });
-        if (!user) {
-            return res.status(404).json({ message: 'User not found' });
-        }
-
-        // Check if product exists
-        const product = await Product.findById(productId);
-        if (!product) {
-            return res.status(404).json({ message: 'Product not found' });
-        }
-
-        // Create new review
-        const review = new Review({
-            product: productId,
-            user: user._id,
-            rating,
-            text,
-            likes: [],
-            dislikes: [],
-            replies: []
-        });
-
-        await review.save();
-
-        // Populate user data for response
-        await review.populate('user', 'username name');
-
-        res.status(201).json(review);
-    } catch (err) {
-        console.error('Error creating review:', err);
-        res.status(500).json({ message: 'Error creating review' });
-    }
-});
+// ========== REVIEW ROUTES (LEGACY) ==========
+// Note: Enhanced review routes are defined earlier in the file (lines 3059-3242)
+// These legacy routes are kept for backward compatibility
 
 // Like or dislike a review
 app.post('/reviews/:id/like', async (req, res) => {
