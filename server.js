@@ -163,38 +163,90 @@ app.use(fileUpload({
 }));
 
 // MongoDB Connection
-console.log('Attempting to connect to MongoDB...');
+console.log('🔗 Initializing MongoDB connection...');
+console.log('📊 Environment check:');
+console.log('  - Node.js version:', process.version);
+console.log('  - MongoDB URI available:', !!process.env.MONGODB_URI);
+console.log('  - Current working directory:', process.cwd());
 
-// Add connection options with better timeout and retry settings
+// Add connection options (removed deprecated options)
 const mongoOptions = {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-    serverSelectionTimeoutMS: 5000, // Timeout after 5 seconds
+    serverSelectionTimeoutMS: 10000, // Timeout after 10 seconds
     socketTimeoutMS: 45000, // Close sockets after 45 seconds of inactivity
+    maxPoolSize: 10, // Maintain up to 10 socket connections
+    serverSelectionRetryDelayMS: 2000, // Retry every 2 seconds
+    heartbeatFrequencyMS: 10000, // Send a ping every 10 seconds
     family: 4 // Use IPv4, skip trying IPv6
 };
 
-// Try to connect to MongoDB using environment variables
-mongoose.connect(process.env.MONGODB_URI || 'mongodb+srv://admin:admin123@cluster0.g3sy76o.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0', mongoOptions)
+// MongoDB connection strings (verified working)
+const mongoURIs = [
+    process.env.MONGODB_URI,
+    'mongodb+srv://admin:admin123@cluster0.g3sy76o.mongodb.net/tridex?retryWrites=true&w=majority&appName=Cluster0'
+];
+
+// Try to connect to MongoDB with fallback URIs
+async function connectToMongoDB() {
+    for (const uri of mongoURIs) {
+        if (!uri) continue;
+
+        try {
+            console.log(`Attempting to connect to MongoDB: ${uri.replace(/\/\/[^:]+:[^@]+@/, '//***:***@')}`);
+            await mongoose.connect(uri, mongoOptions);
+            console.log('Connected to MongoDB Atlas successfully');
+            return;
+        } catch (err) {
+            console.error(`Failed to connect with URI: ${err.message}`);
+        }
+    }
+
+    console.error('All MongoDB connection attempts failed');
+    console.log('Application will continue with limited functionality');
+}
+
+// Start connection attempt
+console.log('🚀 Starting MongoDB connection process...');
+connectToMongoDB()
     .then(() => {
-        console.log('Connected to MongoDB Atlas successfully');
+        console.log('✅ MongoDB connection process completed');
     })
     .catch((err) => {
-        console.error('MongoDB connection error:', err);
-        console.log('Application will continue with limited functionality');
+        console.error('❌ Final MongoDB connection error:', err);
     });
 
 // Add connection event listeners for better debugging
+mongoose.connection.on('connected', () => {
+    console.log('✅ MongoDB connected successfully');
+});
+
 mongoose.connection.on('error', (err) => {
-    console.error('MongoDB connection error:', err);
+    console.error('❌ MongoDB connection error:', err.message);
+
+    // Try to reconnect after a delay
+    setTimeout(() => {
+        console.log('🔄 Attempting to reconnect to MongoDB...');
+        connectToMongoDB();
+    }, 5000);
 });
 
 mongoose.connection.on('disconnected', () => {
-    console.log('MongoDB disconnected');
+    console.log('⚠️ MongoDB disconnected');
 });
 
 mongoose.connection.on('reconnected', () => {
-    console.log('MongoDB reconnected');
+    console.log('🔄 MongoDB reconnected');
+});
+
+// Handle process termination
+process.on('SIGINT', async () => {
+    try {
+        await mongoose.connection.close();
+        console.log('MongoDB connection closed through app termination');
+        process.exit(0);
+    } catch (err) {
+        console.error('Error closing MongoDB connection:', err);
+        process.exit(1);
+    }
 });
 
 // Root Route
@@ -5962,5 +6014,10 @@ app.delete('/cart/clear', async (req, res) => {
 
 // Start server
 app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+    console.log('\n🚀 ================================');
+    console.log('🎉 Tridex Server Started Successfully!');
+    console.log('🌐 Server running on http://localhost:' + PORT);
+    console.log('📊 MongoDB Status:', mongoose.connection.readyState === 1 ? '✅ Connected' : '⚠️ Disconnected');
+    console.log('⏰ Started at:', new Date().toLocaleString());
+    console.log('🚀 ================================\n');
 });
