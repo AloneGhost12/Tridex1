@@ -40,9 +40,11 @@ const googleClient = new OAuth2Client(
 const allowedOrigins = [
     'https://aloneghost12.github.io',
     'http://localhost:3000',
+    'http://localhost:3001',
     'http://127.0.0.1:5500',
     'http://localhost:5500',
     'http://127.0.0.1:3000',
+    'http://127.0.0.1:3001',
     'file://', // Allow file:// origins for local development
     null // Allow null origin for local file access
 ];
@@ -113,7 +115,7 @@ app.use(session({
     resave: false,
     saveUninitialized: false,
     store: MongoStore.create({
-        mongoUrl: process.env.MONGODB_URI || 'mongodb+srv://adharsh:adharsh@cluster0.ixhqj.mongodb.net/tridex?retryWrites=true&w=majority',
+        mongoUrl: process.env.MONGODB_URI || 'mongodb+srv://admin:admin123@cluster0.g3sy76o.mongodb.net/tridex?retryWrites=true&w=majority&appName=Cluster0',
         touchAfter: 24 * 3600 // lazy session update
     }),
     cookie: {
@@ -174,7 +176,6 @@ const mongoOptions = {
     serverSelectionTimeoutMS: 10000, // Timeout after 10 seconds
     socketTimeoutMS: 45000, // Close sockets after 45 seconds of inactivity
     maxPoolSize: 10, // Maintain up to 10 socket connections
-    serverSelectionRetryDelayMS: 2000, // Retry every 2 seconds
     heartbeatFrequencyMS: 10000, // Send a ping every 10 seconds
     family: 4 // Use IPv4, skip trying IPv6
 };
