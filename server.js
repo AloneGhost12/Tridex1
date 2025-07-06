@@ -40,7 +40,7 @@ const googleClient = new OAuth2Client(
 const allowedOrigins = [
     'https://aloneghost12.github.io',
     'http://localhost:3000',
-    'http://localhost:3001',
+    'http://localhost:3000',
     'http://127.0.0.1:5500',
     'http://localhost:5500',
     'http://127.0.0.1:3000',
@@ -750,6 +750,14 @@ app.get('/users/check-ban/:username', async (req, res) => {
         const username = req.params.username;
         if (!username) {
             return res.status(400).json({ message: 'Username is required' });
+        }
+
+        // Handle hardcoded users
+        if (username === 'admin' || username === 'user') {
+            return res.json({
+                username: username,
+                isBanned: false // Hardcoded users are never banned
+            });
         }
 
         // Find user by username
