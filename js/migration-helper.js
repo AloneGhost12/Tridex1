@@ -10,7 +10,7 @@ class MigrationHelper {
 
     getBaseUrl() {
         if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-            return 'http://localhost:3000';
+            return 'http://localhost:3001';
         } else if (window.location.hostname.includes('onrender.com')) {
             return 'https://tridex1.onrender.com';
         } else {
