@@ -212,7 +212,11 @@ connectToMongoDB()
     })
     .catch((err) => {
         console.error('❌ Final MongoDB connection error:', err);
+        console.error('Stack trace:', err.stack);
     });
+
+// Force console output
+process.stdout.write('Server initialization starting...\n');
 
 // Add connection event listeners for better debugging
 mongoose.connection.on('connected', () => {
@@ -1410,7 +1414,19 @@ app.get('/users/:username', async (req, res) => {
 
 app.get('/categories', async (req, res) => {
     try {
+        console.log('📂 Categories endpoint called');
+
+        // Check if MongoDB is connected
+        if (mongoose.connection.readyState !== 1) {
+            console.log('❌ MongoDB not connected for categories, readyState:', mongoose.connection.readyState);
+            return res.status(503).json({
+                message: 'Database service temporarily unavailable'
+            });
+        }
+
+        console.log('✅ MongoDB connected, fetching categories...');
         const categories = await Category.find().sort({ name: 1 });
+        console.log(`📂 Found ${categories.length} categories`);
         res.json(categories);
     } catch (err) {
         console.error('Error fetching categories:', err);
@@ -1509,6 +1525,18 @@ app.get('/categories/:id/products', async (req, res) => {
 
 app.get('/products', async (req, res) => {
     try {
+        console.log('📦 Products endpoint called');
+
+        // Check if MongoDB is connected
+        if (mongoose.connection.readyState !== 1) {
+            console.log('❌ MongoDB not connected, readyState:', mongoose.connection.readyState);
+            return res.status(503).json({
+                message: 'Database service temporarily unavailable'
+            });
+        }
+
+        console.log('✅ MongoDB connected, fetching products...');
+
         // Build filter based on query parameters
         const filter = {};
 
@@ -5392,6 +5420,18 @@ app.get('/flash-sales', async (req, res) => {
 // Get active flash sales (public)
 app.get('/flash-sales/active', async (req, res) => {
     try {
+        console.log('⚡ Flash sales active endpoint called');
+
+        // Check if MongoDB is connected
+        if (mongoose.connection.readyState !== 1) {
+            console.log('❌ MongoDB not connected for flash sales, readyState:', mongoose.connection.readyState);
+            return res.status(503).json({
+                message: 'Database service temporarily unavailable'
+            });
+        }
+
+        console.log('✅ MongoDB connected, fetching flash sales...');
+
         // First, update all flash sale statuses
         const allFlashSales = await FlashSale.find({ isActive: true });
         for (const sale of allFlashSales) {
