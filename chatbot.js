@@ -31,6 +31,18 @@ class TridexChatbot {
     }
 
     /**
+     * Get the correct base URL for API calls
+     */
+    getBaseUrl() {
+        // Check if we're running locally
+        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+            return 'http://localhost:3000';
+        } else {
+            return 'https://tridex1.onrender.com';
+        }
+    }
+
+    /**
      * Initialize the chatbot
      */
     init() {
@@ -177,7 +189,8 @@ class TridexChatbot {
 
                     // Send feedback to server
                     try {
-                        const response = await fetch(`https://tridex1.onrender.com/chatbot/feedback/${this.lastInteractionId}`, {
+                        const baseUrl = this.getBaseUrl();
+                        const response = await fetch(`${baseUrl}/chatbot/feedback/${this.lastInteractionId}`, {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json'
@@ -279,7 +292,8 @@ class TridexChatbot {
 
             // Store the interaction in the database
             try {
-                const response = await fetch('https://tridex1.onrender.com/chatbot/interaction', {
+                const baseUrl = this.getBaseUrl();
+                const response = await fetch(`${baseUrl}/chatbot/interaction`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -362,7 +376,8 @@ class TridexChatbot {
 
         // Store the support request in the database
         try {
-            fetch('https://tridex1.onrender.com/chatbot/interaction', {
+            const baseUrl = this.getBaseUrl();
+            fetch(`${baseUrl}/chatbot/interaction`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -423,7 +438,8 @@ class TridexChatbot {
      */
     async fetchProducts() {
         try {
-            const res = await fetch('https://tridex1.onrender.com/products');
+            const baseUrl = this.getBaseUrl();
+            const res = await fetch(`${baseUrl}/products`);
             if (res.ok) {
                 this.products = await res.json();
                 console.log('Chatbot: Loaded', this.products.length, 'products for recommendations');
@@ -440,7 +456,8 @@ class TridexChatbot {
      */
     async fetchCategories() {
         try {
-            const res = await fetch('https://tridex1.onrender.com/categories');
+            const baseUrl = this.getBaseUrl();
+            const res = await fetch(`${baseUrl}/categories`);
             if (res.ok) {
                 this.categories = await res.json();
                 console.log('Chatbot: Loaded', this.categories.length, 'categories');
