@@ -687,6 +687,11 @@
         // Upload profile picture to Cloudinary
         async function uploadProfilePicture(file) {
             try {
+                // Check if user object exists and has _id
+                if (!user || !user._id) {
+                    throw new Error('User data not available. Please refresh the page and try again.');
+                }
+
                 // Show upload status
                 const uploadStatus = document.getElementById('upload-status');
                 uploadStatus.style.display = 'block';
@@ -712,16 +717,33 @@
                 const data = await response.json();
                 const imageUrl = data.secure_url;
 
-                // Update user profile picture on server
-                const updateResponse = await fetch(`https://tridex1.onrender.com/users/${user._id}/profile-picture`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        profilePicture: imageUrl
-                    })
-                });
+                // Update user profile picture on server - try production first, then local
+                let updateResponse;
+                try {
+                    updateResponse = await fetch(`https://tridex1.onrender.com/users/${user._id}/profile-picture`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({
+                            profilePicture: imageUrl
+                        })
+                    });
+                } catch (productionError) {
+                    console.log('Production server unavailable, trying local server...');
+                    // Try local server as fallback
+                    updateResponse = await fetch(`http://localhost:3000/users/${user._id}/profile-picture`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({
+                            profilePicture: imageUrl
+                        })
+                    });
+                }
 
                 if (!updateResponse.ok) {
                     throw new Error('Failed to update profile picture on server');
@@ -742,7 +764,7 @@
                 console.error('Profile picture upload error:', error);
                 const uploadStatus = document.getElementById('upload-status');
                 uploadStatus.style.color = '#dc3545';
-                uploadStatus.textContent = 'Failed to upload profile picture. Please try again.';
+                uploadStatus.textContent = error.message || 'Failed to upload profile picture. Please try again.';
                 setTimeout(() => {
                     uploadStatus.style.display = 'none';
                 }, 5000);
@@ -753,14 +775,27 @@
         async function fetchUserData() {
             showLoading();
             try {
-                // First try to get user data from server
-                const response = await fetch(`https://tridex1.onrender.com/users/profile?username=${encodeURIComponent(username)}`, {
-                    method: 'GET',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    }
-                });
+                // First try to get user data from production server
+                let response;
+                try {
+                    response = await fetch(`https://tridex1.onrender.com/users/profile?username=${encodeURIComponent(username)}`, {
+                        method: 'GET',
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                } catch (productionError) {
+                    console.log('Production server unavailable, trying local server...');
+                    // Try local server as fallback
+                    response = await fetch(`http://localhost:3000/users/profile?username=${encodeURIComponent(username)}`, {
+                        method: 'GET',
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                }
 
                 if (response.ok) {
                     user = await response.json();
@@ -904,13 +939,27 @@
                     username: username
                 });
 
-                const response = await fetch('https://tridex1.onrender.com/users/addresses', {
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'X-Username': username,
-                        'Content-Type': 'application/json'
-                    }
-                });
+                // Try production server first, then local server
+                let response;
+                try {
+                    response = await fetch('https://tridex1.onrender.com/users/addresses', {
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'X-Username': username,
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                } catch (productionError) {
+                    console.log('Production server unavailable, trying local server...');
+                    // Try local server as fallback
+                    response = await fetch('http://localhost:3000/users/addresses', {
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'X-Username': username,
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                }
 
                 console.log('Response status:', response.status);
 
@@ -1038,13 +1087,27 @@
             showLoading();
 
             try {
-                const response = await fetch(`https://tridex1.onrender.com/users/addresses/${addressId}`, {
-                    method: 'DELETE',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'X-Username': username
-                    }
-                });
+                // Try production server first, then local server
+                let response;
+                try {
+                    response = await fetch(`https://tridex1.onrender.com/users/addresses/${addressId}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'X-Username': username
+                        }
+                    });
+                } catch (productionError) {
+                    console.log('Production server unavailable, trying local server...');
+                    // Try local server as fallback
+                    response = await fetch(`http://localhost:3000/users/addresses/${addressId}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'X-Username': username
+                        }
+                    });
+                }
 
                 if (!response.ok) {
                     throw new Error('Failed to delete address');
@@ -1572,12 +1635,23 @@
 
         // Profile picture upload event listeners
         document.getElementById('change-picture-btn').addEventListener('click', function() {
+            // Check if user data is loaded
+            if (!user || !user._id) {
+                tridexWarning('Please wait for your profile to load before uploading a picture.', 'Profile Not Ready');
+                return;
+            }
             document.getElementById('profile-picture-input').click();
         });
 
         document.getElementById('profile-picture-input').addEventListener('change', async function(e) {
             const file = e.target.files[0];
             if (file) {
+                // Check if user data is loaded
+                if (!user || !user._id) {
+                    await tridexWarning('Please wait for your profile to load before uploading a picture.', 'Profile Not Ready');
+                    return;
+                }
+
                 // Validate file type
                 if (!file.type.startsWith('image/')) {
                     await tridexWarning('Please select an image file.', 'Invalid File Type');
