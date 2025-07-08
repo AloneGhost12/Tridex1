@@ -113,7 +113,7 @@ app.use(session({
     resave: false,
     saveUninitialized: false,
     store: MongoStore.create({
-        mongoUrl: process.env.MONGODB_URI || 'mongodb+srv://adharsh:adharsh@cluster0.ixhqj.mongodb.net/tridex?retryWrites=true&w=majority',
+        mongoUrl: process.env.MONGODB_URI || 'mongodb+srv://admin:admin1326@cluster0.p0toplm.mongodb.net/tridex?retryWrites=true&w=majority&appName=Cluster0',
         touchAfter: 24 * 3600 // lazy session update
     }),
     cookie: {
@@ -175,7 +175,7 @@ const mongoOptions = {
 };
 
 // Try to connect to MongoDB using environment variables
-mongoose.connect(process.env.MONGODB_URI || 'mongodb+srv://admin:admin123@cluster0.g3sy76o.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0', mongoOptions)
+mongoose.connect(process.env.MONGODB_URI || 'mongodb+srv://admin:admin1326@cluster0.p0toplm.mongodb.net/tridex?retryWrites=true&w=majority&appName=Cluster0', mongoOptions)
     .then(() => {
         console.log('Connected to MongoDB Atlas successfully');
     })
