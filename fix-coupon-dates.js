@@ -12,7 +12,7 @@ const Coupon = require('./models/Coupon');
 async function fixCouponDates() {
     try {
         // Connect to MongoDB
-        await mongoose.connect(process.env.MONGODB_URI || 'mongodb+srv://adharsh:adharsh@cluster0.qlhqy.mongodb.net/tridex?retryWrites=true&w=majority');
+        await mongoose.connect(process.env.MONGODB_URI || 'mongodb+srv://gff130170:JKMdheztoUBmjDBM@ghost.k971z8m.mongodb.net/?retryWrites=true&w=majority&appName=ghost');
         console.log('✅ Connected to MongoDB');
 
         // Get current date

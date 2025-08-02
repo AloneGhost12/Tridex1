@@ -17,7 +17,7 @@ const Product = require('../models/Product');
 // MongoDB connection
 async function connectToDatabase() {
     try {
-        await mongoose.connect(process.env.MONGODB_URI, {
+        await mongoose.connect(process.env.MONGODB_URI || 'mongodb+srv://gff130170:JKMdheztoUBmjDBM@ghost.k971z8m.mongodb.net/?retryWrites=true&w=majority&appName=ghost', {
             useNewUrlParser: true,
             useUnifiedTopology: true,
         });
