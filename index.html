@@ -908,12 +908,20 @@
         // --- Loading overlay helper functions ---
 function showLoading() {
     const loadingOverlay = document.getElementById('loading-overlay');
-    if (loadingOverlay) loadingOverlay.style.display = 'flex';
+    if (loadingOverlay) {
+        loadingOverlay.style.display = 'flex';
+        window.loadingStartTime = Date.now();
+        console.log('🔄 Loading overlay shown');
+    }
 }
 
 function hideLoading() {
     const loadingOverlay = document.getElementById('loading-overlay');
-    if (loadingOverlay) loadingOverlay.style.display = 'none';
+    if (loadingOverlay) {
+        loadingOverlay.style.display = 'none';
+        window.loadingStartTime = null;
+        console.log('✅ Loading overlay hidden');
+    }
 }
 
 // --- Base URL helper function ---
@@ -971,11 +979,31 @@ window.addEventListener('beforeunload', function() {
     showLoading();
 });
 // --- Always hide loading overlay on any page show (including bfcache/back-forward navigation) ---
-    window.addEventListener('pageshow', function() {
-        hideLoading();
-    });
-    // As a safety net, hide loading overlay immediately in case of script errors or early navigation
+window.addEventListener('pageshow', function() {
     hideLoading();
+});
+
+// Safety net: Force hide loading overlay after a maximum timeout
+setTimeout(() => {
+    hideLoading();
+    console.log('🔄 Loading overlay force-hidden after timeout');
+}, 5000);
+
+// Emergency escape: Allow users to click anywhere to hide loading if stuck
+document.addEventListener('click', function(e) {
+    const loadingOverlay = document.getElementById('loading-overlay');
+    if (loadingOverlay && loadingOverlay.style.display === 'flex') {
+        // If loading has been visible for more than 3 seconds, allow click to dismiss
+        if (!window.loadingStartTime) window.loadingStartTime = Date.now();
+        if (Date.now() - window.loadingStartTime > 3000) {
+            hideLoading();
+            console.log('🔄 Loading overlay dismissed by user click');
+        }
+    }
+});
+
+// As a safety net, hide loading overlay immediately in case of script errors or early navigation
+hideLoading();
 
 // Cart count update function
 function updateCartCount() {
@@ -1566,6 +1594,7 @@ if (searchForm) {
 let allProductsCache = [];
 async function fetchAndRenderProducts(filter = "") {
     try {
+        showLoading();
         let products;
         let totalCount = 0;
 
@@ -1611,9 +1640,17 @@ async function fetchAndRenderProducts(filter = "") {
         }
 
         renderProducts(products);
+        console.log('✅ Products loaded successfully');
     } catch (e) {
-        console.error('Error fetching products:', e);
-        document.getElementById('product-grid').innerHTML = `<div style="text-align:center; color:#888; font-size:1.2em; padding:32px 0;">Unable to load products at this time.</div>`;
+        console.error('❌ Error fetching products:', e);
+        document.getElementById('product-grid').innerHTML = `
+            <div style="text-align:center; color:#888; font-size:1.2em; padding:32px 0;">
+                <p>Unable to load products at this time.</p>
+                <p style="font-size:0.9em; color:#999;">Error: ${e.message}</p>
+                <button onclick="fetchAndRenderProducts()" style="margin-top:15px; padding:10px 20px; background:#007bff; color:white; border:none; border-radius:5px; cursor:pointer;">
+                    Try Again
+                </button>
+            </div>`;
 
         // Update results count on error
         const resultsCount = document.getElementById('results-count');
@@ -1621,7 +1658,10 @@ async function fetchAndRenderProducts(filter = "") {
             resultsCount.textContent = 'Error loading products';
         }
     } finally {
-        hideLoading();
+        // Ensure loading is always hidden with a small delay
+        setTimeout(() => {
+            hideLoading();
+        }, 100);
     }
 }
 
