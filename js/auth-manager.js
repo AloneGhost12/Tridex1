@@ -18,15 +18,16 @@ class AuthManager {
 
     getBaseUrl() {
         // Check if we're in a real development environment (running a local server)
-        const isLocalDevelopment = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-            && window.location.port !== '' && window.location.port !== '80' && window.location.port !== '443';
+        const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+        const currentPort = window.location.port;
 
-        if (isLocalDevelopment) {
-            // Only use localhost if we're actually running on a development port
-            console.log('🔧 AuthManager: Using development server');
+        // Only use localhost:3000 if we're on port 3000 (actual Node.js server)
+        // For Live Server (port 5500) or other ports, use production server
+        if (isLocalhost && currentPort === '3000') {
+            console.log('🔧 AuthManager: Using development server (Node.js)');
             return 'http://localhost:3000';
         } else {
-            // For all other cases (including file:// protocol, GitHub Pages, or production), use production server
+            // For all other cases (Live Server, file://, GitHub Pages, production), use production server
             console.log('🌐 AuthManager: Using production server');
             return 'https://tridex1.onrender.com';
         }

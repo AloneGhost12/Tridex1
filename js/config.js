@@ -104,18 +104,19 @@ if (typeof window !== 'undefined') {
     const currentProtocol = window.location.protocol;
     const currentPort = window.location.port;
 
-    // Only use development mode if we're actually running on a development server with a specific port
+    // Only use development mode if we're actually running on port 3000 (Node.js server)
+    // For Live Server (port 5500) or other ports, use production mode
     const isRealDevelopment = (currentHost === 'localhost' || currentHost === '127.0.0.1')
         && currentProtocol === 'http:'
-        && currentPort !== '' && currentPort !== '80' && currentPort !== '443';
+        && currentPort === '3000';
 
     if (isRealDevelopment) {
         CONFIG.isDevelopment = true;
-        console.log('🔧 Development environment detected (localhost with port)');
+        console.log('🔧 Development environment detected (Node.js on port 3000)');
     } else {
-        // Default to production for file:// protocol, GitHub Pages, or any other case
+        // Default to production for Live Server, file:// protocol, GitHub Pages, or any other case
         CONFIG.isDevelopment = false;
-        console.log('🌐 Production environment detected');
+        console.log('🌐 Production environment detected (Live Server or production)');
     }
 
     console.log(`📡 API Base URL: ${API.getEndpoint('base')}`);

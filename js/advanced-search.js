@@ -859,15 +859,13 @@ class AdvancedSearch {
     }
 
     getBaseUrl() {
-        // Check if we're in a real development environment (running a local server)
-        const isLocalDevelopment = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-            && window.location.port !== '' && window.location.port !== '80' && window.location.port !== '443';
+        // Only use localhost:3000 if we're actually on port 3000 (Node.js server)
+        const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+        const currentPort = window.location.port;
 
-        if (isLocalDevelopment) {
-            // Only use localhost if we're actually running on a development port
+        if (isLocalhost && currentPort === '3000') {
             return 'http://localhost:3000';
         } else {
-            // For all other cases (including file:// protocol, GitHub Pages, or production), use production server
             return 'https://tridex1.onrender.com';
         }
     }
