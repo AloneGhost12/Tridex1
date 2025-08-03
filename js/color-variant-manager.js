@@ -94,7 +94,7 @@ class ColorVariantManager {
                                 <div class="form-group">
                                     <label for="variant-color">Color</label>
                                     <select id="variant-color" class="form-control" required>
-                                        <option value="">-- Select Color --</option>
+                                        <option value="" disabled>-- Select Color --</option>
                                         ${this.standardColors.map(color =>
                                             `<option value="${color.name}" data-hex="${color.hexCode}">${color.name}</option>`
                                         ).join('')}
@@ -307,8 +307,9 @@ class ColorVariantManager {
             }
 
             // Validate color selection
-            if (colorSelect.value === '') {
+            if (!colorSelect.value || colorSelect.value === '') {
                 alert('Please select a color');
+                colorSelect.focus();
                 return;
             }
 
