@@ -407,6 +407,15 @@ app.post('/users/request-otp', async (req, res) => {
     try {
         const { email } = req.body;
         if (!email) return res.status(400).json({ message: 'Email is required' });
+
+        // Check if MongoDB is connected
+        if (mongoose.connection.readyState !== 1) {
+            console.log('MongoDB not connected, cannot process OTP request');
+            return res.status(503).json({
+                message: 'Database service temporarily unavailable. Please try again later.'
+            });
+        }
+
         const user = await User.findOne({ email: email.toLowerCase() });
         if (!user) return res.status(404).json({ message: 'No user found with this email' });
 
@@ -447,6 +456,14 @@ app.post('/users/verify-otp', async (req, res) => {
     try {
         const { email, otp } = req.body;
         if (!email || !otp) return res.status(400).json({ message: 'Email and OTP required' });
+
+        // Check if MongoDB is connected
+        if (mongoose.connection.readyState !== 1) {
+            return res.status(503).json({
+                message: 'Database service temporarily unavailable. Please try again later.'
+            });
+        }
+
         const user = await User.findOne({ email: email.toLowerCase() });
         if (!user || !user.otp || !user.otpExpires) return res.status(400).json({ message: 'OTP not requested' });
         if (user.otp !== otp) return res.status(400).json({ message: 'Invalid OTP' });
@@ -462,6 +479,14 @@ app.post('/users/reset-password-with-otp', async (req, res) => {
     try {
         const { email, otp, newPassword } = req.body;
         if (!email || !otp || !newPassword) return res.status(400).json({ message: 'All fields required' });
+
+        // Check if MongoDB is connected
+        if (mongoose.connection.readyState !== 1) {
+            return res.status(503).json({
+                message: 'Database service temporarily unavailable. Please try again later.'
+            });
+        }
+
         const user = await User.findOne({ email: email.toLowerCase() });
         if (!user || !user.otp || !user.otpExpires) return res.status(400).json({ message: 'OTP not requested' });
         if (user.otp !== otp) return res.status(400).json({ message: 'Invalid OTP' });
