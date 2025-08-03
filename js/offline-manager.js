@@ -520,13 +520,15 @@ class OfflineManager {
 
     // Utility methods
     getBaseUrl() {
-        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        // Check if we're in a real development environment (running a local server)
+        const isLocalDevelopment = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+            && window.location.port !== '' && window.location.port !== '80' && window.location.port !== '443';
+
+        if (isLocalDevelopment) {
+            // Only use localhost if we're actually running on a development port
             return 'http://localhost:3000';
-        } else if (window.location.hostname.includes('onrender.com')) {
-            return 'https://tridex1.onrender.com';
-        } else if (window.location.hostname.includes('github.io') || window.location.protocol === 'file:') {
-            return 'https://tridex1.onrender.com';
         } else {
+            // For all other cases (including file:// protocol, GitHub Pages, or production), use production server
             return 'https://tridex1.onrender.com';
         }
     }
