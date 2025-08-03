@@ -31,6 +31,19 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Debug endpoint to check environment variables (remove in production)
+app.get('/debug/env', (req, res) => {
+    res.json({
+        NODE_ENV: process.env.NODE_ENV,
+        PORT: process.env.PORT,
+        BREVO_API_KEY_EXISTS: !!process.env.BREVO_API_KEY,
+        BREVO_API_KEY_LENGTH: process.env.BREVO_API_KEY ? process.env.BREVO_API_KEY.length : 0,
+        BREVO_API_KEY_PREFIX: process.env.BREVO_API_KEY ? process.env.BREVO_API_KEY.substring(0, 10) + '...' : 'undefined',
+        MONGODB_URI_EXISTS: !!process.env.MONGODB_URI,
+        timestamp: new Date().toISOString()
+    });
+});
+
 // Initialize Google OAuth client
 const googleClient = new OAuth2Client(
     process.env.GOOGLE_CLIENT_ID || '511326319939-431231ifhs4239598gc0d7ba2vc97lms.apps.googleusercontent.com'
