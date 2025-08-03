@@ -8,7 +8,10 @@ class AuthManager {
         this.currentUser = null;
         this.isLoggedIn = false;
         this.baseUrl = this.getBaseUrl();
-        
+
+        // Version check for cache busting - Updated: 2025-01-03
+        console.log('🔄 AuthManager v2.1 - Cache busted');
+
         // Initialize on page load
         this.init();
     }
@@ -20,9 +23,11 @@ class AuthManager {
 
         if (isLocalDevelopment) {
             // Only use localhost if we're actually running on a development port
+            console.log('🔧 AuthManager: Using development server');
             return 'http://localhost:3000';
         } else {
             // For all other cases (including file:// protocol, GitHub Pages, or production), use production server
+            console.log('🌐 AuthManager: Using production server');
             return 'https://tridex1.onrender.com';
         }
     }
