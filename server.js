@@ -447,6 +447,9 @@ app.post('/users/request-otp', async (req, res) => {
         await user.save();
 
         // Send OTP email using Brevo
+        console.log('🔍 OTP Debug - BREVO_API_KEY exists:', !!process.env.BREVO_API_KEY);
+        console.log('🔍 OTP Debug - BREVO_API_KEY length:', process.env.BREVO_API_KEY ? process.env.BREVO_API_KEY.length : 0);
+
         if (process.env.BREVO_API_KEY && process.env.BREVO_API_KEY !== 'dummy-key') {
             try {
                 console.log('📧 Sending OTP email via Brevo...');
