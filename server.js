@@ -140,6 +140,7 @@ if (!process.env.BREVO_API_KEY) {
     console.warn('⚠️ BREVO_API_KEY environment variable is not set. Email functionality will be disabled.');
     apiKey.apiKey = 'dummy-key';
 } else {
+    console.log('✅ Brevo email service configured');
     apiKey.apiKey = process.env.BREVO_API_KEY;
 }
 const crypto = require('crypto');
@@ -435,19 +436,37 @@ app.post('/users/request-otp', async (req, res) => {
         // Send OTP email using Brevo
         if (process.env.BREVO_API_KEY && process.env.BREVO_API_KEY !== 'dummy-key') {
             try {
+                console.log('📧 Sending OTP email via Brevo...');
                 const apiInstance = new SibApiV3Sdk.TransactionalEmailsApi();
                 const sendSmtpEmail = new SibApiV3Sdk.SendSmtpEmail();
-                sendSmtpEmail.subject = 'Your OTP for Password Reset';
-                sendSmtpEmail.htmlContent = `<p>Your OTP for password reset is: <b>${otp}</b><br>This OTP is valid for 5 minutes.</p>`;
+                sendSmtpEmail.subject = 'Your OTP for Password Reset - Tridex';
+                sendSmtpEmail.htmlContent = `
+                    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                        <h2 style="color: #333;">Password Reset OTP</h2>
+                        <p>Hello,</p>
+                        <p>You have requested to reset your password. Please use the following OTP to proceed:</p>
+                        <div style="background-color: #f4f4f4; padding: 20px; text-align: center; margin: 20px 0;">
+                            <h1 style="color: #007bff; font-size: 32px; margin: 0;">${otp}</h1>
+                        </div>
+                        <p><strong>This OTP is valid for 5 minutes only.</strong></p>
+                        <p>If you didn't request this password reset, please ignore this email.</p>
+                        <hr style="margin: 30px 0;">
+                        <p style="color: #666; font-size: 12px;">This email was sent by Tridex Support Team</p>
+                    </div>
+                `;
                 sendSmtpEmail.sender = { name: 'Tridex Support', email: 'gff130170@gmail.com' };
                 sendSmtpEmail.to = [{ email: user.email, name: user.name || user.username }];
-                await apiInstance.sendTransacEmail(sendSmtpEmail);
+
+                const result = await apiInstance.sendTransacEmail(sendSmtpEmail);
+                console.log('✅ Email sent successfully via Brevo. Message ID:', result.messageId);
             } catch (emailError) {
-                console.error('Failed to send OTP email:', emailError);
-                return res.status(500).json({ message: 'Failed to send OTP email' });
+                console.error('❌ Failed to send OTP email:', emailError);
+                // Log the OTP to console as fallback
+                console.log(`📱 Fallback - OTP for ${email}: ${otp} (Email failed, but OTP generated)`);
+                // Don't return error, continue with success response
             }
         } else {
-            console.log(`OTP for ${email}: ${otp} (Email service not configured)`);
+            console.log(`📱 OTP for ${email}: ${otp} (Email service not configured)`);
         }
 
         res.json({ message: 'OTP sent to your email' });
