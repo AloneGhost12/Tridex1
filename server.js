@@ -41,7 +41,9 @@ const allowedOrigins = [
     'https://aloneghost12.github.io',
     'http://localhost:3000',
     'http://127.0.0.1:5500',
+    'http://127.0.0.1:5502',
     'http://localhost:5500',
+    'http://localhost:5502',
     'http://127.0.0.1:3000',
     'https://tridex1.onrender.com', // Added deployed site origin
     'file://', // Allow file:// origins for local development
@@ -79,11 +81,15 @@ app.options('*', cors());
 app.use((req, res, next) => {
     const origin = req.headers.origin;
 
-    // If the origin is in our allowed list, set it specifically
-    // Otherwise use * for development
+    // Always set specific origin for credentials support
+    // Cannot use * with credentials: 'include'
     if (origin && allowedOrigins.includes(origin)) {
         res.header('Access-Control-Allow-Origin', origin);
+    } else if (origin) {
+        // For development, allow the specific origin even if not in list
+        res.header('Access-Control-Allow-Origin', origin);
     } else {
+        // For requests without origin (like curl), allow any
         res.header('Access-Control-Allow-Origin', '*');
     }
 
