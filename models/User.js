@@ -32,6 +32,10 @@ const userSchema = new mongoose.Schema({
     profilePicture: { type: String }, // Google profile picture URL
     isGoogleUser: { type: Boolean, default: false }, // Flag to identify Google users
 
+    // OTP fields for password reset
+    otp: { type: String },
+    otpExpires: { type: Date },
+
     // Timestamps
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now }

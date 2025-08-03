@@ -126,6 +126,18 @@ app.use(session({
 
 app.use(express.json());
 
+// --- OTP ENDPOINTS (Brevo/Sendinblue) ---
+const SibApiV3Sdk = require('sib-api-v3-sdk');
+const defaultClient = SibApiV3Sdk.ApiClient.instance;
+const apiKey = defaultClient.authentications['api-key'];
+if (!process.env.BREVO_API_KEY) {
+    console.warn('⚠️ BREVO_API_KEY environment variable is not set. Email functionality will be disabled.');
+    apiKey.apiKey = 'dummy-key';
+} else {
+    apiKey.apiKey = process.env.BREVO_API_KEY;
+}
+const crypto = require('crypto');
+
 // Handle legacy product.html redirects
 app.get('/product.html', (req, res) => {
     const productId = req.query.id;
@@ -385,6 +397,83 @@ app.post('/logout', (req, res) => {
     } catch (error) {
         console.error('Error during logout:', error);
         res.status(500).json({ message: 'Error logging out' });
+    }
+});
+
+// ========== OTP PASSWORD RESET ROUTES ==========
+
+// Request OTP endpoint
+app.post('/users/request-otp', async (req, res) => {
+    try {
+        const { email } = req.body;
+        if (!email) return res.status(400).json({ message: 'Email is required' });
+        const user = await User.findOne({ email: email.toLowerCase() });
+        if (!user) return res.status(404).json({ message: 'No user found with this email' });
+
+        // Generate 6-digit OTP
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        const otpExpires = new Date(Date.now() + 5 * 60 * 1000); // 5 min expiry
+        user.otp = otp;
+        user.otpExpires = otpExpires;
+        await user.save();
+
+        // Send OTP email using Brevo
+        if (process.env.BREVO_API_KEY && process.env.BREVO_API_KEY !== 'dummy-key') {
+            try {
+                const apiInstance = new SibApiV3Sdk.TransactionalEmailsApi();
+                const sendSmtpEmail = new SibApiV3Sdk.SendSmtpEmail();
+                sendSmtpEmail.subject = 'Your OTP for Password Reset';
+                sendSmtpEmail.htmlContent = `<p>Your OTP for password reset is: <b>${otp}</b><br>This OTP is valid for 5 minutes.</p>`;
+                sendSmtpEmail.sender = { name: 'Tridex Support', email: 'gff130170@gmail.com' };
+                sendSmtpEmail.to = [{ email: user.email, name: user.name || user.username }];
+                await apiInstance.sendTransacEmail(sendSmtpEmail);
+            } catch (emailError) {
+                console.error('Failed to send OTP email:', emailError);
+                return res.status(500).json({ message: 'Failed to send OTP email' });
+            }
+        } else {
+            console.log(`OTP for ${email}: ${otp} (Email service not configured)`);
+        }
+
+        res.json({ message: 'OTP sent to your email' });
+    } catch (err) {
+        console.error('Error sending OTP:', err);
+        res.status(500).json({ message: 'Failed to send OTP' });
+    }
+});
+
+// Verify OTP endpoint
+app.post('/users/verify-otp', async (req, res) => {
+    try {
+        const { email, otp } = req.body;
+        if (!email || !otp) return res.status(400).json({ message: 'Email and OTP required' });
+        const user = await User.findOne({ email: email.toLowerCase() });
+        if (!user || !user.otp || !user.otpExpires) return res.status(400).json({ message: 'OTP not requested' });
+        if (user.otp !== otp) return res.status(400).json({ message: 'Invalid OTP' });
+        if (user.otpExpires < new Date()) return res.status(400).json({ message: 'OTP expired' });
+        res.json({ message: 'OTP verified' });
+    } catch (err) {
+        res.status(500).json({ message: 'OTP verification failed' });
+    }
+});
+
+// Reset password with OTP endpoint
+app.post('/users/reset-password-with-otp', async (req, res) => {
+    try {
+        const { email, otp, newPassword } = req.body;
+        if (!email || !otp || !newPassword) return res.status(400).json({ message: 'All fields required' });
+        const user = await User.findOne({ email: email.toLowerCase() });
+        if (!user || !user.otp || !user.otpExpires) return res.status(400).json({ message: 'OTP not requested' });
+        if (user.otp !== otp) return res.status(400).json({ message: 'Invalid OTP' });
+        if (user.otpExpires < new Date()) return res.status(400).json({ message: 'OTP expired' });
+        user.password = await bcrypt.hash(newPassword, 10);
+        user.otp = undefined;
+        user.otpExpires = undefined;
+        await user.save();
+        res.json({ message: 'Password reset successful' });
+    } catch (err) {
+        console.error('Error resetting password:', err);
+        res.status(500).json({ message: 'Failed to reset password' });
     }
 });
 
