@@ -102,13 +102,18 @@ const API = {
 if (typeof window !== 'undefined') {
     const currentHost = window.location.hostname;
     const currentProtocol = window.location.protocol;
+    const currentPort = window.location.port;
 
-    // If running locally (localhost or file://) and you want to use local server
-    if ((currentHost === 'localhost' || currentHost === '127.0.0.1') && currentProtocol === 'http:') {
+    // Only use development mode if we're actually running on a development server with a specific port
+    const isRealDevelopment = (currentHost === 'localhost' || currentHost === '127.0.0.1')
+        && currentProtocol === 'http:'
+        && currentPort !== '' && currentPort !== '80' && currentPort !== '443';
+
+    if (isRealDevelopment) {
         CONFIG.isDevelopment = true;
-        console.log('🔧 Development environment detected');
+        console.log('🔧 Development environment detected (localhost with port)');
     } else {
-        // Default to production for file:// protocol and all other cases
+        // Default to production for file:// protocol, GitHub Pages, or any other case
         CONFIG.isDevelopment = false;
         console.log('🌐 Production environment detected');
     }

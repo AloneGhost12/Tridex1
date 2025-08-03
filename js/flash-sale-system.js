@@ -469,21 +469,9 @@ class FlashSaleSystem {
     }
 
     getBaseUrl() {
-        // Use the same logic as the main site
-        if (typeof getBaseUrl === 'function') {
-            return getBaseUrl();
-        }
-
-        // Fallback logic
-        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-            return 'http://localhost:3000';
-        } else if (window.location.hostname.includes('onrender.com')) {
-            return 'https://tridex1.onrender.com';
-        } else if (window.location.hostname.includes('github.io') || window.location.protocol === 'file:') {
-            return 'https://tridex1.onrender.com';
-        } else {
-            return 'https://tridex1.onrender.com';
-        }
+        // Force production URL for flash sales to avoid localhost connection issues
+        // This ensures flash sales always connect to the deployed server
+        return 'https://tridex1.onrender.com';
     }
 }
 
