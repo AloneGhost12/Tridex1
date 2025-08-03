@@ -1213,7 +1213,19 @@ async function loadUserDataForNavigation() {
         const username = localStorage.getItem('username') || localStorage.getItem('currentUser');
         const token = localStorage.getItem('token');
 
-        if (!username || !token) return;
+        if (!username) {
+            console.log('No username found, skipping profile load');
+            return;
+        }
+
+        // If no token, just display username without fetching from server
+        if (!token) {
+            console.log('No token found, displaying username only');
+            displayUsernameOnly(username);
+            return;
+        }
+
+        console.log('Loading profile for username:', username, 'with token:', token ? token.substring(0, 10) + '...' : 'none');
 
         // Fetch user data from server to get full name and profile picture
         const baseUrl = getBaseUrl();
@@ -1228,6 +1240,7 @@ async function loadUserDataForNavigation() {
 
         if (response.ok) {
             const userData = await response.json();
+            console.log('Profile data loaded successfully:', userData);
 
             // Display username for identification, not full name
             const verifiedUsers = JSON.parse(localStorage.getItem('verifiedUsers') || '[]');
@@ -1238,16 +1251,31 @@ async function loadUserDataForNavigation() {
             // Display profile picture in navigation
             displayNavProfilePicture(userData.profilePicture);
         } else {
+            console.log('Profile request failed with status:', response.status);
+            if (response.status === 401) {
+                console.log('Authentication failed - token may be invalid or expired');
+            }
             // Fallback to localStorage data - use username, not full name
-            const verifiedUsers = JSON.parse(localStorage.getItem('verifiedUsers') || '[]');
-
-            document.getElementById('username-display').innerHTML =
-                `Welcome, <span style="text-transform:uppercase; letter-spacing:0.5px; font-weight:500;">${username}</span> ${verifiedUsers.includes(username) ? '<span title="Verified" style="color:#1da1f2; font-size:1.1em;">✓</span>' : ''}`;
+            displayUsernameOnly(username);
         }
     } catch (error) {
-        console.log('Could not load user data:', error);
+        console.log('Could not load user data (network error):', error.message);
         // Fallback to localStorage data - use username, not full name
-        const verifiedUsers = JSON.parse(localStorage.getItem('verifiedUsers') || '[]');
+        const username = localStorage.getItem('username') || localStorage.getItem('currentUser');
+        if (username) {
+            displayUsernameOnly(username);
+        }
+    }
+}
+
+// Helper function to display username without server data
+function displayUsernameOnly(username) {
+    const verifiedUsers = JSON.parse(localStorage.getItem('verifiedUsers') || '[]');
+    const usernameDisplay = document.getElementById('username-display');
+    if (usernameDisplay) {
+        usernameDisplay.innerHTML =
+            `Welcome, <span style="text-transform:uppercase; letter-spacing:0.5px; font-weight:500;">${username}</span> ${verifiedUsers.includes(username) ? '<span title="Verified" style="color:#1da1f2; font-size:1.1em;">✓</span>' : ''}`;
+    }
 
         document.getElementById('username-display').innerHTML =
             `Welcome, <span style="text-transform:uppercase; letter-spacing:0.5px; font-weight:500;">${username}</span> ${verifiedUsers.includes(username) ? '<span title="Verified" style="color:#1da1f2; font-size:1.1em;">✓</span>' : ''}`;

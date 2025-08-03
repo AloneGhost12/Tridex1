@@ -47,10 +47,16 @@ class AuthManager {
                 };
                 this.isLoggedIn = true;
                 console.log('AuthManager: User session found:', this.currentUser);
-            } else {
+            } else if (response.status === 401) {
+                // 401 is expected when no session exists - this is normal
                 this.currentUser = null;
                 this.isLoggedIn = false;
-                console.log('AuthManager: No active session');
+                console.log('AuthManager: No active session (expected)');
+            } else {
+                // Other errors are unexpected
+                this.currentUser = null;
+                this.isLoggedIn = false;
+                console.warn('AuthManager: Unexpected response:', response.status);
             }
         } catch (error) {
             console.error('AuthManager: Error checking session:', error);

@@ -923,10 +923,23 @@ app.get('/users/profile', async (req, res) => {
             username = usernameFromQuery || req.headers['x-username'];
         }
 
-        console.log('Profile request for username:', username);
+        console.log('Profile request debug:');
+        console.log('- Token received:', token);
+        console.log('- Username from query:', usernameFromQuery);
+        console.log('- Username from header:', req.headers['x-username']);
+        console.log('- Resolved username:', username);
 
         if (!username) {
-            return res.status(401).json({ message: 'Invalid token or missing username' });
+            console.log('No username resolved, returning 401');
+            return res.status(401).json({
+                message: 'Invalid token or missing username',
+                debug: {
+                    tokenReceived: !!token,
+                    tokenType: token ? (token.startsWith('dev-') ? 'dev-token' : token.startsWith('fake-jwt-') ? 'jwt-token' : 'unknown') : 'none',
+                    usernameFromQuery: usernameFromQuery,
+                    usernameFromHeader: req.headers['x-username']
+                }
+            });
         }
 
         // Find user by username
