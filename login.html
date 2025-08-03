@@ -976,7 +976,7 @@
                 const controller = new AbortController();
                 const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
 
-                // Don't use credentials mode with wildcard CORS
+                // Include credentials for proper session management
                 const res = await fetch(apiUrl, {
                     method: 'POST',
                     headers: {
@@ -984,7 +984,7 @@
                         'Accept': 'application/json'
                     },
                     body: JSON.stringify({ username: userInput, password }),
-                    // Don't use credentials: 'include' with wildcard CORS
+                    credentials: 'include', // Required for session cookies
                     signal: controller.signal
                 });
 
