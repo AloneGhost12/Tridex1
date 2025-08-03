@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minimal Coupon Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .container { max-width: 600px; margin: 0 auto; }
+        .coupon-card { border: 1px solid #ddd; padding: 15px; margin: 10px 0; border-radius: 8px; }
+        .coupon-code { font-weight: bold; color: #007bff; }
+        button { background: #007bff; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; margin: 5px; }
+        .error { color: red; }
+        .success { color: green; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Minimal Coupon Test</h1>
+        
+        <div>
+            <button onclick="testAPI()">Test API Direct</button>
+            <button onclick="initCouponSystem()">Init Coupon System</button>
+            <button onclick="loadCoupons()">Load Coupons</button>
+        </div>
+        
+        <div id="status"></div>
+        <div id="available-coupons"></div>
+    </div>
+
+    <script>
+        const CONFIG = {
+            isDevelopment: true,
+            endpoints: {
+                development: { base: 'http://localhost:3000' },
+                production: { base: 'https://tridex1.onrender.com' }
+            }
+        };
+
+        async function testAPI() {
+            const statusDiv = document.getElementById('status');
+            statusDiv.innerHTML = 'Testing API...';
+            
+            try {
+                const response = await fetch('http://localhost:3000/coupons/public');
+                const data = await response.json();
+                
+                statusDiv.innerHTML = `<div class="success">✅ API works! Found ${data.coupons?.length || 0} coupons</div>`;
+                console.log('API Response:', data);
+            } catch (error) {
+                statusDiv.innerHTML = `<div class="error">❌ API Error: ${error.message}</div>`;
+                console.error('API Error:', error);
+            }
+        }
+
+        function initCouponSystem() {
+            const statusDiv = document.getElementById('status');
+            
+            try {
+                // Load the coupon system script dynamically
+                if (!window.CouponSystem) {
+                    const script = document.createElement('script');
+                    script.src = 'js/coupon-system.js';
+                    script.onload = () => {
+                        statusDiv.innerHTML = '<div class="success">✅ Coupon System script loaded</div>';
+                        setTimeout(() => {
+                            if (window.CouponSystem) {
+                                window.couponSystem = new window.CouponSystem();
+                                statusDiv.innerHTML = '<div class="success">✅ Coupon System initialized</div>';
+                            }
+                        }, 100);
+                    };
+                    script.onerror = () => {
+                        statusDiv.innerHTML = '<div class="error">❌ Failed to load coupon system script</div>';
+                    };
+                    document.head.appendChild(script);
+                } else {
+                    window.couponSystem = new window.CouponSystem();
+                    statusDiv.innerHTML = '<div class="success">✅ Coupon System initialized</div>';
+                }
+            } catch (error) {
+                statusDiv.innerHTML = `<div class="error">❌ Init Error: ${error.message}</div>`;
+                console.error('Init Error:', error);
+            }
+        }
+
+        function loadCoupons() {
+            const statusDiv = document.getElementById('status');
+            
+            if (window.couponSystem) {
+                statusDiv.innerHTML = 'Loading coupons...';
+                window.couponSystem.loadAvailableCoupons();
+            } else {
+                statusDiv.innerHTML = '<div class="error">❌ Coupon System not initialized</div>';
+            }
+        }
+
+        // Simple manual coupon display
+        async function manualCouponLoad() {
+            const container = document.getElementById('available-coupons');
+            
+            try {
+                const response = await fetch('http://localhost:3000/coupons/public');
+                const data = await response.json();
+                
+                if (data.coupons && data.coupons.length > 0) {
+                    container.innerHTML = data.coupons.map(coupon => `
+                        <div class="coupon-card">
+                            <div class="coupon-code">${coupon.code}</div>
+                            <div>${coupon.name}</div>
+                            <div>${coupon.discountValue}${coupon.discountType === 'percentage' ? '%' : '₹'} OFF</div>
+                        </div>
+                    `).join('');
+                } else {
+                    container.innerHTML = '<p>No coupons found</p>';
+                }
+            } catch (error) {
+                container.innerHTML = `<p class="error">Error: ${error.message}</p>`;
+            }
+        }
+
+        // Auto-test on load
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('Minimal test page loaded');
+            setTimeout(() => {
+                testAPI();
+                manualCouponLoad();
+            }, 500);
+        });
+    </script>
+</body>
+</html>

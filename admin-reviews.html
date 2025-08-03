@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Review Management - Tridex Admin</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+
+        .header {
+            background: #2c3e50;
+            color: white;
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 1.8rem;
+        }
+
+        .nav-links {
+            margin-top: 0.5rem;
+        }
+
+        .nav-links a {
+            color: #ecf0f1;
+            text-decoration: none;
+            margin-right: 1rem;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+        }
+
+        .nav-links a:hover {
+            background-color: rgba(255,255,255,0.1);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .stat-card h3 {
+            color: #2c3e50;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-card .number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #3498db;
+        }
+
+        .reviews-section {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .section-header {
+            background: #34495e;
+            color: white;
+            padding: 1rem 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .filters {
+            display: flex;
+            gap: 1rem;
+            padding: 1rem 1.5rem;
+            background: #ecf0f1;
+            border-bottom: 1px solid #bdc3c7;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .filter-group label {
+            font-size: 0.875rem;
+            color: #2c3e50;
+            font-weight: 500;
+        }
+
+        .filter-group select,
+        .filter-group input {
+            padding: 0.5rem;
+            border: 1px solid #bdc3c7;
+            border-radius: 4px;
+            font-size: 0.875rem;
+        }
+
+        .reviews-list {
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .review-item {
+            padding: 1.5rem;
+            border-bottom: 1px solid #ecf0f1;
+            transition: background-color 0.3s;
+        }
+
+        .review-item:hover {
+            background-color: #f8f9fa;
+        }
+
+        .review-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+
+        .review-meta {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .product-name {
+            font-weight: bold;
+            color: #2c3e50;
+            font-size: 1.1rem;
+        }
+
+        .reviewer-info {
+            color: #7f8c8d;
+            font-size: 0.875rem;
+        }
+
+        .review-date {
+            color: #95a5a6;
+            font-size: 0.8rem;
+        }
+
+        .review-rating {
+            display: flex;
+            gap: 0.25rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .star {
+            color: #f39c12;
+        }
+
+        .review-text {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+            line-height: 1.5;
+        }
+
+        .review-actions {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.875rem;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-danger {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c0392b;
+        }
+
+        .btn-info {
+            background: #3498db;
+            color: white;
+        }
+
+        .btn-info:hover {
+            background: #2980b9;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: #7f8c8d;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: #7f8c8d;
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            color: #bdc3c7;
+        }
+
+        .message {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 1rem 1.5rem;
+            border-radius: 4px;
+            color: white;
+            font-weight: 500;
+            z-index: 1000;
+            display: none;
+        }
+
+        .message.success {
+            background: #27ae60;
+        }
+
+        .message.error {
+            background: #e74c3c;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 0 0.5rem;
+            }
+
+            .filters {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+
+            .review-header {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+
+            .review-actions {
+                flex-wrap: wrap;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <h1><i class="fas fa-star"></i> Review Management</h1>
+        <nav class="nav-links">
+            <a href="admin.html"><i class="fas fa-dashboard"></i> Dashboard</a>
+            <a href="admin-reviews.html" class="active"><i class="fas fa-star"></i> Reviews</a>
+            <a href="index.html"><i class="fas fa-home"></i> Back to Site</a>
+        </nav>
+    </header>
+
+    <div class="container">
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3>Total Reviews</h3>
+                <div class="number" id="total-reviews">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>Average Rating</h3>
+                <div class="number" id="average-rating">0.0</div>
+            </div>
+            <div class="stat-card">
+                <h3>Recent Reviews</h3>
+                <div class="number" id="recent-reviews">0</div>
+            </div>
+        </div>
+
+        <div class="reviews-section">
+            <div class="section-header">
+                <h2><i class="fas fa-list"></i> All Reviews</h2>
+                <button class="btn btn-info" onclick="refreshReviews()">
+                    <i class="fas fa-refresh"></i> Refresh
+                </button>
+            </div>
+
+            <div class="filters">
+                <div class="filter-group">
+                    <label>Filter by Rating</label>
+                    <select id="rating-filter">
+                        <option value="">All Ratings</option>
+                        <option value="5">5 Stars</option>
+                        <option value="4">4 Stars</option>
+                        <option value="3">3 Stars</option>
+                        <option value="2">2 Stars</option>
+                        <option value="1">1 Star</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Search Reviews</label>
+                    <input type="text" id="search-input" placeholder="Search by product or reviewer...">
+                </div>
+                <div class="filter-group">
+                    <label>Sort by</label>
+                    <select id="sort-filter">
+                        <option value="newest">Newest First</option>
+                        <option value="oldest">Oldest First</option>
+                        <option value="rating-high">Highest Rating</option>
+                        <option value="rating-low">Lowest Rating</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="reviews-list" id="reviews-list">
+                <div class="loading">
+                    <i class="fas fa-spinner fa-spin"></i> Loading reviews...
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="message" id="message"></div>
+
+    <script>
+        // --- Simple login protection: redirect to login.html if not logged in ---
+        if (!localStorage.getItem('token')) {
+            window.location.href = 'login.html';
+        }
+        // Enforce admin-only access
+        if (localStorage.getItem('isAdmin') !== 'true') {
+            window.location.href = 'index.html';
+        }
+
+        let allReviews = [];
+        let filteredReviews = [];
+        let isAdmin = false;
+
+        // Initialize the page
+        async function initAdminReviews() {
+            // Check admin authentication
+            await checkAdminAuth();
+
+            if (!isAdmin) {
+                showMessage('Access denied. Admin privileges required.', 'error');
+                setTimeout(() => {
+                    window.location.href = 'login.html';
+                }, 2000);
+                return;
+            }
+
+            // Load reviews
+            await loadAllReviews();
+
+            // Setup event listeners
+            setupEventListeners();
+        }
+
+        // Check if user is admin
+        async function checkAdminAuth() {
+            // First check if user is logged in
+            const token = localStorage.getItem('token');
+            const username = localStorage.getItem('username') || localStorage.getItem('currentUser');
+
+            if (!token || !username) {
+                isAdmin = false;
+                return;
+            }
+
+            // Check localStorage isAdmin flag first (same as admin.html)
+            const isAdminLocal = localStorage.getItem('isAdmin') === 'true';
+
+            if (isAdminLocal) {
+                isAdmin = true;
+                return;
+            }
+
+            // Fallback: check with server if localStorage doesn't have admin flag
+            try {
+                const response = await fetch(`https://tridex1.onrender.com/users/${username}`);
+                if (response.ok) {
+                    const userData = await response.json();
+                    isAdmin = userData.isAdmin || false;
+                    // Update localStorage with the correct admin status
+                    localStorage.setItem('isAdmin', isAdmin ? 'true' : 'false');
+                } else {
+                    isAdmin = false;
+                }
+            } catch (error) {
+                console.error('Error checking admin status:', error);
+                isAdmin = false;
+            }
+        }
+
+        // Load all reviews from API
+        async function loadAllReviews() {
+            const username = localStorage.getItem('username') || localStorage.getItem('currentUser');
+
+            try {
+                const response = await fetch(`https://tridex1.onrender.com/admin/reviews?username=${username}`);
+
+                if (response.ok) {
+                    allReviews = await response.json();
+                    filteredReviews = [...allReviews];
+                    updateStats();
+                    renderReviews();
+                } else {
+                    showMessage('Failed to load reviews', 'error');
+                    document.getElementById('reviews-list').innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <h3>Failed to Load Reviews</h3>
+                            <p>There was an error loading the reviews. Please try again.</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error loading reviews:', error);
+                showMessage('Network error while loading reviews', 'error');
+                document.getElementById('reviews-list').innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-wifi"></i>
+                        <h3>Network Error</h3>
+                        <p>Please check your connection and try again.</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Update statistics
+        function updateStats() {
+            const totalReviews = allReviews.length;
+            const averageRating = totalReviews > 0
+                ? (allReviews.reduce((sum, review) => sum + review.rating, 0) / totalReviews).toFixed(1)
+                : '0.0';
+
+            const oneWeekAgo = new Date();
+            oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+            const recentReviews = allReviews.filter(review =>
+                new Date(review.createdAt) > oneWeekAgo
+            ).length;
+
+            document.getElementById('total-reviews').textContent = totalReviews;
+            document.getElementById('average-rating').textContent = averageRating;
+            document.getElementById('recent-reviews').textContent = recentReviews;
+        }
+
+        // Render reviews list
+        function renderReviews() {
+            const reviewsList = document.getElementById('reviews-list');
+
+            if (filteredReviews.length === 0) {
+                reviewsList.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-star"></i>
+                        <h3>No Reviews Found</h3>
+                        <p>No reviews match your current filters.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            reviewsList.innerHTML = filteredReviews.map(review => `
+                <div class="review-item" data-review-id="${review._id}">
+                    <div class="review-header">
+                        <div class="review-meta">
+                            <div class="product-name">${review.product?.name || 'Unknown Product'}</div>
+                            <div class="reviewer-info">
+                                <i class="fas fa-user"></i> ${review.user?.username || review.username || 'Anonymous'}
+                            </div>
+                            <div class="review-date">
+                                <i class="fas fa-calendar"></i> ${formatDate(review.createdAt)}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="review-rating">
+                        ${generateStarRating(review.rating)}
+                    </div>
+
+                    <div class="review-text">
+                        ${review.text}
+                    </div>
+
+                    <div class="review-actions">
+                        <span class="review-stats">
+                            <i class="fas fa-thumbs-up"></i> ${review.likes?.length || 0}
+                            <i class="fas fa-thumbs-down"></i> ${review.dislikes?.length || 0}
+                            <i class="fas fa-reply"></i> ${review.replies?.length || 0}
+                        </span>
+                        <button class="btn btn-info" onclick="viewProduct('${review.product?._id}')">
+                            <i class="fas fa-eye"></i> View Product
+                        </button>
+                        <button class="btn btn-danger" onclick="deleteReviewAdmin('${review._id}')">
+                            <i class="fas fa-trash"></i> Delete Review
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Generate star rating HTML
+        function generateStarRating(rating) {
+            let stars = '';
+            for (let i = 1; i <= 5; i++) {
+                if (i <= rating) {
+                    stars += '<i class="fas fa-star star"></i>';
+                } else {
+                    stars += '<i class="far fa-star"></i>';
+                }
+            }
+            return stars;
+        }
+
+        // Format date
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+        }
+
+        // Delete review (Admin function)
+        async function deleteReviewAdmin(reviewId) {
+            if (!confirm('Are you sure you want to delete this review? This action cannot be undone.')) {
+                return;
+            }
+
+            const username = localStorage.getItem('username') || localStorage.getItem('currentUser');
+
+            try {
+                const response = await fetch(`https://tridex1.onrender.com/reviews/${reviewId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username })
+                });
+
+                if (response.ok) {
+                    showMessage('Review deleted successfully', 'success');
+
+                    // Remove from arrays
+                    allReviews = allReviews.filter(review => review._id !== reviewId);
+                    filteredReviews = filteredReviews.filter(review => review._id !== reviewId);
+
+                    // Update UI
+                    updateStats();
+                    renderReviews();
+                } else {
+                    const errorData = await response.json();
+                    showMessage(errorData.message || 'Failed to delete review', 'error');
+                }
+            } catch (error) {
+                console.error('Error deleting review:', error);
+                showMessage('Network error while deleting review', 'error');
+            }
+        }
+
+        // View product
+        function viewProduct(productId) {
+            if (productId) {
+                window.open(`product-details.html?id=${productId}`, '_blank');
+            }
+        }
+
+        // Setup event listeners
+        function setupEventListeners() {
+            // Rating filter
+            document.getElementById('rating-filter').addEventListener('change', applyFilters);
+
+            // Search input
+            document.getElementById('search-input').addEventListener('input', applyFilters);
+
+            // Sort filter
+            document.getElementById('sort-filter').addEventListener('change', applyFilters);
+        }
+
+        // Apply filters and sorting
+        function applyFilters() {
+            const ratingFilter = document.getElementById('rating-filter').value;
+            const searchTerm = document.getElementById('search-input').value.toLowerCase();
+            const sortBy = document.getElementById('sort-filter').value;
+
+            // Filter reviews
+            filteredReviews = allReviews.filter(review => {
+                // Rating filter
+                if (ratingFilter && review.rating != ratingFilter) {
+                    return false;
+                }
+
+                // Search filter
+                if (searchTerm) {
+                    const productName = (review.product?.name || '').toLowerCase();
+                    const username = (review.user?.username || review.username || '').toLowerCase();
+                    const reviewText = review.text.toLowerCase();
+
+                    if (!productName.includes(searchTerm) &&
+                        !username.includes(searchTerm) &&
+                        !reviewText.includes(searchTerm)) {
+                        return false;
+                    }
+                }
+
+                return true;
+            });
+
+            // Sort reviews
+            filteredReviews.sort((a, b) => {
+                switch (sortBy) {
+                    case 'newest':
+                        return new Date(b.createdAt) - new Date(a.createdAt);
+                    case 'oldest':
+                        return new Date(a.createdAt) - new Date(b.createdAt);
+                    case 'rating-high':
+                        return b.rating - a.rating;
+                    case 'rating-low':
+                        return a.rating - b.rating;
+                    default:
+                        return new Date(b.createdAt) - new Date(a.createdAt);
+                }
+            });
+
+            renderReviews();
+        }
+
+        // Refresh reviews
+        async function refreshReviews() {
+            document.getElementById('reviews-list').innerHTML = `
+                <div class="loading">
+                    <i class="fas fa-spinner fa-spin"></i> Refreshing reviews...
+                </div>
+            `;
+
+            await loadAllReviews();
+            applyFilters();
+        }
+
+        // Show message
+        function showMessage(text, type = 'success') {
+            const messageEl = document.getElementById('message');
+            messageEl.textContent = text;
+            messageEl.className = `message ${type}`;
+            messageEl.style.display = 'block';
+
+            setTimeout(() => {
+                messageEl.style.display = 'none';
+            }, 3000);
+        }
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', initAdminReviews);
+    </script>
+</body>
+</html>

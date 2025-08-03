@@ -1,0 +1,2289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+   <meta charset="UTF-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <title>Tridex</title>
+
+   <!-- PWA Meta Tags -->
+   <meta name="description" content="Discover amazing products with advanced search and seamless shopping experience.">
+   <meta name="theme-color" content="#007bff">
+   <meta name="mobile-web-app-capable" content="yes">
+   <meta name="apple-mobile-web-app-capable" content="yes">
+   <meta name="apple-mobile-web-app-status-bar-style" content="default">
+   <meta name="apple-mobile-web-app-title" content="Tridex">
+   <meta name="msapplication-TileColor" content="#007bff">
+   <meta name="msapplication-config" content="/browserconfig.xml">
+
+   <!-- PWA Manifest -->
+   <link rel="manifest" href="/manifest.json">
+
+   <!-- Favicon and App Icons -->
+   <link rel="icon" type="image/svg+xml" href="favicon.svg">
+   <link rel="apple-touch-icon" sizes="180x180" href="icons/icon-192x192.png">
+   <link rel="icon" type="image/png" sizes="32x32" href="icons/icon-192x192.png">
+   <link rel="icon" type="image/png" sizes="16x16" href="icons/icon-192x192.png">
+   <link rel="stylesheet" href="style.css">
+   <link rel="stylesheet" href="chatbot.css">
+   <!-- Custom Popup System -->
+   <link rel="stylesheet" href="css/custom-popups.css">
+   <!-- Wishlist Styles -->
+   <link rel="stylesheet" href="css/wishlist.css">
+   <!-- Advanced Search Styles -->
+   <link rel="stylesheet" href="css/advanced-search.css">
+   <!-- Comprehensive Responsive Styles -->
+   <link rel="stylesheet" href="css/responsive.css">
+   <link rel="stylesheet" href="css/navigation-responsive.css">
+   <link rel="stylesheet" href="css/forms-responsive.css">
+   <link rel="stylesheet" href="css/ecommerce-responsive.css">
+   <link rel="stylesheet" href="css/master-responsive.css">
+   <!-- Flash Sale and Coupon System Styles -->
+   <link rel="stylesheet" href="css/flash-sale-system.css">
+   <link rel="stylesheet" href="css/coupon-system.css">
+   <!-- Mobile App-like UI Styles -->
+   <link rel="stylesheet" href="css/mobile-app-ui.css">
+   <!-- Dynamic Content Styles -->
+   <link rel="stylesheet" href="css/dynamic-content.css">
+   <script src="js/custom-popups.js"></script>
+   <script>
+       // Fallback functions in case custom popups don't load
+       window.tridexConfirm = window.tridexConfirm || function(message) { return Promise.resolve(confirm(message)); };
+       window.tridexSuccess = window.tridexSuccess || function(message) { alert(message); return Promise.resolve(); };
+       window.tridexError = window.tridexError || function(message) { alert(message); return Promise.resolve(); };
+       window.tridexWarning = window.tridexWarning || function(message) { alert(message); return Promise.resolve(); };
+       window.tridexInfo = window.tridexInfo || function(message) { alert(message); return Promise.resolve(); };
+   </script>
+   <!-- Include the ban system script -->
+   <script src="ban-system.js"></script>
+   <!-- Include enhanced chatbot scripts -->
+   <script src="chatbot.js" defer></script>
+   <script src="chatbot-ai.js" defer></script>
+   <!-- Include authentication manager -->
+   <script src="js/auth-manager.js" defer></script>
+   <!-- Include migration helper -->
+   <script src="js/migration-helper.js" defer></script>
+   <!-- Include flash sale system -->
+   <script src="js/flash-sale-system.js" defer></script>
+   <style>
+       /* Responsive Navbar */
+       @media (max-width: 900px) {
+           header > div {
+               flex-direction: column;
+               align-items: flex-start !important;
+           }
+           nav ul {
+               gap: 10px !important;
+           }
+           .search-bar {
+               max-width: 98vw !important;
+           }
+       }
+       @media (max-width: 600px) {
+           header > div {
+               flex-direction: column;
+               align-items: flex-start !important;
+               padding: 0 8px;
+           }
+           h1 {
+               font-size: 1.5rem !important;
+               margin-bottom: 8px !important;
+           }
+           nav ul {
+               flex-wrap: wrap;
+               gap: 6px !important;
+               font-size: 0.98em;
+           }
+           .search-bar {
+               flex-direction: column !important;
+               max-width: 100vw !important;
+               margin: 10px 0 0 0 !important;
+               position: relative !important;
+           }
+           .search-bar input {
+               border-radius: 5px !important;
+               margin-bottom: 0;
+               padding-right: 38px !important;
+           }
+           .search-bar button {
+               border-radius: 5px !important;
+               width: auto;
+               position: absolute !important;
+               right: 8px;
+               top: 50%;
+               transform: translateY(-50%);
+               padding: 0 !important;
+               background: none !important;
+               box-shadow: none !important;
+               height: 32px;
+               min-width: 32px;
+               display: flex;
+               align-items: center;
+               justify-content: center;
+           }
+           .search-bar .search-icon {
+               font-size: 1.2em;
+               color: #007bff;
+           }
+           #username-display {
+               font-size: 0.98em !important;
+           }
+       }
+       @media (max-width: 420px) {
+           h1 {
+               font-size: 1.1rem !important;
+           }
+           nav ul {
+               font-size: 0.9em;
+           }
+           .product-card h3, .product-card p {
+               font-size: 0.95em;
+           }
+       }
+       /* Responsive Product Grid */
+       .product-grid {
+           display: grid;
+           grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+           gap: 18px;
+           padding: 24px 12px;
+           max-width: 1200px;
+           margin: 0 auto;
+       }
+       .product-card {
+           background: #fff;
+           border-radius: 8px;
+           box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+           padding: 18px 12px;
+           text-align: center;
+           transition: box-shadow 0.2s;
+       }
+       .product-card img {
+           width: 100%;
+           height: 180px;
+           object-fit: contain;
+           margin-bottom: 10px;
+           border-radius: 6px;
+           background-color: #f9f9f9;
+           padding: 8px;
+       }
+       .product-card:hover {
+           box-shadow: 0 4px 16px rgba(0,0,0,0.13);
+       }
+       .product-image-container {
+           height: 180px;
+           display: flex;
+           align-items: center;
+           justify-content: center;
+           margin-bottom: 10px;
+       }
+       /* Responsive logout button */
+       @media (max-width: 600px) {
+           #logout-btn {
+               top: 8px !important;
+               right: 8px !important;
+               font-size: 0.95rem !important;
+               padding: 6px 12px !important;
+           }
+       }
+       #nav {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 18px;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    background: none;
+    position: static;
+    width: auto;
+}
+.hamburger {
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    cursor: pointer;
+    margin-left: 8px;
+    z-index: 1001;
+}
+.hamburger span {
+    height: 4px;
+    width: 100%;
+    background: #fff;
+    margin: 4px 0;
+    border-radius: 2px;
+    transition: 0.3s;
+    display: block;
+}
+@media (max-width: 900px) {
+    .hamburger { display: flex; }
+    #nav {
+        display: none;
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 0 !important;
+        background: #222;
+        position: absolute;
+        top: 60px;
+        left: 0;
+        width: 100vw;
+        padding: 0;
+        z-index: 1000;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.13);
+    }
+    #nav.show {
+        display: flex !important;
+    }
+    #nav li {
+        width: 100%;
+        border-bottom: 1px solid #333;
+        padding: 12px 18px;
+        text-align: left;
+        position: relative; /* Ensure proper positioning for notification badges */
+    }
+    #nav li:last-child {
+        border-bottom: none;
+    }
+    nav ul li a {
+        width: 100%;
+        display: block;
+        color: #fff !important;
+        text-decoration: none;
+        text-align: left;
+        font-size: 1em !important; /* Make nav text and icons smaller */
+        padding: 8px 0;
+    }
+    .nav-icon {
+        font-size: 1.1em !important; /* Make nav icons smaller in hamburger */
+    }
+    /* Ensure notification badges are visible in mobile menu */
+    #mail-count, #cart-count {
+        position: absolute !important;
+        top: 12px !important;
+        right: 18px !important;
+        z-index: 1001 !important;
+    }
+    /* Ensure dropdown menus appear properly in mobile view */
+    .dropdown-menu {
+        position: fixed !important;
+        top: 120px !important;
+        right: 20px !important;
+        z-index: 1002 !important;
+    }
+}
+@media (max-width: 600px) {
+    /* ...existing code... */
+    .hamburger { margin-bottom: 8px; }
+}
+   </style>
+</head>
+<body>
+    <!-- Loading animation overlay -->
+    <div id="loading-overlay" style="display:flex; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(255,255,255,0.7); z-index:99999; align-items:center; justify-content:center;">
+        <div style="border:6px solid #f3f3f3; border-top:6px solid #007bff; border-radius:50%; width:48px; height:48px; animation:spin 1s linear infinite;"></div>
+    </div>
+    <style>
+        @keyframes spin {
+            0% { transform: rotate(0deg);}
+            100% { transform: rotate(360deg);}
+        }
+    </style>
+   <header style="background-color: #333; color: white; padding: 15px 0; position:relative;">
+       <div style="display:flex; align-items:center; justify-content:space-between; padding:0 15px;">
+           <div style="display:flex; align-items:center;">
+               <h1 style="display: flex; align-items: center; gap: 8px; margin: 0;">
+                   Tridex
+                   <i class="fas fa-heart" style="color: #e74c3c; font-size: 0.6em; animation: brandHeartPulse 2s infinite;"></i>
+               </h1>
+               <span id="username-display"></span>
+           </div>
+
+           <!-- Hamburger icon for mobile -->
+           <button id="hamburger-menu" style="background:none; border:none; cursor:pointer; display:none; padding:10px; z-index:1000;">
+               <div style="width:30px; height:3px; background-color:white; margin:6px 0; transition:0.4s;"></div>
+               <div style="width:30px; height:3px; background-color:white; margin:6px 0; transition:0.4s;"></div>
+               <div style="width:30px; height:3px; background-color:white; margin:6px 0; transition:0.4s;"></div>
+           </button>
+
+           <nav id="main-nav" style="display:flex;">
+               <ul id="nav" style="display:flex; list-style:none; margin:0; padding:0; align-items:center;">
+                   <li class="nav"><a href="index.html">Home</a></li>
+                   <li class="nav"><a href="about.html">About</a></li>
+                   <li class="nav"><a href="more.html">More</a></li>
+                   <li class="nav"><a href="contact.html">Contact Us</a></li>
+                   <li style="position: relative;">
+                       <a href="#" class="nav-icon" id="userIcon" style="position: relative;">
+                           <img id="nav-profile-picture" src="" alt="Profile" style="width: 28px; height: 28px; border-radius: 50%; object-fit: cover; display: none; border: 2px solid #fff;">
+                           <span id="nav-profile-placeholder" style="font-size: 1.3em;">👤</span>
+                       </a>
+                       <!-- Move dropdown inside the li element for proper positioning -->
+                       <div class="dropdown-menu" id="userDropdown" style="display:none; position: absolute; top: 100%; right: 0; z-index: 1000;">
+                           <a href="login.html" class="dropdown-btn">Login</a>
+                           <a href="signup.html" class="dropdown-btn">Sign Up</a>
+                       </div>
+                   </li>
+                   <li>
+                       <a href="#" class="nav-icon" id="mailIcon" title="Mailbox">
+                           &#9993;
+                           <span id="mail-count">0</span>
+                       </a>
+                   </li>
+                   <li>
+                       <a href="wishlist.html" class="nav-icon wishlist-nav-btn" id="wishlistIcon" title="My Wishlist">
+                           <i class="fas fa-heart" style="color: #e74c3c; font-size: 1.2em;"></i>
+                           <span id="wishlist-count" style="display: none;">0</span>
+                       </a>
+                   </li>
+                   <li>
+                       <a href="cart.html" class="nav-icon" id="cartIcon" title="Cart" style="position: relative; display: inline-block !important; visibility: visible !important;">
+                           <i class="fas fa-shopping-cart" style="color: #28a745; font-size: 1.2em;"></i>
+                           <span id="cart-count" style="position: absolute; top: -8px; right: -8px; background: #28a745; color: white; border-radius: 50%; padding: 2px 6px; font-size: 10px; font-weight: bold; min-width: 16px; height: 16px; display: flex !important; align-items: center; justify-content: center; line-height: 1; z-index: 10;">0</span>
+                       </a>
+                   </li>
+                   <li>
+                       <a href="#" class="nav-icon" id="notificationIcon" title="Notification Settings" onclick="pushNotificationManager.showNotificationPanel()">
+                           <i class="fas fa-bell" style="color: #ffc107; font-size: 1.2em;"></i>
+                       </a>
+                   </li>
+               </ul>
+           </nav>
+       </div>
+       <form class="search-bar" id="search-form" style="position: relative;">
+           <input type="text" id="search-input" placeholder="Search products... ❤️ Save favorites!">
+           <button type="submit">
+               <span class="search-icon">🔍</span>
+           </button>
+       </form>
+
+   </header>
+
+   <!-- Advanced Search Controls -->
+   <div id="advanced-search-controls" style="background: #f8f9fa; border-bottom: 1px solid #dee2e6; padding: 15px 0;">
+       <div style="max-width: 1200px; margin: 0 auto; padding: 0 15px;">
+           <div class="search-controls" style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap; margin-bottom: 15px;">
+               <button id="filter-toggle" class="filter-toggle" style="background: #007bff; color: white; border: none; padding: 8px 16px; border-radius: 5px; cursor: pointer; display: flex; align-items: center; gap: 5px;">
+                   <i class="fas fa-filter"></i> Filters
+               </button>
+               <select id="sort-select" class="sort-select" style="padding: 8px 12px; border: 1px solid #ccc; border-radius: 5px; background: white;">
+                   <option value="relevance">Most Relevant</option>
+                   <option value="popularity">Most Popular</option>
+                   <option value="price_asc">Price: Low to High</option>
+                   <option value="price_desc">Price: High to Low</option>
+                   <option value="rating">Highest Rated</option>
+                   <option value="newest">Newest First</option>
+               </select>
+               <div class="results-info" style="margin-left: auto;">
+                   <span id="results-count" style="color: #666; font-size: 0.9em;">Loading products...</span>
+               </div>
+           </div>
+
+           <div id="search-filters" class="search-filters" style="display: none; background: white; border: 1px solid #dee2e6; border-radius: 8px; padding: 20px; margin-bottom: 15px;">
+               <div class="filters-content" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
+                   <div class="filter-group">
+                       <h4 style="margin: 0 0 10px 0; color: #333;">Price Range</h4>
+                       <div class="price-range" style="display: flex; align-items: center; gap: 10px;">
+                           <input type="number" id="min-price" placeholder="Min" min="0" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px; width: 80px;">
+                           <span>to</span>
+                           <input type="number" id="max-price" placeholder="Max" min="0" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px; width: 80px;">
+                       </div>
+                   </div>
+
+                   <div class="filter-group">
+                       <h4 style="margin: 0 0 10px 0; color: #333;">Category</h4>
+                       <select id="category-filter" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px; width: 100%;">
+                           <option value="">All Categories</option>
+                       </select>
+                   </div>
+
+                   <div class="filter-group">
+                       <h4 style="margin: 0 0 10px 0; color: #333;">Brand</h4>
+                       <select id="brand-filter" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px; width: 100%;">
+                           <option value="">All Brands</option>
+                       </select>
+                   </div>
+
+                   <div class="filter-group">
+                       <h4 style="margin: 0 0 10px 0; color: #333;">Rating</h4>
+                       <div class="rating-filter" style="display: flex; flex-direction: column; gap: 5px;">
+                           <label style="display: flex; align-items: center; gap: 5px;"><input type="radio" name="rating" value=""> Any Rating</label>
+                           <label style="display: flex; align-items: center; gap: 5px;"><input type="radio" name="rating" value="4"> 4+ Stars</label>
+                           <label style="display: flex; align-items: center; gap: 5px;"><input type="radio" name="rating" value="3"> 3+ Stars</label>
+                           <label style="display: flex; align-items: center; gap: 5px;"><input type="radio" name="rating" value="2"> 2+ Stars</label>
+                       </div>
+                   </div>
+
+                   <div class="filter-group">
+                       <h4 style="margin: 0 0 10px 0; color: #333;">Availability</h4>
+                       <label class="checkbox-label" style="display: flex; align-items: center; gap: 5px;">
+                           <input type="checkbox" id="available-only"> In Stock Only
+                       </label>
+                   </div>
+               </div>
+
+               <div class="filter-actions" style="margin-top: 20px; display: flex; gap: 10px;">
+                   <button id="apply-filters" class="apply-filters-btn" style="background: #28a745; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">Apply Filters</button>
+                   <button id="clear-filters" class="clear-filters-btn" style="background: #6c757d; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">Clear All</button>
+               </div>
+           </div>
+       </div>
+   </div>
+
+   <!-- Search Suggestions Container -->
+   <div id="search-suggestions" class="search-suggestions" style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #ccc; border-top: none; border-radius: 0 0 5px 5px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); z-index: 1000; max-height: 300px; overflow-y: auto;"></div>
+
+   <!-- Search Loading Indicator -->
+   <div id="search-loading" class="search-loading" style="display: none; text-align: center; padding: 20px;">
+       <div class="loading-spinner" style="display: inline-block; border: 3px solid #f3f3f3; border-top: 3px solid #007bff; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite;"></div>
+       <p style="margin-top: 10px; color: #666;">Searching...</p>
+   </div>
+
+   <!-- Quick Actions Bar -->
+   <div class="quick-actions-bar" style="background: linear-gradient(135deg, #007bff, #6f42c1); padding: 15px 0; text-align: center;">
+       <div style="max-width: 1200px; margin: 0 auto; padding: 0 15px; display: flex; justify-content: center; align-items: center; gap: 20px; flex-wrap: wrap;">
+           <div style="color: white; font-size: 1.1em; font-weight: 500;">
+               <i class="fas fa-heart" style="margin-right: 8px; color: #ff6b6b;"></i>
+               Save your favorite items!
+           </div>
+           <a href="wishlist.html" class="wishlist-cta-btn" style="background: rgba(255, 255, 255, 0.2); color: white; text-decoration: none; padding: 10px 20px; border-radius: 25px; font-weight: 600; transition: all 0.3s ease; border: 2px solid rgba(255, 255, 255, 0.3); backdrop-filter: blur(10px);">
+               <i class="fas fa-heart" style="margin-right: 8px;"></i>
+               View My Wishlist
+               <span id="wishlist-cta-count" style="background: #ff6b6b; color: white; border-radius: 50%; padding: 2px 8px; font-size: 12px; margin-left: 8px; display: none;">0</span>
+           </a>
+       </div>
+   </div>
+
+   <!-- Category Navigation -->
+   <div class="category-nav" style="padding:20px 0; background:#f4f4f9; text-align:center; overflow-x:auto; white-space:nowrap; scrollbar-width:none; -ms-overflow-style:none;">
+       <div style="max-width:1200px; margin:0 auto; padding:0 15px;">
+           <h2 style="margin-bottom:15px; color:#333; font-size:1.5rem; text-align:center;">Shop by Category</h2>
+           <div id="category-icons" style="display:flex; gap:20px; justify-content:center; flex-wrap:wrap;">
+               <!-- Category icons will be rendered here by JS -->
+               <div class="category-loading" style="text-align:center; padding:20px;">
+                   <div style="display:inline-block; border:3px solid #f3f3f3; border-top:3px solid #007bff; border-radius:50%; width:30px; height:30px; animation:spin 1s linear infinite;"></div>
+                   <p style="margin-top:10px; color:#666;">Loading categories...</p>
+               </div>
+           </div>
+       </div>
+   </div>
+
+   <!-- Flash Sales Section -->
+   <section class="flash-sales-section" style="background: linear-gradient(135deg, #ff4444, #ff6666); margin: 20px 0; border-radius: 12px; overflow: hidden;">
+       <div style="max-width: 1200px; margin: 0 auto; padding: 20px;">
+           <div class="flash-sales-header" style="text-align: center; margin-bottom: 20px;">
+               <h2 style="color: white; font-size: 28px; margin: 0 0 10px 0; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);">
+                   ⚡ Flash Sales
+               </h2>
+               <p style="color: rgba(255,255,255,0.9); margin: 0; font-size: 16px;">Limited time offers - Don't miss out!</p>
+           </div>
+           <div id="flash-sales-container">
+               <!-- Flash sales will be loaded here -->
+           </div>
+       </div>
+   </section>
+
+
+
+   <section class="product-grid" id="product-grid">
+       <!-- Product cards will be rendered here by JS -->
+   </section>
+
+   <style>
+       /* Category Navigation Styles */
+       .category-item {
+           display: flex;
+           flex-direction: column;
+           align-items: center;
+           cursor: pointer;
+           transition: transform 0.3s ease;
+           padding: 10px;
+           min-width: 100px;
+       }
+
+       .category-item:hover {
+           transform: translateY(-5px);
+       }
+
+       .category-icon {
+           width: 80px;
+           height: 80px;
+           border-radius: 50%;
+           background: #fff;
+           display: flex;
+           align-items: center;
+           justify-content: center;
+           margin-bottom: 8px;
+           box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+           overflow: hidden;
+           transition: all 0.3s ease;
+           border: 2px solid #e0e0e0;
+       }
+
+       .category-icon img {
+           width: 100%;
+           height: 100%;
+           object-fit: cover;
+           border-radius: 50%;
+       }
+
+       .category-item:hover .category-icon {
+           box-shadow: 0 6px 15px rgba(0,123,255,0.3);
+           border-color: #007bff;
+       }
+
+       .category-name {
+           font-size: 0.9rem;
+           color: #333;
+           margin-top: 5px;
+           text-align: center;
+           font-weight: 500;
+       }
+
+       /* Hide scrollbar but keep functionality */
+       .category-nav::-webkit-scrollbar {
+           display: none;
+       }
+
+       @media (max-width: 768px) {
+           .category-icon {
+               width: 70px;
+               height: 70px;
+           }
+
+           .category-name {
+               font-size: 0.8rem;
+           }
+       }
+
+       @media (max-width: 480px) {
+           .category-icon {
+               width: 60px;
+               height: 60px;
+           }
+
+           .category-name {
+               font-size: 0.75rem;
+           }
+
+           .category-nav {
+               padding: 15px 0;
+           }
+       }
+
+       /* Advanced Search Styles */
+       .search-suggestions {
+           background: white;
+           border: 1px solid #ccc;
+           border-top: none;
+           border-radius: 0 0 5px 5px;
+           box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+           max-height: 300px;
+           overflow-y: auto;
+           z-index: 1000;
+       }
+
+       .suggestion-item {
+           padding: 12px 16px;
+           border-bottom: 1px solid #eee;
+           cursor: pointer;
+           display: flex;
+           align-items: center;
+           gap: 10px;
+           transition: background-color 0.2s;
+       }
+
+       .suggestion-item:hover {
+           background-color: #f8f9fa;
+       }
+
+       .suggestion-item:last-child {
+           border-bottom: none;
+       }
+
+       .suggestion-content {
+           flex: 1;
+       }
+
+       .suggestion-name {
+           font-weight: 500;
+           color: #333;
+       }
+
+       .suggestion-subtitle {
+           font-size: 0.85em;
+           color: #666;
+       }
+
+       .filter-toggle.active {
+           background: #0056b3 !important;
+       }
+
+       @media (max-width: 768px) {
+           #advanced-search-controls {
+               padding: 10px 0;
+           }
+
+           .search-controls {
+               flex-direction: column;
+               align-items: stretch !important;
+               gap: 10px !important;
+           }
+
+           .filters-content {
+               grid-template-columns: 1fr !important;
+               gap: 15px !important;
+           }
+
+           .filter-actions {
+               flex-direction: column;
+           }
+
+           .filter-actions button {
+               width: 100%;
+           }
+       }
+
+       /* Enhanced Dropdown Menu Styles */
+       .dropdown-menu {
+           position: absolute;
+           top: 100%;
+           right: 0;
+           background: white;
+           border: 1px solid #ddd;
+           border-radius: 8px;
+           box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+           min-width: 200px;
+           z-index: 1000;
+           overflow: hidden;
+       }
+
+       .dropdown-btn {
+           display: flex;
+           align-items: center;
+           padding: 12px 16px;
+           color: #333;
+           text-decoration: none;
+           transition: background-color 0.3s ease;
+           border-bottom: 1px solid #f0f0f0;
+       }
+
+       .dropdown-btn:last-child {
+           border-bottom: none;
+       }
+
+       .dropdown-btn:hover {
+           background-color: #f8f9fa;
+           color: #007bff;
+       }
+
+       .dropdown-btn i {
+           margin-right: 8px;
+           width: 16px;
+           text-align: center;
+       }
+
+       /* Navigation Icons Styling */
+       #wishlistIcon, #cartIcon {
+           position: relative;
+           font-size: 1.2em;
+           transition: all 0.3s ease;
+       }
+
+       #wishlist-count, #cart-count {
+           position: absolute;
+           top: -8px;
+           right: -8px;
+           color: white;
+           border-radius: 50%;
+           padding: 2px 6px;
+           font-size: 10px;
+           font-weight: bold;
+           min-width: 16px;
+           height: 16px;
+           display: flex;
+           align-items: center;
+           justify-content: center;
+           line-height: 1;
+       }
+
+       #wishlist-count {
+           background: #e74c3c;
+       }
+
+       #cart-count {
+           background: #28a745;
+       }
+
+       /* Mobile Navigation Enhancements */
+       @media (max-width: 900px) {
+           .dropdown-menu {
+               position: fixed !important;
+               top: 120px !important;
+               right: 20px !important;
+               z-index: 1002 !important;
+           }
+       }
+
+       /* Enhanced Navigation Icons Styles */
+       .wishlist-nav-btn, #cartIcon {
+           position: relative;
+           transition: all 0.3s ease;
+       }
+
+       .wishlist-nav-btn:hover, #cartIcon:hover {
+           transform: scale(1.1);
+       }
+
+       .wishlist-nav-btn:hover i {
+           animation: heartBeat 1s infinite;
+       }
+
+       #cartIcon:hover i {
+           animation: cartShake 0.5s infinite;
+       }
+
+       @keyframes heartBeat {
+           0%, 100% { transform: scale(1); }
+           50% { transform: scale(1.2); }
+       }
+
+       @keyframes cartShake {
+           0%, 100% { transform: translateX(0); }
+           25% { transform: translateX(-2px); }
+           75% { transform: translateX(2px); }
+       }
+
+       @keyframes brandHeartPulse {
+           0%, 100% { transform: scale(1); opacity: 0.8; }
+           50% { transform: scale(1.3); opacity: 1; }
+       }
+
+       /* Quick Actions Bar Styles */
+       .wishlist-cta-btn:hover {
+           background: rgba(255, 255, 255, 0.3) !important;
+           transform: translateY(-2px);
+           box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+       }
+
+       /* Floating Wishlist Button Styles */
+       .floating-wishlist-btn:hover {
+           transform: scale(1.1) rotate(5deg);
+           box-shadow: 0 8px 25px rgba(231, 76, 60, 0.6);
+       }
+
+       .floating-wishlist-btn:active {
+           transform: scale(0.95);
+       }
+
+       /* Pulse animation for floating button */
+       @keyframes wishlistPulse {
+           0% { box-shadow: 0 4px 15px rgba(231, 76, 60, 0.4); }
+           50% { box-shadow: 0 4px 25px rgba(231, 76, 60, 0.7); }
+           100% { box-shadow: 0 4px 15px rgba(231, 76, 60, 0.4); }
+       }
+
+       .floating-wishlist-btn {
+           animation: wishlistPulse 3s infinite;
+       }
+
+       /* Responsive adjustments for floating button */
+       @media (max-width: 768px) {
+           #floating-wishlist {
+               bottom: 120px !important;
+               right: 16px !important;
+           }
+
+           .floating-wishlist-btn {
+               width: 48px !important;
+               height: 48px !important;
+           }
+
+           .floating-wishlist-btn i {
+               font-size: 1.3em !important;
+           }
+
+           .quick-actions-bar {
+               padding: 10px 0 !important;
+           }
+
+           .quick-actions-bar > div {
+               flex-direction: column !important;
+               gap: 10px !important;
+           }
+
+           .wishlist-cta-btn {
+               padding: 8px 16px !important;
+               font-size: 14px !important;
+           }
+       }
+   </style>
+
+    <!-- Ban popup for banned users -->
+    <div id="ban-message" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:999999; align-items:center; justify-content:center;">
+        <div style="background:#fff; padding:32px 24px; border-radius:8px; box-shadow:0 2px 12px rgba(0,0,0,0.15); min-width:280px; max-width:90%; text-align:center;">
+            <div style="margin-bottom:10px; font-size:3em; color:#d32f2f;">⚠️</div>
+            <h2 style="margin-bottom:10px; color:#d32f2f; font-size:1.5em;">Account Banned</h2>
+            <p style="margin-bottom:24px; font-size:1.1em; color:#555; line-height:1.5;">Your account has been banned by the administrator. You no longer have access to this site.</p>
+            <p style="margin-bottom:24px; font-size:0.9em; color:#777;">For more information, please contact support.</p>
+            <button id="ban-ok-btn" style="padding:10px 24px; background:#dc3545; color:#fff; border:none; border-radius:5px; font-size:1rem; cursor:pointer; font-weight:bold; transition:all 0.2s ease;">OK</button>
+        </div>
+    </div>
+
+    <script>
+        // Add click handler for the ban message OK button
+        document.addEventListener('DOMContentLoaded', function() {
+            const banOkBtn = document.getElementById('ban-ok-btn');
+            if (banOkBtn) {
+                banOkBtn.addEventListener('click', function() {
+                    // Clear all login data including admin credentials
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('isLoggedIn');
+                    localStorage.removeItem('username');
+                    localStorage.removeItem('currentUser');
+                    localStorage.removeItem('isAdmin');
+                    localStorage.removeItem('verified');
+                    localStorage.removeItem('isGoogleUser');
+                    localStorage.removeItem('adminLoginMethod');
+
+                    // Allow scrolling again
+                    document.body.style.overflow = '';
+
+                    // Redirect to login page with banned parameter
+                    window.location.href = 'login.html?banned=true';
+                });
+            }
+        });
+    </script>
+    <!-- Mailbox Modal -->
+    <div id="mailbox-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.3); z-index:3000; align-items:center; justify-content:center;">
+        <div style="background:#fff; padding:32px 24px; border-radius:8px; box-shadow:0 2px 12px rgba(0,0,0,0.15); min-width:320px; max-width:90vw;">
+            <h2 style="margin-top:0;">Mailbox</h2>
+            <div id="mailbox-messages" style="max-height:300px; overflow-y:auto; margin-bottom:18px;"></div>
+            <button id="close-mailbox" style="padding:8px 18px; background:#007bff; color:#fff; border:none; border-radius:5px; font-size:1rem; cursor:pointer;">Close</button>
+        </div>
+    </div>
+    <!-- Floating Wishlist Button -->
+    <div id="floating-wishlist" style="position: fixed; bottom: 150px; right: 24px; z-index: 4999;">
+        <a href="wishlist.html" class="floating-wishlist-btn" style="background: linear-gradient(135deg, #e74c3c, #c0392b); color: white; text-decoration: none; border-radius: 50%; width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 15px rgba(231, 76, 60, 0.4); transition: all 0.3s ease; position: relative;" title="My Wishlist">
+            <i class="fas fa-heart" style="font-size: 1.5em;"></i>
+            <span id="floating-wishlist-count" style="position: absolute; top: -8px; right: -8px; background: #fff; color: #e74c3c; border-radius: 50%; padding: 2px 6px; font-size: 10px; font-weight: bold; min-width: 18px; height: 18px; display: none; align-items: center; justify-content: center; border: 2px solid #e74c3c;">0</span>
+        </a>
+    </div>
+
+    <!-- Enhanced Chatbot Widget with Responsive Design -->
+    <div id="chatbot-widget" style="position:fixed; bottom:80px; right:24px; z-index:5000;">
+        <button id="chatbot-toggle" style="background:#007bff; color:#fff; border:none; border-radius:50%; width:56px; height:56px; font-size:2em; cursor:pointer; box-shadow:0 4px 8px rgba(0,0,0,0.2); transition:all 0.3s ease;">💬</button>
+        <div id="chatbot-box" style="display:none; width:350px; max-width:calc(100vw - 48px); background:#fff; border-radius:12px; box-shadow:0 4px 16px rgba(0,0,0,0.2); padding:0 0 12px 0; transition:all 0.3s ease; max-height:80vh;">
+            <div style="background:#007bff; color:#fff; border-radius:12px 12px 0 0; padding:14px 18px; font-size:1.2em; display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                    <span style="font-weight:600;">AI Chatbot</span>
+                    <span id="chatbot-status" style="font-size:0.8em; margin-left:8px; opacity:0.8;">Online</span>
+                </div>
+                <button id="chatbot-close" style="background:none; border:none; color:white; font-size:1.2em; cursor:pointer; padding:0; line-height:1;">×</button>
+            </div>
+            <div id="chatbot-messages" style="height:320px; max-height:50vh; overflow-y:auto; padding:16px; scroll-behavior:smooth;"></div>
+            <div id="chatbot-typing" style="display:none; padding:0 16px 8px; font-size:0.9em; color:#666;">
+                <div style="display:flex; align-items:center;">
+                    <div style="width:8px; height:8px; background:#007bff; border-radius:50%; margin-right:4px; animation:typing-dot 1s infinite;"></div>
+                    <div style="width:8px; height:8px; background:#007bff; border-radius:50%; margin-right:4px; animation:typing-dot 1s infinite 0.2s;"></div>
+                    <div style="width:8px; height:8px; background:#007bff; border-radius:50%; animation:typing-dot 1s infinite 0.4s;"></div>
+                </div>
+            </div>
+            <form id="chatbot-form" style="display:flex; flex-wrap:wrap; border-top:1px solid #eee; padding:12px;">
+                <input id="chatbot-input" type="text" placeholder="Ask me anything..." style="flex:1; min-width:150px; border:1px solid #ccc; border-radius:20px; padding:10px 16px; font-size:1em; outline:none; transition:border 0.3s ease; margin-bottom:8px;" required>
+                <button type="submit" style="margin-left:8px; background:#007bff; color:#fff; border:none; border-radius:20px; padding:10px 16px; font-size:1em; cursor:pointer; transition:background 0.3s ease;">Send</button>
+            </form>
+            <div style="text-align:center; font-size:0.8em; color:#888; padding:0 16px;">
+                <p style="margin:4px 0;">Type 'help' to see available commands</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chatbot styles moved to chatbot.css -->
+    </style>
+    <!-- Footer (fixed at bottom) -->
+    <footer style="position:fixed; left:0; bottom:0; width:100vw; background:#222; color:#fff; text-align:center; padding:12px 0; font-size:1rem; z-index:9999;">
+        &copy; 2025 Tridex. All rights reserved. Made with <span style="color:#e25555;">&#10084;&#65039;</span> by Tridex.
+    </footer>
+    <script>
+        // --- Loading overlay helper functions ---
+function showLoading() {
+    const loadingOverlay = document.getElementById('loading-overlay');
+    if (loadingOverlay) loadingOverlay.style.display = 'flex';
+}
+
+function hideLoading() {
+    const loadingOverlay = document.getElementById('loading-overlay');
+    if (loadingOverlay) loadingOverlay.style.display = 'none';
+}
+
+// --- Base URL helper function ---
+function getBaseUrl() {
+    // Determine the correct base URL for API calls
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        // Local development - use the Node.js server port
+        return 'http://localhost:3000';
+    } else if (window.location.hostname.includes('onrender.com')) {
+        // Production on Render
+        return 'https://tridex1.onrender.com';
+    } else if (window.location.hostname.includes('github.io') || window.location.protocol === 'file:') {
+        // GitHub Pages or file:// protocol - use production server
+        return 'https://tridex1.onrender.com';
+    } else {
+        // Default to production server for any other case
+        return 'https://tridex1.onrender.com';
+    }
+}
+
+// Helper function to check if server is running
+async function checkServerConnection() {
+    try {
+        const baseUrl = getBaseUrl();
+        const response = await fetch(`${baseUrl}/products`, {
+            method: 'HEAD',
+            timeout: 5000
+        });
+        return response.ok;
+    } catch (error) {
+        console.log('Server connection check failed:', error.message);
+        return false;
+    }
+}
+
+// --- withLoading helper for loading overlay ---
+function withLoading(action) {
+    return async function(...args) {
+        showLoading();
+        try {
+            await action(...args);
+        } catch (error) {
+            console.error('Error during action:', error);
+        } finally {
+            hideLoading();
+        }
+    };
+}
+
+// Add event listeners for page load/unload
+window.addEventListener('load', function() {
+    hideLoading();
+});
+window.addEventListener('beforeunload', function() {
+    showLoading();
+});
+// --- Always hide loading overlay on any page show (including bfcache/back-forward navigation) ---
+    window.addEventListener('pageshow', function() {
+        hideLoading();
+    });
+    // As a safety net, hide loading overlay immediately in case of script errors or early navigation
+    hideLoading();
+
+// Cart count update function
+function updateCartCount() {
+    const cartCountElement = document.getElementById('cart-count');
+    if (cartCountElement) {
+        const username = localStorage.getItem('username') || localStorage.getItem('currentUser');
+        let cart = [];
+        try {
+            cart = JSON.parse(localStorage.getItem('cart')) || [];
+        } catch (e) {
+            cart = [];
+        }
+        cartCountElement.textContent = cart.length || '0';
+        cartCountElement.style.display = 'flex'; // Always show cart icon
+    }
+}
+
+// --- Hamburger menu functionality ---
+document.addEventListener('DOMContentLoaded', function() {
+    const hamburger = document.getElementById('hamburger-menu');
+    const nav = document.getElementById('nav');
+
+    // Toggle navigation when hamburger is clicked
+    hamburger.addEventListener('click', function(e) {
+        e.stopPropagation(); // Prevent event from bubbling up
+        nav.classList.toggle('show');
+
+        // Animate hamburger icon to X when menu is open
+        const divs = hamburger.querySelectorAll('div');
+        if (nav.classList.contains('show')) {
+            // X shape when menu is open
+            divs[0].style.transform = 'rotate(-45deg) translate(-5px, 6px)';
+            divs[1].style.opacity = '0';
+            divs[2].style.transform = 'rotate(45deg) translate(-5px, -6px)';
+        } else {
+            // Reset to hamburger shape
+            divs[0].style.transform = 'none';
+            divs[1].style.opacity = '1';
+            divs[2].style.transform = 'none';
+        }
+    });
+
+    // Close navigation when clicking outside
+    document.addEventListener('click', function(event) {
+        if (!hamburger.contains(event.target) && !nav.contains(event.target) && nav.classList.contains('show')) {
+            nav.classList.remove('show');
+
+            // Reset hamburger icon
+            const divs = hamburger.querySelectorAll('div');
+            divs[0].style.transform = 'none';
+            divs[1].style.opacity = '1';
+            divs[2].style.transform = 'none';
+        }
+    });
+
+    // Close navigation when window is resized
+    window.addEventListener('resize', function() {
+        if (window.innerWidth > 992 && nav.classList.contains('show')) {
+            nav.classList.remove('show');
+
+            // Reset hamburger icon
+            const divs = hamburger.querySelectorAll('div');
+            if (divs.length > 0) {
+                divs[0].style.transform = 'none';
+                divs[1].style.opacity = '1';
+                divs[2].style.transform = 'none';
+            }
+        }
+    });
+});
+
+// Ban check logic (must be first in script)
+(function() {
+    // Get the current username
+    const username = localStorage.getItem('username') || localStorage.getItem('currentUser');
+
+    console.log('Index page loaded, checking ban status for user:', username);
+
+    // Function to check if the user is banned
+    function checkUserBan() {
+        try {
+            // Check if the ban system is available
+            if (window.banSystem) {
+                // Check if the user is banned or if there's a ban flag in sessionStorage
+                if (window.banSystem.isUserBanned(username) || sessionStorage.getItem('userBanned') === 'true') {
+                    console.log('User is banned or ban flag found, showing ban message');
+
+                    // Use the ban system to handle the ban
+                    window.banSystem.checkCurrentUserBan();
+
+                    // Stop further script execution
+                    throw new Error('User is banned');
+                }
+            } else if (sessionStorage.getItem('userBanned') === 'true') {
+                // If the ban system isn't loaded yet but we have a ban flag, show a basic ban message
+                console.log('Ban flag found in sessionStorage but ban system not loaded');
+
+                // Clear all login data including admin credentials
+                localStorage.removeItem('token');
+                localStorage.removeItem('isLoggedIn');
+                localStorage.removeItem('username');
+                localStorage.removeItem('currentUser');
+                localStorage.removeItem('isAdmin');
+                localStorage.removeItem('verified');
+                localStorage.removeItem('isGoogleUser');
+                localStorage.removeItem('adminLoginMethod');
+
+                // Redirect to login page with banned parameter
+                window.location.href = 'login.html?banned=true';
+
+                // Stop further script execution
+                throw new Error('User is banned (from sessionStorage)');
+            }
+        } catch (error) {
+            if (error.message.includes('User is banned')) {
+                throw error; // Re-throw ban-related errors
+            }
+            console.error('Error checking ban status:', error);
+        }
+    }
+
+    // Function to wait for the ban system to load
+    function waitForBanSystem() {
+        // Check if the ban system is already loaded
+        if (window.banSystem) {
+            checkUserBan();
+            return;
+        }
+
+        console.log('Ban system not loaded yet, waiting...');
+
+        // Set up a polling mechanism to check for the ban system
+        let attempts = 0;
+        const maxAttempts = 50; // 5 seconds at 100ms intervals
+
+        const checkInterval = setInterval(function() {
+            attempts++;
+
+            if (window.banSystem) {
+                console.log('Ban system loaded after', attempts, 'attempts');
+                clearInterval(checkInterval);
+                checkUserBan();
+            } else if (attempts >= maxAttempts) {
+                console.log('Ban system failed to load after', maxAttempts, 'attempts');
+                clearInterval(checkInterval);
+
+                // Check if we have a ban flag in sessionStorage even though the ban system failed to load
+                if (sessionStorage.getItem('userBanned') === 'true') {
+                    console.log('Ban flag found in sessionStorage but ban system failed to load');
+
+                    // Clear all login data including admin credentials
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('isLoggedIn');
+                    localStorage.removeItem('username');
+                    localStorage.removeItem('currentUser');
+                    localStorage.removeItem('isAdmin');
+                    localStorage.removeItem('verified');
+                    localStorage.removeItem('isGoogleUser');
+                    localStorage.removeItem('adminLoginMethod');
+
+                    // Redirect to login page with banned parameter
+                    window.location.href = 'login.html?banned=true';
+                }
+            }
+        }, 100);
+    }
+
+    // Check ban status immediately
+    waitForBanSystem();
+
+    // Also check after DOM is loaded
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('DOM loaded, checking ban status again');
+        checkUserBan();
+    });
+
+    // Check again after a short delay to catch any race conditions
+    setTimeout(checkUserBan, 1000);
+
+    // Check again after the page is fully loaded
+    window.addEventListener('load', function() {
+        console.log('Window loaded, checking ban status again');
+        checkUserBan();
+    });
+})();
+
+// Fix: define verifiedUsers as an empty array to prevent JS errors
+const verifiedUsers = [];
+
+// Show/hide buttons based on login status - now handled by AuthManager
+// Wait for AuthManager to initialize
+let isLoggedIn = false;
+let username = null;
+
+// Check if AuthManager is available
+if (window.authManager) {
+    isLoggedIn = window.authManager.isUserLoggedIn();
+    username = window.authManager.getUsername();
+} else {
+    // Fallback to localStorage for backward compatibility during transition
+    isLoggedIn = localStorage.getItem('isLoggedIn') || localStorage.getItem('token');
+    username = localStorage.getItem('username') || localStorage.getItem('currentUser');
+}
+
+// Debug login status
+console.log('Login Status Debug:', {
+    isLoggedIn: localStorage.getItem('isLoggedIn'),
+    token: localStorage.getItem('token'),
+    username: username,
+    finalLoginStatus: isLoggedIn,
+    allLocalStorage: {...localStorage}
+});
+
+// Force show cart icon regardless of login status
+let cartIconElement = document.getElementById('cartIcon');
+let cartCountElement = document.getElementById('cart-count');
+if (cartIconElement) {
+    cartIconElement.style.display = 'inline-block';
+    cartIconElement.style.visibility = 'visible';
+}
+if (cartCountElement) {
+    cartCountElement.style.display = 'flex';
+    cartCountElement.style.visibility = 'visible';
+}
+
+// Display name if available (for personalization), fallback to username
+if (isLoggedIn && username) {
+    // Load user data to get full name and profile picture
+    loadUserDataForNavigation();
+}
+
+// Function to load user data for navigation display
+async function loadUserDataForNavigation() {
+    try {
+        const username = localStorage.getItem('username') || localStorage.getItem('currentUser');
+        const token = localStorage.getItem('token');
+
+        if (!username || !token) return;
+
+        // Fetch user data from server to get full name and profile picture
+        const baseUrl = getBaseUrl();
+        const response = await fetch(`${baseUrl}/users/profile?username=${encodeURIComponent(username)}`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+                'X-Username': username
+            }
+        });
+
+        if (response.ok) {
+            const userData = await response.json();
+
+            // Display username for identification, not full name
+            const verifiedUsers = JSON.parse(localStorage.getItem('verifiedUsers') || '[]');
+
+            document.getElementById('username-display').innerHTML =
+                `Welcome, <span style="text-transform:uppercase; letter-spacing:0.5px; font-weight:500;">${username}</span> ${verifiedUsers.includes(username) ? '<span title="Verified" style="color:#1da1f2; font-size:1.1em;">✓</span>' : ''}`;
+
+            // Display profile picture in navigation
+            displayNavProfilePicture(userData.profilePicture);
+        } else {
+            // Fallback to localStorage data - use username, not full name
+            const verifiedUsers = JSON.parse(localStorage.getItem('verifiedUsers') || '[]');
+
+            document.getElementById('username-display').innerHTML =
+                `Welcome, <span style="text-transform:uppercase; letter-spacing:0.5px; font-weight:500;">${username}</span> ${verifiedUsers.includes(username) ? '<span title="Verified" style="color:#1da1f2; font-size:1.1em;">✓</span>' : ''}`;
+        }
+    } catch (error) {
+        console.log('Could not load user data:', error);
+        // Fallback to localStorage data - use username, not full name
+        const verifiedUsers = JSON.parse(localStorage.getItem('verifiedUsers') || '[]');
+
+        document.getElementById('username-display').innerHTML =
+            `Welcome, <span style="text-transform:uppercase; letter-spacing:0.5px; font-weight:500;">${username}</span> ${verifiedUsers.includes(username) ? '<span title="Verified" style="color:#1da1f2; font-size:1.1em;">✓</span>' : ''}`;
+    }
+}
+
+// Function to display profile picture in navigation
+function displayNavProfilePicture(profilePictureUrl) {
+    const navProfilePicture = document.getElementById('nav-profile-picture');
+    const navProfilePlaceholder = document.getElementById('nav-profile-placeholder');
+
+    if (profilePictureUrl && navProfilePicture && navProfilePlaceholder) {
+        navProfilePicture.src = profilePictureUrl;
+        navProfilePicture.style.display = 'inline-block';
+        navProfilePlaceholder.style.display = 'none';
+    } else if (navProfilePicture && navProfilePlaceholder) {
+        navProfilePicture.style.display = 'none';
+        navProfilePlaceholder.style.display = 'inline';
+    }
+}
+// Consolidated profile dropdown handler - single clean implementation
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🔧 Initializing profile dropdown...');
+
+    const userIcon = document.getElementById('userIcon');
+    const dropdown = document.getElementById('userDropdown');
+
+    // Ensure userIcon and dropdown exist
+    if (!userIcon || !dropdown) {
+        console.error('❌ User icon or dropdown not found!');
+        return;
+    }
+
+    console.log('✅ Profile elements found');
+
+    // Check login status properly
+    const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true' || localStorage.getItem('token');
+    const username = localStorage.getItem('username') || localStorage.getItem('currentUser');
+
+    console.log('🔍 Login status:', { isLoggedIn, username });
+
+    // Make sure dropdown is properly positioned
+    dropdown.style.position = 'absolute';
+    dropdown.style.zIndex = '1000';
+
+    // Setup dropdown content based on login status
+    function setupDropdownContent() {
+        if (isLoggedIn && username) {
+            // Create logged-in user dropdown menu
+            dropdown.innerHTML = `
+                <a href="profile.html" class="dropdown-btn">
+                    <i class="fas fa-user"></i> My Profile
+                </a>
+                <a href="orders.html" class="dropdown-btn">
+                    <i class="fas fa-box"></i> My Orders
+                </a>
+                <a href="wishlist.html" class="dropdown-btn" style="background: linear-gradient(135deg, #ffe6e6, #fff0f0); border-left: 3px solid #e74c3c;">
+                    <i class="fas fa-heart" style="color: #e74c3c;"></i> My Wishlist
+                    <span id="dropdown-wishlist-count" style="display: none; background: #e74c3c; color: white; border-radius: 50%; padding: 2px 6px; font-size: 10px; margin-left: 5px; font-weight: bold;">0</span>
+                </a>
+                <div style="border-top: 1px solid #eee; margin: 5px 0;"></div>
+                <a href="#" class="dropdown-btn" id="dropdown-logout">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </a>
+            `;
+
+            // Handle logout
+            const logoutBtn = document.getElementById('dropdown-logout');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    console.log('🚪 Logging out...');
+
+                    // Clear all login data
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('isLoggedIn');
+                    localStorage.removeItem('username');
+                    localStorage.removeItem('currentUser');
+                    localStorage.removeItem('userId');
+                    localStorage.removeItem('verified');
+                    localStorage.removeItem('isGoogleUser');
+
+                    // Redirect to login page
+                    window.location.href = 'login.html';
+                });
+            }
+        } else {
+            // Not logged in - show login/signup options
+            dropdown.innerHTML = `
+                <a href="login.html" class="dropdown-btn">
+                    <i class="fas fa-sign-in-alt"></i> Login
+                </a>
+                <a href="signup.html" class="dropdown-btn">
+                    <i class="fas fa-user-plus"></i> Sign Up
+                </a>
+                <a href="profile.html" class="dropdown-btn">
+                    <i class="fas fa-user"></i> View Profile (Guest)
+                </a>
+            `;
+        }
+    }
+
+    // Setup initial dropdown content
+    setupDropdownContent();
+
+    // Single click handler for profile icon - no conflicts!
+    userIcon.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        console.log('👤 Profile icon clicked!');
+
+        // Toggle dropdown visibility
+        const isVisible = dropdown.style.display === 'block';
+        dropdown.style.display = isVisible ? 'none' : 'block';
+
+        console.log('📋 Dropdown toggled:', dropdown.style.display);
+    });
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!userIcon.contains(e.target) && !dropdown.contains(e.target)) {
+            dropdown.style.display = 'none';
+        }
+    });
+
+    // Debug functions for testing
+    window.testLogin = function() {
+        localStorage.setItem('isLoggedIn', 'true');
+        localStorage.setItem('username', 'testuser');
+        localStorage.setItem('currentUser', 'testuser');
+        localStorage.setItem('token', 'test-token');
+        console.log('🧪 Test login applied. Refresh the page.');
+        location.reload();
+    };
+
+    window.testLogout = function() {
+        localStorage.removeItem('isLoggedIn');
+        localStorage.removeItem('username');
+        localStorage.removeItem('currentUser');
+        localStorage.removeItem('token');
+        console.log('🧪 Test logout applied. Refresh the page.');
+        location.reload();
+    };
+
+    // Debug function to check dropdown positioning
+    window.debugDropdown = function() {
+        const dropdown = document.getElementById('userDropdown');
+        const userIcon = document.getElementById('userIcon');
+
+        console.log('🔍 Dropdown Debug Info:');
+        console.log('Dropdown element:', dropdown);
+        console.log('Dropdown display:', dropdown.style.display);
+        console.log('Dropdown computed style:', window.getComputedStyle(dropdown));
+        console.log('Dropdown position:', dropdown.getBoundingClientRect());
+        console.log('User icon position:', userIcon.getBoundingClientRect());
+
+        // Force show dropdown for testing
+        dropdown.style.display = 'block';
+        dropdown.style.visibility = 'visible';
+        dropdown.style.opacity = '1';
+        dropdown.style.zIndex = '9999';
+
+        console.log('✅ Dropdown forced visible for testing');
+    };
+
+    console.log('✅ Profile dropdown initialized successfully!');
+});
+
+// Redirect to login if not logged in
+if (!isLoggedIn) {
+    // User is not logged in
+}
+
+
+
+// --- Patch product rendering to record views/likes/searches ---
+function renderProducts(products) {
+    try {
+        const grid = document.getElementById('product-grid');
+        grid.innerHTML = '';
+        if (!products || products.length === 0) {
+            grid.innerHTML = '<div style="text-align:center; color:#888; font-size:1.2em; padding:32px 0;">No results found.</div>';
+            return;
+        }
+        products.forEach(product => {
+            try {
+                const div = document.createElement('div');
+                div.className = 'product-card';
+                div.innerHTML = `
+                    <div class="product-image-container" style="position: relative;">
+                        <img src="${product.image || ''}" alt="${product.name}" style="cursor:pointer;" data-id="${product._id}">
+                        <div class="product-actions" style="position: absolute; top: 10px; right: 10px; display: flex; flex-direction: column; gap: 8px;">
+                            <button class="wishlist-btn" data-product-id="${product._id}" title="Add to Wishlist" style="background: rgba(255, 255, 255, 0.9); border: none; width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);">
+                                <i class="far fa-heart" style="color: #6c757d; font-size: 14px;"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <h3>${product.name}</h3>
+                    <p>₹${product.price}</p>
+                `;
+                div.querySelector('img').onclick = function(e) {
+                    history.pushState({ page: 'index', scrollPos: window.scrollY }, '', window.location.href);
+                    window.location.href = `product-details.html?id=${product._id}`;
+                };
+
+                // Add wishlist button functionality
+                const wishlistBtn = div.querySelector('.wishlist-btn');
+                if (wishlistBtn) {
+                    wishlistBtn.onclick = function(e) {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        handleWishlistToggle(product._id, wishlistBtn);
+                    };
+                }
+
+                grid.appendChild(div);
+            } catch (err) {
+                console.error('Error rendering product:', product, err);
+            }
+        });
+    } catch (err) {
+        console.error('Error in renderProducts:', err);
+        document.getElementById('product-grid').innerHTML = '<div style="text-align:center; color:#888; font-size:1.2em; padding:32px 0;">Failed to render products.<br>' + err + '</div>';
+    }
+}
+
+// Initialize advanced search functionality
+function initializeAdvancedSearch() {
+    // Wait for advanced search script to load
+    if (typeof AdvancedSearch !== 'undefined') {
+        // Initialize advanced search but don't let it override our main page functionality
+        window.advancedSearch = new AdvancedSearch();
+
+        // Override the advanced search's product display to use our existing renderProducts function
+        if (window.advancedSearch) {
+            const originalDisplayResults = window.advancedSearch.displaySearchResults;
+            window.advancedSearch.displaySearchResults = function(data) {
+                // Update results count
+                const resultsCount = document.getElementById('results-count');
+                if (resultsCount) {
+                    const count = data.pagination?.totalCount || 0;
+                    resultsCount.textContent = `${count} product${count !== 1 ? 's' : ''} found`;
+                }
+
+                // Use our existing renderProducts function
+                if (data.products && data.products.length > 0) {
+                    renderProducts(data.products);
+                } else {
+                    document.getElementById('product-grid').innerHTML = `
+                        <div style="text-align:center; color:#888; font-size:1.2em; padding:32px 0;">
+                            <div style="font-size:3em; margin-bottom:10px;">🔍</div>
+                            <h3>No products found</h3>
+                            <p>Try adjusting your search terms or filters</p>
+                        </div>
+                    `;
+                }
+
+                // Update pagination if needed
+                if (this.updatePagination) {
+                    this.updatePagination(data.pagination);
+                }
+            };
+        }
+    } else {
+        // Retry after a short delay if AdvancedSearch is not yet loaded
+        setTimeout(initializeAdvancedSearch, 100);
+    }
+}
+
+// Enhanced search form with advanced search integration
+const searchForm = document.getElementById('search-form');
+if (searchForm) {
+    searchForm.onsubmit = function(e) {
+        e.preventDefault();
+        const query = document.getElementById('search-input').value.trim();
+        if (query) {
+            // Use advanced search if available, otherwise fallback to basic search
+            if (window.advancedSearch) {
+                window.advancedSearch.search(query);
+            } else {
+                fetchAndRenderProducts(query);
+            }
+        }
+    };
+}
+// --- Enhanced product fetching with advanced search support ---
+let allProductsCache = [];
+async function fetchAndRenderProducts(filter = "") {
+    try {
+        let products;
+        let totalCount = 0;
+
+        if (filter && filter.trim()) {
+            // Use advanced search endpoint for search queries
+            const searchParams = new URLSearchParams({
+                q: filter.trim(),
+                sortBy: 'relevance',
+                page: 1,
+                limit: 50
+            });
+
+            const headers = {};
+            const userId = localStorage.getItem('userId');
+            const username = localStorage.getItem('username');
+            if (userId) headers.userid = userId;
+            if (username) headers.username = username;
+
+            const baseUrl = getBaseUrl();
+            const res = await fetch(`${baseUrl}/products/search?${searchParams}`, { headers });
+            const data = await res.json();
+            products = data.products || [];
+            totalCount = data.pagination?.totalCount || products.length;
+
+            // Update results count
+            const resultsCount = document.getElementById('results-count');
+            if (resultsCount) {
+                resultsCount.textContent = `${totalCount} product${totalCount !== 1 ? 's' : ''} found`;
+            }
+        } else {
+            // Use regular products endpoint for browsing
+            const baseUrl = getBaseUrl();
+            const res = await fetch(`${baseUrl}/products`);
+            products = await res.json();
+            allProductsCache = products;
+            totalCount = products.length;
+
+            // Update results count
+            const resultsCount = document.getElementById('results-count');
+            if (resultsCount) {
+                resultsCount.textContent = `${totalCount} product${totalCount !== 1 ? 's' : ''} available`;
+            }
+        }
+
+        renderProducts(products);
+    } catch (e) {
+        console.error('Error fetching products:', e);
+        document.getElementById('product-grid').innerHTML = `<div style="text-align:center; color:#888; font-size:1.2em; padding:32px 0;">Unable to load products at this time.</div>`;
+
+        // Update results count on error
+        const resultsCount = document.getElementById('results-count');
+        if (resultsCount) {
+            resultsCount.textContent = 'Error loading products';
+        }
+    } finally {
+        hideLoading();
+    }
+}
+
+
+
+    // Initialize advanced search functionality
+    initializeAdvancedSearch();
+
+    // Initial render
+    fetchAndRenderProducts();
+
+    // Handle browser back button navigation
+    window.addEventListener('popstate', function(event) {
+        if (event.state && event.state.page === 'index') {
+            // Restore scroll position if available
+            if (event.state.scrollPos) {
+                setTimeout(() => {
+                    window.scrollTo(0, event.state.scrollPos);
+                }, 100);
+            }
+        }
+    });
+
+    // Cart icon click
+    document.getElementById('cartIcon').onclick = withLoading(function(e) {
+        e.preventDefault();
+        window.location.href = 'cart.html';
+    });
+
+    // Mailbox open
+    document.getElementById('mailIcon').onclick = withLoading(async function(e) {
+        e.preventDefault();
+
+        const isLoggedIn = localStorage.getItem('isLoggedIn');
+        const hasToken = localStorage.getItem('token');
+        const username = localStorage.getItem('username') || localStorage.getItem('currentUser');
+
+        // If we have a token but no isLoggedIn flag, set it
+        if (hasToken && !isLoggedIn) {
+            localStorage.setItem('isLoggedIn', 'true');
+        }
+
+        // Check login status after potential update
+        const isActuallyLoggedIn = localStorage.getItem('isLoggedIn') || hasToken;
+
+        if (!isActuallyLoggedIn) {
+            await tridexInfo('You must login to view your mailbox.', 'Login Required');
+            window.location.href = 'login.html';
+            return;
+        }
+
+        // Fetch announcements from server including user-specific ones
+        let messages = [];
+        try {
+            const baseUrl = getBaseUrl();
+            const response = await fetch(`${baseUrl}/announcements?username=${encodeURIComponent(username)}`);
+            if (response.ok) {
+                messages = await response.json();
+            } else {
+                console.error('Failed to fetch announcements:', response.status);
+                // Fallback to local storage if server fetch fails
+                messages = JSON.parse(localStorage.getItem('adminMessages')) || [];
+            }
+        } catch (e) {
+            console.error('Error fetching announcements:', e);
+            // Fallback to local storage
+            messages = JSON.parse(localStorage.getItem('adminMessages')) || [];
+        }
+
+        const lastSeenKey = username ? `mailLastSeen_${username}` : 'mailLastSeen_guest';
+        localStorage.setItem(lastSeenKey, messages.length);
+        updateMailCount();
+
+        const mailbox = document.getElementById('mailbox-modal');
+        const messagesDiv = document.getElementById('mailbox-messages');
+
+        if (messages.length === 0) {
+            messagesDiv.innerHTML = '<p style="color:#888;">No messages.</p>';
+        } else {
+            messagesDiv.innerHTML = messages.map(msg => {
+                // Check if it's a welcome message
+                const isWelcomeMessage = msg.isWelcomeMessage;
+                // Only show the special styling and "Mark as Read" button if it hasn't been read
+                const isUnreadWelcome = isWelcomeMessage && !msg.isRead;
+                const welcomeClass = isUnreadWelcome ? 'welcome-message' : '';
+                const welcomeStyle = isUnreadWelcome ? 'background-color:#f8f9fa; border-left:4px solid #28a745; padding-left:12px;' : '';
+
+                return `
+                    <div class="message-item ${welcomeClass}" data-id="${msg._id}" style="border-bottom:1px solid #eee; padding:12px 0; ${welcomeStyle}">
+                        <strong>${msg.title || 'Announcement'}</strong>
+                        <div style="font-size:0.97em; margin-top:4px;">${msg.message || msg.body}</div>
+                        <div style="font-size:0.85em; color:#888; margin-top:2px; display:flex; justify-content:space-between;">
+                            <span>${new Date(msg.createdAt).toLocaleString() || msg.date || ''}</span>
+                            ${isUnreadWelcome ?
+                                `<button class="mark-read-btn" data-id="${msg._id}" style="background:#28a745; color:white; border:none; border-radius:4px; padding:2px 8px; cursor:pointer; font-size:0.9em;">Mark as Read</button>`
+                                : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            // Add event listeners to "Mark as Read" buttons
+            const markReadButtons = document.querySelectorAll('.mark-read-btn');
+            markReadButtons.forEach(button => {
+                button.addEventListener('click', async function(e) {
+                    e.stopPropagation(); // Prevent event bubbling
+
+                    const messageId = this.getAttribute('data-id');
+                    try {
+                        const baseUrl = getBaseUrl();
+                        const response = await fetch(`${baseUrl}/announcements/${messageId}/read`, {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            }
+                        });
+
+                        if (response.ok) {
+                            // Remove the welcome message styling
+                            const messageItem = this.closest('.message-item');
+                            messageItem.classList.remove('welcome-message');
+                            messageItem.style.backgroundColor = '';
+                            messageItem.style.borderLeft = '';
+                            messageItem.style.paddingLeft = '';
+
+                            // Remove the button
+                            this.remove();
+
+                            // Update the count
+                            updateMailCount();
+                        } else {
+                            console.error('Failed to mark message as read:', response.status);
+                        }
+                    } catch (error) {
+                        console.error('Error marking message as read:', error);
+                    }
+                });
+            });
+        }
+
+        mailbox.style.display = 'flex';
+    });
+
+    // Close mailbox
+    document.getElementById('close-mailbox').onclick = withLoading(function() {
+        document.getElementById('mailbox-modal').style.display = 'none';
+    });
+
+
+
+    // Mail notification count logic
+    async function updateMailCount() {
+        // Check login status with both methods
+        const isLoggedIn = localStorage.getItem('isLoggedIn');
+        const hasToken = localStorage.getItem('token');
+        const isActuallyLoggedIn = isLoggedIn || hasToken;
+
+        // Use username from either source
+        const username = localStorage.getItem('username') || localStorage.getItem('currentUser');
+
+        // If we have a token but no isLoggedIn flag, set it
+        if (hasToken && !isLoggedIn) {
+            localStorage.setItem('isLoggedIn', 'true');
+        }
+
+        // If not logged in, hide the mail count
+        const mailCount = document.getElementById('mail-count');
+        if (!isActuallyLoggedIn || !username) {
+            mailCount.style.display = 'none';
+            return;
+        }
+
+        // Try to fetch from server first
+        let messages = [];
+        let unreadCount = 0;
+
+        try {
+            const baseUrl = getBaseUrl();
+            const response = await fetch(`${baseUrl}/announcements?username=${encodeURIComponent(username)}`);
+            if (response.ok) {
+                messages = await response.json();
+
+                // Count unread welcome messages that are specifically for this user
+                unreadCount = messages.filter(msg =>
+                    msg.isWelcomeMessage &&
+                    !msg.isRead &&
+                    msg.forUser === username
+                ).length;
+
+                // Store the messages in localStorage for offline access
+                localStorage.setItem('adminMessages', JSON.stringify(messages));
+            } else {
+                console.error('Failed to fetch announcements for count:', response.status);
+                // Fallback to local storage
+                messages = JSON.parse(localStorage.getItem('adminMessages')) || [];
+            }
+        } catch (e) {
+            console.error('Error fetching announcements for count:', e);
+            // Fallback to local storage
+            try {
+                messages = JSON.parse(localStorage.getItem('adminMessages')) || [];
+            } catch (e) {
+                messages = [];
+            }
+        }
+
+        // If we didn't get unread count from server, calculate from local storage
+        if (unreadCount === 0) {
+            const lastSeenKey = username ? `mailLastSeen_${username}` : 'mailLastSeen_guest';
+            const lastSeen = Number(localStorage.getItem(lastSeenKey) || 0);
+            unreadCount = Math.max(messages.length - lastSeen, 0);
+        }
+
+        // Update the badge
+        if (unreadCount > 0) {
+            mailCount.textContent = unreadCount;
+            mailCount.style.display = '';
+        } else {
+            mailCount.style.display = 'none';
+        }
+    }
+    updateMailCount();
+
+    // This mailbox click handler is now handled above with the enhanced implementation
+
+    // Fix: Ensure close button works even if DOMContentLoaded is not fired yet
+    document.getElementById('close-mailbox').onclick = function() {
+        document.getElementById('mailbox-modal').style.display = 'none';
+    };
+
+    // Update mail count when messages change (from other tabs)
+    window.addEventListener('storage', function(e) {
+        if (e.key === 'adminMessages') updateMailCount();
+    });
+
+        // Chatbot logic moved to chatbot.js and chatbot-ai.js
+        // The chatbot will be initialized when the DOM is fully loaded
+
+        // Cart icon logic
+    function updateCartCount() {
+        const isLoggedIn = localStorage.getItem('isLoggedIn');
+        // Check for token as well (for backward compatibility)
+        const hasToken = localStorage.getItem('token');
+        // Use username from either source
+        const username = localStorage.getItem('currentUser') || localStorage.getItem('username');
+
+        // If we have a token but no isLoggedIn flag, set it
+        if (hasToken && !isLoggedIn) {
+            localStorage.setItem('isLoggedIn', 'true');
+        }
+
+        // If we have a username but no currentUser, set it
+        if (localStorage.getItem('username') && !localStorage.getItem('currentUser')) {
+            localStorage.setItem('currentUser', localStorage.getItem('username'));
+        }
+
+        // Recheck login status after potential updates
+        const isActuallyLoggedIn = localStorage.getItem('isLoggedIn') || hasToken;
+
+        // Always show cart icon, even if not logged in
+        let cartCountElement = document.getElementById('cart-count');
+        if (!isActuallyLoggedIn || !username) {
+            if (cartCountElement) {
+                cartCountElement.textContent = '0';
+                cartCountElement.style.display = 'flex';
+            }
+            return;
+        }
+        // Ensure cart is isolated per user
+        const cartUser = localStorage.getItem('cartUser');
+        if (cartUser !== username) {
+            const userCart = localStorage.getItem('cart_' + username);
+            if (userCart) {
+                localStorage.setItem('cart', userCart);
+            } else {
+                localStorage.removeItem('cart');
+            }
+            localStorage.setItem('cartUser', username);
+        }
+        let cart = [];
+        try { cart = JSON.parse(localStorage.getItem('cart')) || []; } catch (e) { cart = []; }
+        const count = cart.length;
+        cartCountElement = document.getElementById('cart-count');
+        if (cartCountElement) {
+            cartCountElement.textContent = count || '0';
+            cartCountElement.style.display = 'flex'; // Always show cart icon
+        }
+    }
+    updateCartCount();
+
+    // Listen for cart changes from other tabs/windows
+    window.addEventListener('storage', function(e) {
+        if (e.key === 'cart') updateCartCount();
+    });
+
+    // Cart icon click: show cart page or popup (redirect to cart.html)
+    const cartIcon = document.getElementById('cartIcon');
+    if (cartIcon) {
+        cartIcon.onclick = async function(e) {
+            e.preventDefault();
+            const isLoggedIn = localStorage.getItem('isLoggedIn');
+            const hasToken = localStorage.getItem('token');
+
+            // If we have a token but no isLoggedIn flag, set it
+            if (hasToken && !isLoggedIn) {
+                localStorage.setItem('isLoggedIn', 'true');
+            }
+
+            // Check login status after potential update
+            const isActuallyLoggedIn = localStorage.getItem('isLoggedIn') || hasToken;
+
+            if (!isActuallyLoggedIn) {
+                if (window.tridexInfo) {
+                    await tridexInfo('You must login to view your cart.', 'Login Required');
+                } else {
+                    alert('You must login to view your cart.');
+                }
+                window.location.href = 'login.html';
+                return;
+            }
+
+            window.location.href = 'cart.html';
+        };
+    }
+
+    // Simple hamburger menu implementation
+    document.addEventListener('DOMContentLoaded', function() {
+        const hamburger = document.getElementById('hamburger-menu');
+        const nav = document.getElementById('main-nav');
+
+        // Function to check window size and adjust menu visibility
+        function checkWindowSize() {
+            if (window.innerWidth <= 768) {
+                // Mobile view
+                hamburger.style.display = 'block';
+                nav.style.display = 'none';
+            } else {
+                // Desktop view
+                hamburger.style.display = 'none';
+                nav.style.display = 'flex';
+            }
+        }
+
+        // Initial check
+        checkWindowSize();
+
+        // Check on window resize
+        window.addEventListener('resize', checkWindowSize);
+
+        // Toggle menu when hamburger is clicked
+        hamburger.addEventListener('click', function() {
+            if (nav.style.display === 'none' || nav.style.display === '') {
+                nav.style.display = 'flex';
+                nav.style.position = 'absolute';
+                nav.style.top = '60px';
+                nav.style.left = '0';
+                nav.style.width = '100%';
+                nav.style.backgroundColor = '#333';
+                nav.style.flexDirection = 'column';
+                nav.style.zIndex = '1000';
+
+                // Make the nav items stack vertically
+                document.getElementById('nav').style.flexDirection = 'column';
+                document.getElementById('nav').style.width = '100%';
+
+                // Add some styling to nav items
+                const navItems = document.querySelectorAll('#nav li');
+                navItems.forEach(item => {
+                    item.style.width = '100%';
+                    item.style.textAlign = 'left';
+                    item.style.padding = '10px 0';
+                    item.style.borderBottom = '1px solid #444';
+                    item.style.position = 'relative'; // Ensure proper positioning for notification badges
+                });
+
+                // Ensure notification badges are visible
+                const mailCount = document.getElementById('mail-count');
+                const cartCount = document.getElementById('cart-count');
+
+                if (mailCount) {
+                    mailCount.style.position = 'absolute';
+                    mailCount.style.right = '18px';
+                    mailCount.style.top = '12px';
+                    mailCount.style.zIndex = '1001';
+                }
+
+                if (cartCount) {
+                    cartCount.style.position = 'absolute';
+                    cartCount.style.right = '18px';
+                    cartCount.style.top = '12px';
+                    cartCount.style.zIndex = '1001';
+                }
+            } else {
+                nav.style.display = 'none';
+            }
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function(event) {
+            if (window.innerWidth <= 768 &&
+                nav.style.display === 'flex' &&
+                !nav.contains(event.target) &&
+                event.target !== hamburger &&
+                !hamburger.contains(event.target)) {
+                nav.style.display = 'none';
+            }
+        });
+    });
+
+    // --- Category Navigation: Fetch and Render Categories ---
+document.addEventListener('DOMContentLoaded', function() {
+    const categoryIcons = document.getElementById('category-icons');
+    if (!categoryIcons) return;
+    // Show loading spinner
+    categoryIcons.innerHTML = `<div class="category-loading" style="text-align:center; padding:20px;">
+        <div style="display:inline-block; border:3px solid #f3f3f3; border-top:3px solid #007bff; border-radius:50%; width:30px; height:30px; animation:spin 1s linear infinite;"></div>
+        <p style="margin-top:10px; color:#666;">Loading categories...</p>
+    </div>`;
+    const baseUrl = getBaseUrl();
+    fetch(`${baseUrl}/categories`)
+        .then(res => res.json())
+        .then(categories => {
+            if (!Array.isArray(categories) || categories.length === 0) {
+                categoryIcons.innerHTML = '<p style="color:#888;">No categories found.</p>';
+                return;
+            }
+            categoryIcons.innerHTML = '';
+            categories.forEach(cat => {
+                const div = document.createElement('div');
+                div.className = 'category-item';
+                div.title = cat.name;
+                div.innerHTML = `
+                    <div class="category-icon">
+                        <img src="${cat.icon || 'https://img.icons8.com/ios-filled/50/000000/category.png'}" alt="${cat.name}">
+                    </div>
+                    <span class="category-name">${cat.name}</span>
+                `;
+                div.onclick = function() {
+                    // Filter products by category
+                    fetchAndRenderProductsByCategory(cat.name);
+                };
+                categoryIcons.appendChild(div);
+            });
+        })
+        .catch(err => {
+            categoryIcons.innerHTML = '<p style="color:#d32f2f;">Failed to load categories.</p>';
+            console.error('Error loading categories:', err);
+        });
+});
+
+// Helper: fetch and render products by category
+function fetchAndRenderProductsByCategory(categoryName) {
+    showLoading();
+    const baseUrl = getBaseUrl();
+    fetch(`${baseUrl}/products?category=` + encodeURIComponent(categoryName))
+        .then(res => res.json())
+        .then(products => {
+            renderProducts(products);
+        })
+        .catch(e => {
+            document.getElementById('product-grid').innerHTML = `<div style="text-align:center; color:#888; font-size:1.2em; padding:32px 0;">Unable to load products for this category.</div>`;
+        })
+        .finally(() => hideLoading());
+}
+
+// Wishlist count update function
+function updateWishlistCount() {
+    const isLoggedIn = localStorage.getItem('isLoggedIn');
+    const hasToken = localStorage.getItem('token');
+    const username = localStorage.getItem('username') || localStorage.getItem('currentUser');
+
+    // If we have a token but no isLoggedIn flag, set it
+    if (hasToken && !isLoggedIn) {
+        localStorage.setItem('isLoggedIn', 'true');
+    }
+
+    const isActuallyLoggedIn = localStorage.getItem('isLoggedIn') || hasToken;
+
+    if (!isActuallyLoggedIn || !username) {
+        const wishlistCountElements = document.querySelectorAll('#wishlist-count, #dropdown-wishlist-count');
+        wishlistCountElements.forEach(element => {
+            if (element) element.style.display = 'none';
+        });
+        return;
+    }
+
+    // Get wishlist count from localStorage or fetch from server
+    let wishlistCount = 0;
+    try {
+        const wishlistData = localStorage.getItem('userWishlists');
+        if (wishlistData) {
+            const wishlists = JSON.parse(wishlistData);
+            wishlistCount = wishlists.reduce((total, wishlist) => total + (wishlist.items ? wishlist.items.length : 0), 0);
+        }
+    } catch (e) {
+        console.error('Error parsing wishlist data:', e);
+    }
+
+    // Update wishlist count in navigation
+    const wishlistCountElements = document.querySelectorAll('#wishlist-count, #dropdown-wishlist-count, #wishlist-cta-count, #floating-wishlist-count');
+    wishlistCountElements.forEach(element => {
+        if (element) {
+            element.textContent = wishlistCount;
+            element.style.display = wishlistCount > 0 ? 'inline-flex' : 'none';
+        }
+    });
+}
+
+// Wishlist toggle function
+async function handleWishlistToggle(productId, buttonElement) {
+    try {
+        const isLoggedIn = localStorage.getItem('isLoggedIn');
+        const userId = localStorage.getItem('userId');
+
+        if (!isLoggedIn || !userId) {
+            alert('Please log in to add items to your wishlist');
+            window.location.href = 'login.html';
+            return;
+        }
+
+        const icon = buttonElement.querySelector('i');
+        const isInWishlist = icon.classList.contains('fas');
+
+        // Show loading state
+        buttonElement.style.opacity = '0.6';
+        buttonElement.style.pointerEvents = 'none';
+
+        const baseUrl = getBaseUrl();
+
+        if (isInWishlist) {
+            // Remove from wishlist
+            const response = await fetch(`${baseUrl}/wishlists/quick-remove`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'userid': userId
+                },
+                body: JSON.stringify({ productId })
+            });
+
+            if (response.ok) {
+                icon.className = 'far fa-heart';
+                icon.style.color = '#6c757d';
+                buttonElement.title = 'Add to Wishlist';
+                showToast('Removed from wishlist', 'success');
+            }
+        } else {
+            // Add to wishlist
+            const response = await fetch(`${baseUrl}/wishlists/quick-add`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'userid': userId
+                },
+                body: JSON.stringify({ productId })
+            });
+
+            if (response.ok) {
+                icon.className = 'fas fa-heart';
+                icon.style.color = '#e74c3c';
+                buttonElement.title = 'Remove from Wishlist';
+                showToast('Added to wishlist', 'success');
+            }
+        }
+
+        // Update wishlist count
+        updateWishlistCount();
+
+    } catch (error) {
+        console.error('Error toggling wishlist:', error);
+        showToast('Failed to update wishlist', 'error');
+    } finally {
+        // Restore button state
+        buttonElement.style.opacity = '1';
+        buttonElement.style.pointerEvents = 'auto';
+    }
+}
+
+// Simple toast notification function
+function showToast(message, type = 'info') {
+    const toast = document.createElement('div');
+    toast.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: ${type === 'success' ? '#28a745' : type === 'error' ? '#dc3545' : '#007bff'};
+        color: white;
+        padding: 12px 20px;
+        border-radius: 8px;
+        z-index: 10000;
+        font-weight: 500;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        animation: slideInRight 0.3s ease;
+    `;
+    toast.textContent = message;
+
+    document.body.appendChild(toast);
+
+    setTimeout(() => {
+        toast.style.animation = 'slideOutRight 0.3s ease';
+        setTimeout(() => {
+            if (toast.parentNode) {
+                toast.parentNode.removeChild(toast);
+            }
+        }, 300);
+    }, 3000);
+}
+
+// Add CSS animations for toast
+const toastStyles = document.createElement('style');
+toastStyles.textContent = `
+    @keyframes slideInRight {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+    @keyframes slideOutRight {
+        from { transform: translateX(0); opacity: 1; }
+        to { transform: translateX(100%); opacity: 0; }
+    }
+`;
+document.head.appendChild(toastStyles);
+
+// Initialize wishlist count on page load
+document.addEventListener('DOMContentLoaded', function() {
+    updateWishlistCount();
+
+    // Update wishlist count periodically
+    setInterval(updateWishlistCount, 5000);
+});
+    </script>
+
+    <!-- Wishlist Scripts -->
+    <script src="js/wishlist.js"></script>
+    <!-- Advanced Search Scripts -->
+    <script src="js/advanced-search.js"></script>
+    <!-- Keep only essential scripts for now -->
+
+    <!-- SIMPLE ERROR FIX SCRIPT -->
+    <script>
+        // Clear all service worker registrations
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                for(let registration of registrations) {
+                    registration.unregister();
+                    console.log('Unregistered service worker');
+                }
+            });
+        }
+
+        // Clear all caches
+        if ('caches' in window) {
+            caches.keys().then(function(names) {
+                for(let name of names) {
+                    caches.delete(name);
+                    console.log('Deleted cache:', name);
+                }
+            });
+        }
+
+        // Simple error handler to catch and ignore errors
+        window.addEventListener('error', function(e) {
+            if (e.message.includes('Failed to fetch') ||
+                e.message.includes('Failed to convert') ||
+                e.message.includes('network error')) {
+                console.log('Ignoring network error:', e.message);
+                e.preventDefault();
+                return false;
+            }
+        });
+
+        // Force show cart and profile icons
+        document.addEventListener('DOMContentLoaded', function() {
+            // Make sure cart icon is visible
+            const cartIcon = document.getElementById('cartIcon');
+            const cartCount = document.getElementById('cart-count');
+            if (cartIcon) {
+                cartIcon.style.display = 'inline-block';
+                cartIcon.style.visibility = 'visible';
+            }
+            if (cartCount) {
+                cartCount.style.display = 'flex';
+                cartCount.textContent = '0';
+            }
+
+            // Profile dropdown is now handled by the consolidated handler above
+
+            console.log('✅ Simple fixes applied - cart and profile should work now!');
+        });
+
+        // Flash Sale System will auto-initialize via its own DOMContentLoaded listener
+    </script>
+</body>
+</html>

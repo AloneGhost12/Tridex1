@@ -1,0 +1,131 @@
+/**
+ * Color Variant Selector Styles for Product Details Page
+ */
+
+.color-variants-container {
+    margin: 20px 0;
+}
+
+.color-variants-container h3 {
+    font-size: 16px;
+    font-weight: 500;
+    margin-bottom: 10px;
+    color: #212121;
+}
+
+.color-variants-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.color-variant-option {
+    position: relative;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid #e0e0e0;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.color-variant-option:hover {
+    transform: scale(1.1);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.color-variant-option.selected {
+    border: 2px solid #2874f0;
+}
+
+.color-variant-option.selected::after {
+    content: '';
+    position: absolute;
+    width: 46px;
+    height: 46px;
+    border: 2px solid #2874f0;
+    border-radius: 50%;
+    top: -5px;
+    left: -5px;
+}
+
+.color-variant-option .color-swatch {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,0.1);
+}
+
+.color-variant-option .color-tooltip {
+    position: absolute;
+    bottom: -30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,0.7);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s ease;
+    z-index: 10;
+}
+
+.color-variant-option:hover .color-tooltip {
+    opacity: 1;
+    visibility: visible;
+}
+
+.color-variant-option.out-of-stock {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.color-variant-option.out-of-stock:hover {
+    transform: none;
+    box-shadow: none;
+}
+
+.color-variant-option.out-of-stock .color-swatch {
+    position: relative;
+}
+
+.color-variant-option.out-of-stock .color-swatch::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 2px;
+    height: 120%;
+    background: #dc3545;
+    transform: translate(-50%, -50%) rotate(45deg);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .color-variant-option {
+        width: 35px;
+        height: 35px;
+    }
+
+    .color-variant-option .color-swatch {
+        width: 27px;
+        height: 27px;
+    }
+
+    .color-variants-list {
+        gap: 8px;
+    }
+}
+
+/* Additional responsive styles */
+@media (max-width: 768px) {
+    .color-variants-list {
+        justify-content: center;
+    }
+}

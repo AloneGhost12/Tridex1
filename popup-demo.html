@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tridex Custom Popup Demo</title>
+    <!-- Custom Popup System -->
+    <link rel="stylesheet" href="css/custom-popups.css">
+    <script src="js/custom-popups.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 40px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2.5rem;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 40px;
+            font-size: 1.1rem;
+        }
+        
+        .demo-section {
+            margin-bottom: 40px;
+            padding: 30px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            border-left: 4px solid #007bff;
+        }
+        
+        .demo-section h2 {
+            margin-top: 0;
+            color: #007bff;
+            font-size: 1.5rem;
+        }
+        
+        .demo-section p {
+            color: #666;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+        
+        .button-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .demo-btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .demo-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+        }
+        
+        .demo-btn:active {
+            transform: translateY(0);
+        }
+        
+        .btn-success { background: linear-gradient(135deg, #28a745, #1e7e34); }
+        .btn-error { background: linear-gradient(135deg, #dc3545, #c82333); }
+        .btn-warning { background: linear-gradient(135deg, #ffc107, #e0a800); color: #212529; }
+        .btn-info { background: linear-gradient(135deg, #17a2b8, #138496); }
+        .btn-confirm { background: linear-gradient(135deg, #007bff, #0056b3); }
+        .btn-custom { background: linear-gradient(135deg, #6f42c1, #5a2d91); }
+        
+        .feature-list {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .feature-list li {
+            padding: 8px 0;
+            padding-left: 30px;
+            position: relative;
+        }
+        
+        .feature-list li:before {
+            content: "✅";
+            position: absolute;
+            left: 0;
+            top: 8px;
+        }
+        
+        .code-example {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            overflow-x: auto;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+                margin: 10px;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .button-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎉 Tridex Custom Popup System</h1>
+        <p class="subtitle">Beautiful, responsive, and brand-consistent popup modals</p>
+        
+        <div class="demo-section">
+            <h2>✨ Features</h2>
+            <ul class="feature-list">
+                <li>Replaces all native alert(), confirm(), and prompt() dialogs</li>
+                <li>Brand-consistent design with Tridex color scheme</li>
+                <li>Fully responsive across all devices</li>
+                <li>Smooth animations and transitions</li>
+                <li>Ripple effects on button clicks</li>
+                <li>Promise-based API for modern JavaScript</li>
+                <li>Customizable icons, titles, and button styles</li>
+                <li>Auto-hide functionality for temporary messages</li>
+            </ul>
+        </div>
+        
+        <div class="demo-section">
+            <h2>🎯 Basic Popup Types</h2>
+            <p>Try out the different types of popups available in the Tridex system:</p>
+            <div class="button-grid">
+                <button class="demo-btn btn-success" onclick="showSuccessDemo()">Success Message</button>
+                <button class="demo-btn btn-error" onclick="showErrorDemo()">Error Message</button>
+                <button class="demo-btn btn-warning" onclick="showWarningDemo()">Warning Message</button>
+                <button class="demo-btn btn-info" onclick="showInfoDemo()">Info Message</button>
+            </div>
+        </div>
+        
+        <div class="demo-section">
+            <h2>❓ Confirmation Dialogs</h2>
+            <p>Interactive confirmation dialogs that return true/false:</p>
+            <div class="button-grid">
+                <button class="demo-btn btn-confirm" onclick="showConfirmDemo()">Basic Confirmation</button>
+                <button class="demo-btn btn-error" onclick="showDeleteConfirmDemo()">Delete Confirmation</button>
+            </div>
+        </div>
+        
+        <div class="demo-section">
+            <h2>🚀 Advanced Features</h2>
+            <p>Advanced popup features and customizations:</p>
+            <div class="button-grid">
+                <button class="demo-btn btn-custom" onclick="showCustomDemo()">Custom Buttons</button>
+                <button class="demo-btn btn-info" onclick="showAutoHideDemo()">Auto-Hide Popup</button>
+            </div>
+        </div>
+        
+        <div class="demo-section">
+            <h2>💻 Code Examples</h2>
+            <p>Here's how easy it is to use the new popup system:</p>
+            
+            <div class="code-example">
+// Success message
+await tridexSuccess('Operation completed successfully!', 'Success');
+
+// Error message
+await tridexError('Something went wrong. Please try again.', 'Error');
+
+// Confirmation dialog
+const confirmed = await tridexConfirm(
+    'Are you sure you want to delete this item?',
+    'Delete Confirmation'
+);
+if (confirmed) {
+    // User clicked "Confirm"
+    console.log('Item deleted');
+}
+
+// Custom popup with multiple buttons
+const result = await TridexPopup.custom(
+    'Choose your action:',
+    'Custom Dialog',
+    [
+        { text: 'Save', action: 'save', type: 'success' },
+        { text: 'Cancel', action: 'cancel', type: 'secondary' }
+    ]
+);
+            </div>
+        </div>
+        
+        <div class="demo-section">
+            <h2>🔄 Migration from Native Dialogs</h2>
+            <p>All native browser dialogs have been replaced throughout the Tridex website:</p>
+            <div class="code-example">
+// Old way (native browser dialogs)
+alert('Hello World');
+const result = confirm('Are you sure?');
+
+// New way (Tridex custom popups)
+await tridexAlert('Hello World');
+const result = await tridexConfirm('Are you sure?');
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Demo functions
+        async function showSuccessDemo() {
+            await tridexSuccess(
+                'Your account has been created successfully! Welcome to Tridex!',
+                'Account Created'
+            );
+        }
+        
+        async function showErrorDemo() {
+            await tridexError(
+                'Failed to connect to the server. Please check your internet connection and try again.',
+                'Connection Error'
+            );
+        }
+        
+        async function showWarningDemo() {
+            await tridexWarning(
+                'Your session will expire in 5 minutes. Please save your work.',
+                'Session Warning'
+            );
+        }
+        
+        async function showInfoDemo() {
+            await tridexInfo(
+                'You must be logged in to access this feature. Please sign in to continue.',
+                'Login Required'
+            );
+        }
+        
+        async function showConfirmDemo() {
+            const result = await tridexConfirm(
+                'Do you want to save your changes before leaving this page?',
+                'Unsaved Changes'
+            );
+            
+            if (result) {
+                await tridexSuccess('Changes saved successfully!', 'Saved');
+            } else {
+                await tridexInfo('Changes discarded.', 'Discarded');
+            }
+        }
+        
+        async function showDeleteConfirmDemo() {
+            const result = await tridexConfirm(
+                'Are you sure you want to permanently delete this item? This action cannot be undone.',
+                'Delete Confirmation'
+            );
+            
+            if (result) {
+                await tridexSuccess('Item deleted successfully.', 'Deleted');
+            }
+        }
+        
+        async function showCustomDemo() {
+            const result = await TridexPopup.custom(
+                'What would you like to do with this product?',
+                'Product Actions',
+                [
+                    { text: 'Add to Cart', action: 'cart', type: 'success' },
+                    { text: 'Add to Wishlist', action: 'wishlist', type: 'info' },
+                    { text: 'Share', action: 'share', type: 'warning' },
+                    { text: 'Cancel', action: 'cancel', type: 'secondary' }
+                ],
+                'info'
+            );
+            
+            if (result && result !== 'cancel') {
+                await tridexSuccess(`Action "${result}" completed!`, 'Success');
+            }
+        }
+        
+        async function showAutoHideDemo() {
+            await TridexPopup.autoHide(
+                'This message will automatically disappear in 3 seconds!',
+                'Auto-Hide Demo',
+                'info',
+                3000
+            );
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Category Products - Tridex</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Include the ban system script -->
+    <script src="ban-system.js"></script>
+    <style>
+        /* Responsive Navbar */
+        @media (max-width: 900px) {
+            header > div {
+                flex-direction: column;
+                align-items: flex-start !important;
+                position: relative; /* Ensure proper positioning context */
+            }
+            nav ul {
+                gap: 10px !important;
+            }
+            .search-bar {
+                max-width: 98vw !important;
+            }
+            /* Ensure hamburger menu is visible */
+            #hamburger-menu {
+                display: block;
+                position: absolute;
+                top: 15px;
+                right: 15px;
+                z-index: 1001;
+            }
+
+            /* Ensure proper alignment of notification badges */
+            #mail-count, #cart-count {
+                position: absolute !important;
+                top: -8px !important;
+                right: -10px !important;
+                background: #dc3545 !important;
+                color: #fff !important;
+                border-radius: 50% !important;
+                font-size: 0.7em !important;
+                padding: 2px 6px !important;
+                min-width: 18px !important;
+                text-align: center !important;
+                z-index: 1001 !important;
+            }
+
+            /* Ensure proper positioning of nav icons */
+            .nav-icon {
+                position: relative !important;
+                display: inline-block !important;
+            }
+        }
+        @media (max-width: 600px) {
+            header > div {
+                flex-direction: column;
+                align-items: flex-start !important;
+                padding: 0 8px;
+            }
+            h1 {
+                font-size: 1.5rem !important;
+                margin-bottom: 8px !important;
+            }
+            nav ul {
+                flex-wrap: wrap;
+                gap: 6px !important;
+                font-size: 0.98em;
+            }
+            .search-bar {
+                flex-direction: column !important;
+                max-width: 100vw !important;
+                margin: 10px 0 0 0 !important;
+                position: relative !important;
+            }
+            .search-bar input {
+                border-radius: 5px !important;
+                margin-bottom: 0;
+                padding-right: 38px !important;
+            }
+            .search-bar button {
+                border-radius: 5px !important;
+                width: auto;
+                position: absolute !important;
+                right: 8px;
+                top: 50%;
+                transform: translateY(-50%);
+                padding: 0 !important;
+                background: none !important;
+                box-shadow: none !important;
+                height: 32px;
+                min-width: 32px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            .search-bar .search-icon {
+                font-size: 1.2em;
+                color: #007bff;
+            }
+            #username-display {
+                font-size: 0.98em !important;
+            }
+        }
+        @media (max-width: 420px) {
+            h1 {
+                font-size: 1.1rem !important;
+            }
+            nav ul {
+                font-size: 0.9em;
+            }
+            .product-card h3, .product-card p {
+                font-size: 0.95em;
+            }
+        }
+        /* Responsive Product Grid */
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 18px;
+            padding: 24px 12px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .product-card {
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            padding: 18px 12px;
+            text-align: center;
+            transition: box-shadow 0.2s;
+        }
+        .product-card img {
+            width: 100%;
+            height: 180px;
+            object-fit: contain;
+            margin-bottom: 10px;
+            border-radius: 6px;
+            background-color: #f9f9f9;
+            padding: 8px;
+        }
+        .product-card:hover {
+            box-shadow: 0 4px 16px rgba(0,0,0,0.13);
+        }
+        .product-image-container {
+            height: 180px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 10px;
+        }
+        /* Category Header */
+        .category-header {
+            text-align: center;
+            padding: 20px 0;
+            background: #f4f4f9;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #eee;
+        }
+        .category-header h1 {
+            color: #333;
+            margin: 0;
+            font-size: 2rem;
+        }
+        .category-header p {
+            color: #666;
+            margin-top: 10px;
+            font-size: 1.1rem;
+        }
+        .back-to-home {
+            display: inline-block;
+            margin-top: 15px;
+            padding: 8px 16px;
+            background: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            font-size: 0.9rem;
+            transition: background 0.3s;
+        }
+        .back-to-home:hover {
+            background: #0056b3;
+        }
+        @media (max-width: 600px) {
+            .category-header h1 {
+                font-size: 1.5rem;
+            }
+            .category-header p {
+                font-size: 0.95rem;
+            }
+            /* Ensure hamburger menu is visible */
+            #hamburger-menu {
+                display: block !important;
+                position: absolute;
+                top: 15px;
+                right: 15px;
+                z-index: 1001;
+            }
+            /* Adjust header for mobile */
+            header > div {
+                padding: 0 15px;
+                position: relative;
+                min-height: 60px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading animation overlay -->
+    <div id="loading-overlay" style="display:flex; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(255,255,255,0.7); z-index:99999; align-items:center; justify-content:center;">
+        <div style="border:6px solid #f3f3f3; border-top:6px solid #007bff; border-radius:50%; width:48px; height:48px; animation:spin 1s linear infinite;"></div>
+    </div>
+    <style>
+        @keyframes spin {
+            0% { transform: rotate(0deg);}
+            100% { transform: rotate(360deg);}
+        }
+    </style>
+    <header style="background-color: #333; color: white; padding: 15px 0; position:sticky; top:0; z-index:1000;">
+        <div style="display:flex; align-items:center; justify-content:space-between; padding:0 15px;">
+            <div style="display:flex; align-items:center;">
+                <h1>Tridex</h1>
+                <span id="username-display"></span>
+            </div>
+
+            <!-- Hamburger icon for mobile -->
+            <button id="hamburger-menu" style="background:none; border:none; cursor:pointer; display:none; padding:10px; z-index:1000; position:absolute; top:15px; right:15px;">
+                <div style="width:30px; height:3px; background-color:white; margin:6px 0; transition:0.4s;"></div>
+                <div style="width:30px; height:3px; background-color:white; margin:6px 0; transition:0.4s;"></div>
+                <div style="width:30px; height:3px; background-color:white; margin:6px 0; transition:0.4s;"></div>
+            </button>
+
+            <nav id="main-nav" style="display:flex;">
+                <ul id="nav" style="display:flex; list-style:none; margin:0; padding:0; align-items:center;">
+                    <li class="nav"><a href="index.html">Home</a></li>
+                    <li class="nav"><a href="about.html">About</a></li>
+                    <li class="nav"><a href="more.html">More</a></li>
+                    <li><a href="#" class="nav-icon" id="userIcon">👤</a></li>
+                    <li style="position: relative;">
+                        <a href="#" class="nav-icon" id="mailIcon" title="Mailbox" style="position: relative;">
+                            &#9993;
+                            <span id="mail-count" style="position: absolute; top: -8px; right: -10px; background: #dc3545; color: #fff; border-radius: 50%; font-size: 0.7em; padding: 2px 6px; min-width: 18px; text-align: center;">0</span>
+                        </a>
+                    </li>
+                    <li style="position: relative;">
+                        <a href="cart.html" class="nav-icon" id="cartIcon" title="Cart" style="position: relative;">
+                            🛒<span id="cart-count" style="position: absolute; top: -8px; right: -10px; background: #dc3545; color: #fff; border-radius: 50%; font-size: 0.7em; padding: 2px 6px; min-width: 18px; text-align: center;">0</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+        <form class="search-bar" id="search-form">
+            <input type="text" id="search-input" placeholder="Search...">
+            <button type="submit">
+                <span class="search-icon">🔍</span>
+            </button>
+        </form>
+        <div class="dropdown-menu" id="userDropdown" style="display:none;">
+            <a href="login.html" class="dropdown-btn">Login</a>
+            <a href="signup.html" class="dropdown-btn">Sign Up</a>
+        </div>
+    </header>
+
+    <!-- Category Header -->
+    <div class="category-header">
+        <h1 id="category-title">Category Products</h1>
+        <p id="category-description"></p>
+        <a href="index.html" class="back-to-home">Back to Home</a>
+    </div>
+
+    <section class="product-grid" id="product-grid">
+        <!-- Product cards will be rendered here by JS -->
+    </section>
+
+    <!-- Ban popup for banned users -->
+    <div id="ban-message" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.8); z-index:999999; align-items:center; justify-content:center;">
+        <div style="background:#fff; padding:32px 24px; border-radius:8px; box-shadow:0 2px 12px rgba(0,0,0,0.15); min-width:320px; max-width:90%; text-align:center;">
+            <div style="margin-bottom:10px; font-size:3em; color:#d32f2f;">⚠️</div>
+            <h2 style="margin-bottom:10px; color:#d32f2f; font-size:1.5em;">Account Banned</h2>
+            <p style="margin-bottom:24px; font-size:1.1em; color:#555; line-height:1.5;">Your account has been banned by the administrator. You no longer have access to this site.</p>
+            <p style="margin-bottom:24px; font-size:0.9em; color:#777;">For more information, please contact support.</p>
+            <button id="ban-ok-btn" style="padding:10px 24px; background:#dc3545; color:#fff; border:none; border-radius:5px; font-size:1rem; cursor:pointer; font-weight:bold; transition:all 0.2s ease;">OK</button>
+        </div>
+    </div>
+
+    <script>
+        // Add click handler for the ban message OK button
+        document.getElementById('ban-ok-btn').addEventListener('click', function() {
+            // Clear all login data
+            localStorage.removeItem('token');
+            localStorage.removeItem('isLoggedIn');
+            localStorage.removeItem('username');
+            localStorage.removeItem('currentUser');
+
+            // Redirect to login page with banned parameter
+            window.location.href = 'login.html?banned=true';
+        });
+    </script>
+
+    <!-- Footer (fixed at bottom) -->
+    <footer style="position:fixed; left:0; bottom:0; width:100vw; background:#222; color:#fff; text-align:center; padding:12px 0; font-size:1rem; z-index:9999;">
+        &copy; 2025 Tridex. All rights reserved. Made with <span style="color:#e25555;">&#10084;&#65039;</span> by Tridex.
+    </footer>
+    <script>
+        // --- withLoading helper for loading overlay ---
+        function withLoading(action) {
+            return async function(...args) {
+                const loadingOverlay = document.getElementById('loading-overlay');
+                if (loadingOverlay) loadingOverlay.style.display = 'flex';
+                try {
+                    await action(...args);
+                } catch (error) {
+                    console.error('Error during action:', error);
+                } finally {
+                    if (loadingOverlay) loadingOverlay.style.display = 'none';
+                }
+            };
+        }
+
+        // --- Loading overlay helpers ---
+        function showLoading() {
+            document.getElementById('loading-overlay').style.display = 'flex';
+        }
+        function hideLoading() {
+            document.getElementById('loading-overlay').style.display = 'none';
+        }
+
+        // --- Hamburger menu functionality ---
+        document.addEventListener('DOMContentLoaded', function() {
+            const hamburger = document.getElementById('hamburger-menu');
+            const nav = document.getElementById('nav');
+
+            // Function to check window size and adjust menu visibility
+            function checkWindowSize() {
+                if (window.innerWidth <= 768) {
+                    // Mobile view
+                    hamburger.style.display = 'block';
+                    nav.style.display = 'none';
+                } else {
+                    // Desktop view
+                    hamburger.style.display = 'none';
+                    nav.style.display = 'flex';
+                }
+            }
+
+            // Initial check
+            checkWindowSize();
+
+            // Check on window resize
+            window.addEventListener('resize', checkWindowSize);
+
+            // Toggle navigation when hamburger is clicked
+            hamburger.addEventListener('click', function() {
+                if (nav.style.display === 'none' || nav.style.display === '') {
+                    nav.style.display = 'flex';
+                    nav.style.position = 'absolute';
+                    nav.style.top = '60px';
+                    nav.style.left = '0';
+                    nav.style.width = '100%';
+                    nav.style.backgroundColor = '#333';
+                    nav.style.flexDirection = 'column';
+                    nav.style.zIndex = '1000';
+
+                    // Make the nav items stack vertically
+                    document.getElementById('nav').style.flexDirection = 'column';
+                    document.getElementById('nav').style.width = '100%';
+
+                    // Add some styling to nav items
+                    const navItems = document.querySelectorAll('#nav li');
+                    navItems.forEach(item => {
+                        item.style.width = '100%';
+                        item.style.textAlign = 'left';
+                        item.style.padding = '10px 0';
+                        item.style.borderBottom = '1px solid #444';
+                        item.style.position = 'relative'; // Ensure proper positioning for notification badges
+                    });
+
+                    // Ensure notification badges are visible
+                    const mailCount = document.getElementById('mail-count');
+                    const cartCount = document.getElementById('cart-count');
+                    const mailIcon = document.getElementById('mailIcon');
+                    const cartIcon = document.getElementById('cartIcon');
+
+                    // Make sure the parent elements have proper positioning
+                    if (mailIcon) {
+                        mailIcon.style.position = 'relative';
+                        mailIcon.style.display = 'inline-block';
+                    }
+
+                    if (cartIcon) {
+                        cartIcon.style.position = 'relative';
+                        cartIcon.style.display = 'inline-block';
+                    }
+
+                    // Position the notification badges
+                    if (mailCount) {
+                        mailCount.style.position = 'absolute';
+                        mailCount.style.right = '-10px';
+                        mailCount.style.top = '-8px';
+                        mailCount.style.zIndex = '1001';
+                        mailCount.style.background = '#dc3545';
+                        mailCount.style.color = '#fff';
+                        mailCount.style.borderRadius = '50%';
+                        mailCount.style.fontSize = '0.7em';
+                        mailCount.style.padding = '2px 6px';
+                        mailCount.style.minWidth = '18px';
+                        mailCount.style.textAlign = 'center';
+                    }
+
+                    if (cartCount) {
+                        cartCount.style.position = 'absolute';
+                        cartCount.style.right = '-10px';
+                        cartCount.style.top = '-8px';
+                        cartCount.style.zIndex = '1001';
+                        cartCount.style.background = '#dc3545';
+                        cartCount.style.color = '#fff';
+                        cartCount.style.borderRadius = '50%';
+                        cartCount.style.fontSize = '0.7em';
+                        cartCount.style.padding = '2px 6px';
+                        cartCount.style.minWidth = '18px';
+                        cartCount.style.textAlign = 'center';
+                    }
+                } else {
+                    nav.style.display = 'none';
+                }
+            });
+
+            // Close navigation when clicking outside
+            document.addEventListener('click', function(event) {
+                if (window.innerWidth <= 768 &&
+                    nav.style.display === 'flex' &&
+                    !nav.contains(event.target) &&
+                    event.target !== hamburger &&
+                    !hamburger.contains(event.target)) {
+                    nav.style.display = 'none';
+                }
+            });
+
+            // Close navigation when window is resized to desktop
+            window.addEventListener('resize', function() {
+                if (window.innerWidth > 992 && nav.classList.contains('show')) {
+                    nav.classList.remove('show');
+
+                    // Reset hamburger icon
+                    const spans = hamburger.querySelectorAll('span');
+                    spans.forEach(span => span.classList.remove('active'));
+                }
+            });
+        });
+
+        // Get category id from URL
+        function getCategoryId() {
+            const params = new URLSearchParams(window.location.search);
+            return params.get('id');
+        }
+
+        // Main function to initialize the page
+        async function initCategoryPage() {
+            try {
+                showLoading();
+
+                const categoryId = getCategoryId();
+                if (!categoryId) {
+                    window.location.href = 'index.html';
+                    return;
+                }
+
+                // Fetch category details
+                // Use consistent base URL logic
+                function getBaseUrl() {
+                    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                        return 'http://localhost:3000';
+                    } else if (window.location.hostname.includes('onrender.com')) {
+                        return 'https://tridex1.onrender.com';
+                    } else if (window.location.hostname.includes('github.io') || window.location.protocol === 'file:') {
+                        return 'https://tridex1.onrender.com';
+                    } else {
+                        return 'https://tridex1.onrender.com';
+                    }
+                }
+                const baseUrl = getBaseUrl();
+
+                const categoryRes = await fetch(`${baseUrl}/categories/${categoryId}`);
+                if (!categoryRes.ok) {
+                    throw new Error('Category not found');
+                }
+
+                const category = await categoryRes.json();
+
+                // Update page title and description
+                document.getElementById('category-title').textContent = category.name;
+                document.getElementById('category-description').textContent = category.description || '';
+                document.title = `${category.name} - Tridex`;
+
+                // Fetch products for this category
+                const productsRes = await fetch(`${baseUrl}/categories/${categoryId}/products`);
+                const products = await productsRes.json();
+
+                // Render products
+                renderProducts(products);
+            } catch (error) {
+                console.error('Error initializing category page:', error);
+                document.getElementById('product-grid').innerHTML = `
+                    <div style="text-align:center; color:#888; font-size:1.2em; padding:32px 0;">
+                        <p>Unable to load category products at this time.</p>
+                        <p style="font-size:0.9em; margin-top:10px;">Please try again later or contact support.</p>
+                        <button onclick="initCategoryPage()" style="margin-top:15px; padding:8px 16px; background:#007bff; color:#fff; border:none; border-radius:5px; cursor:pointer;">
+                            Try Again
+                        </button>
+                    </div>`;
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Render products function
+        function renderProducts(products) {
+            try {
+                const grid = document.getElementById('product-grid');
+                grid.innerHTML = '';
+                if (!products || products.length === 0) {
+                    grid.innerHTML = '<div style="text-align:center; color:#888; font-size:1.2em; padding:32px 0;">No products found in this category.</div>';
+                    return;
+                }
+                products.forEach(product => {
+                    try {
+                        const div = document.createElement('div');
+                        div.className = 'product-card';
+                        div.innerHTML = `
+                            <div class="product-image-container">
+                                <img src="${product.image || ''}" alt="${product.name}" style="cursor:pointer;" data-id="${product._id}">
+                            </div>
+                            <h3>${product.name}</h3>
+                            <p>₹${product.price}</p>
+                        `;
+                        div.querySelector('img').onclick = function() {
+                            window.location.href = `product-details.html?id=${product._id}`;
+                        };
+                        grid.appendChild(div);
+                    } catch (err) {
+                        console.error('Error rendering product:', product, err);
+                    }
+                });
+            } catch (err) {
+                console.error('Error in renderProducts:', err);
+                document.getElementById('product-grid').innerHTML = '<div style="text-align:center; color:#888; font-size:1.2em; padding:32px 0;">Failed to render products.<br>' + err + '</div>';
+            }
+        }
+
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', function() {
+            initCategoryPage();
+            updateCartCount(); // Update cart count on page load
+            updateMailCount(); // Update mail count on page load
+        });
+
+        // Search form
+        document.getElementById('search-form').onsubmit = function(e) {
+            e.preventDefault();
+            const filter = document.getElementById('search-input').value.trim().toLowerCase();
+            window.location.href = `index.html?search=${encodeURIComponent(filter)}`;
+        };
+
+        // Cart count update function
+        function updateCartCount() {
+            const isLoggedIn = localStorage.getItem('isLoggedIn');
+            // Check for token as well (for backward compatibility)
+            const hasToken = localStorage.getItem('token');
+            // Use username from either source
+            const username = localStorage.getItem('currentUser') || localStorage.getItem('username');
+
+            // If we have a token but no isLoggedIn flag, set it
+            if (hasToken && !isLoggedIn) {
+                localStorage.setItem('isLoggedIn', 'true');
+            }
+
+            // If we have a username but no currentUser, set it
+            if (localStorage.getItem('username') && !localStorage.getItem('currentUser')) {
+                localStorage.setItem('currentUser', localStorage.getItem('username'));
+            }
+
+            // Recheck login status after potential updates
+            const isActuallyLoggedIn = localStorage.getItem('isLoggedIn') || hasToken;
+
+            if (!isActuallyLoggedIn || !username) {
+                document.getElementById('cart-count').style.display = 'none';
+                return;
+            }
+
+            // Ensure cart is isolated per user
+            const cartUser = localStorage.getItem('cartUser');
+            if (cartUser !== username) {
+                const userCart = localStorage.getItem('cart_' + username);
+                if (userCart) {
+                    localStorage.setItem('cart', userCart);
+                } else {
+                    localStorage.removeItem('cart');
+                }
+                localStorage.setItem('cartUser', username);
+            }
+
+            let cart = [];
+            try { cart = JSON.parse(localStorage.getItem('cart')) || []; } catch (e) { cart = []; }
+            const count = cart.length;
+            const cartCount = document.getElementById('cart-count');
+
+            if (count > 0) {
+                cartCount.textContent = count;
+                cartCount.style.display = '';
+            } else {
+                cartCount.style.display = 'none';
+            }
+        }
+
+        // Mail count update function
+        function updateMailCount() {
+            // Check login status with both methods
+            const isLoggedIn = localStorage.getItem('isLoggedIn');
+            const hasToken = localStorage.getItem('token');
+            const isActuallyLoggedIn = isLoggedIn || hasToken;
+
+            // Use username from either source
+            const username = localStorage.getItem('username') || localStorage.getItem('currentUser');
+
+            // If we have a token but no isLoggedIn flag, set it
+            if (hasToken && !isLoggedIn) {
+                localStorage.setItem('isLoggedIn', 'true');
+            }
+
+            if (!isActuallyLoggedIn || !username) {
+                document.getElementById('mail-count').style.display = 'none';
+                return;
+            }
+
+            const mailCount = document.getElementById('mail-count');
+
+            // Try to get unread count from local storage
+            let messages = [];
+            let unreadCount = 0;
+
+            try {
+                messages = JSON.parse(localStorage.getItem('adminMessages')) || [];
+            } catch (e) {
+                messages = [];
+            }
+
+            // Calculate unread count from local storage
+            const lastSeenKey = username ? `mailLastSeen_${username}` : 'mailLastSeen_guest';
+            const lastSeen = Number(localStorage.getItem(lastSeenKey) || 0);
+            unreadCount = Math.max(messages.length - lastSeen, 0);
+
+            // Update the badge
+            if (unreadCount > 0) {
+                mailCount.textContent = unreadCount;
+                mailCount.style.display = '';
+            } else {
+                mailCount.style.display = 'none';
+            }
+        }
+
+        // Listen for cart changes from other tabs/windows
+        window.addEventListener('storage', function(e) {
+            if (e.key === 'cart') updateCartCount();
+            if (e.key === 'adminMessages') updateMailCount();
+        });
+
+        // Cart icon click
+        document.getElementById('cartIcon').onclick = withLoading(function(e) {
+            e.preventDefault();
+            const isLoggedIn = localStorage.getItem('isLoggedIn');
+            const hasToken = localStorage.getItem('token');
+
+            // If we have a token but no isLoggedIn flag, set it
+            if (hasToken && !isLoggedIn) {
+                localStorage.setItem('isLoggedIn', 'true');
+            }
+
+            // Check login status after potential update
+            const isActuallyLoggedIn = localStorage.getItem('isLoggedIn') || hasToken;
+
+            if (!isActuallyLoggedIn) {
+                alert('You must login to view your cart.');
+                window.location.href = 'login.html';
+                return;
+            }
+
+            window.location.href = 'cart.html';
+        });
+
+        // User icon click
+        const userIcon = document.getElementById('userIcon');
+        const dropdown = document.getElementById('userDropdown');
+        userIcon.onclick = function(e) {
+            e.preventDefault();
+            dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+        };
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!userIcon.contains(e.target) && !dropdown.contains(e.target)) {
+                dropdown.style.display = 'none';
+            }
+        });
+
+        // Ban check logic using our ban system
+        if (window.banSystem && window.banSystem.checkCurrentUserBan()) {
+            // Show ban message
+            document.getElementById('ban-message').style.display = 'flex';
+            // Stop further script execution
+            throw new Error('User is banned');
+        }
+    </script>
+</body>
+</html>

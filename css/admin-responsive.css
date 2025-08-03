@@ -1,0 +1,486 @@
+/**
+ * Admin Panel Responsive Styles
+ *
+ * This file contains responsive styles for the admin panel
+ * to ensure it works well on all device sizes.
+ */
+
+/* Base styles for better mobile experience */
+body {
+    padding: 20px;
+    max-width: 100%;
+    overflow-x: hidden;
+    background-color: #f8f9fa;
+    font-family: Arial, sans-serif;
+}
+
+h1 {
+    font-size: 1.8rem;
+    margin-bottom: 20px;
+    text-align: center;
+    color: #333;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #007bff;
+    max-width: 300px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* Admin navigation buttons */
+.admin-nav-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 25px;
+    justify-content: center;
+    background-color: #fff;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.admin-nav-btn {
+    margin: 0;
+    padding: 10px 15px;
+    font-size: 0.95rem;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+.admin-nav-btn:hover {
+    background-color: #0069d9;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.admin-nav-btn.active {
+    background-color: #0056b3;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.admin-nav-btn i {
+    margin-right: 8px;
+    font-size: 1.1em;
+}
+
+/* Admin controls */
+.admin-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 20px;
+    justify-content: center;
+    background-color: #fff;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.admin-controls button {
+    margin: 0;
+    white-space: nowrap;
+}
+
+/* Tables */
+.table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin-bottom: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    background-color: #fff;
+}
+
+table {
+    min-width: 650px; /* Ensure tables have a minimum width */
+    width: 100%;
+    border-collapse: collapse;
+}
+
+table th {
+    background-color: #f8f9fa;
+    color: #495057;
+    font-weight: 600;
+    text-align: left;
+    padding: 12px 15px;
+    border-bottom: 2px solid #dee2e6;
+}
+
+table td {
+    padding: 10px 15px;
+    border-bottom: 1px solid #e9ecef;
+    vertical-align: middle;
+}
+
+table tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+.edit-btn, .delete-btn, .ban-btn, .unban-btn, .verify-btn {
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+    margin-right: 5px;
+}
+
+.edit-btn {
+    background-color: #007bff;
+    color: white;
+}
+
+.edit-btn:hover {
+    background-color: #0069d9;
+}
+
+.delete-btn {
+    background-color: #dc3545;
+    color: white;
+}
+
+.delete-btn:hover {
+    background-color: #c82333;
+}
+
+.ban-btn {
+    background-color: #dc3545;
+    color: white;
+}
+
+.unban-btn {
+    background-color: #28a745;
+    color: white;
+}
+
+.verify-btn {
+    background-color: #17a2b8;
+    color: white;
+}
+
+/* Forms */
+form {
+    max-width: 100%;
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    margin-bottom: 20px;
+}
+
+input, textarea, select {
+    max-width: 100%;
+    font-size: 16px; /* Prevent zoom on iOS */
+    padding: 10px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+input:focus, textarea:focus, select:focus {
+    border-color: #80bdff;
+    outline: 0;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+/* Product form */
+#product-form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    max-width: 100%;
+}
+
+#product-form label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 500;
+    color: #495057;
+}
+
+/* Category form */
+#category-form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    max-width: 100%;
+}
+
+#category-form label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 500;
+    color: #495057;
+}
+
+/* Form buttons */
+form button[type="submit"],
+form button[type="button"] {
+    padding: 10px 15px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+form button[type="submit"] {
+    background-color: #007bff;
+    color: white;
+}
+
+form button[type="submit"]:hover {
+    background-color: #0069d9;
+}
+
+form button[type="button"] {
+    background-color: #6c757d;
+    color: white;
+}
+
+form button[type="button"]:hover {
+    background-color: #5a6268;
+}
+
+/* Color variant manager */
+.color-variants-list {
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+}
+
+/* Modals */
+.modal-content {
+    max-width: 90vw;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+/* Debug controls */
+#debug-ban-system, #force-check-ban-status {
+    font-size: 0.85rem;
+    padding: 6px 10px;
+}
+
+/* Contact section styles */
+.contact-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 15px;
+    align-items: center;
+}
+
+.contact-pagination {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 15px;
+    align-items: center;
+    justify-content: center;
+}
+
+#contact-search {
+    flex: 1;
+    min-width: 150px;
+    max-width: 300px;
+}
+
+/* Form styles */
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 500;
+}
+
+.form-group input,
+.form-group textarea,
+.form-group select {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+}
+
+.form-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+    margin-bottom: 20px;
+}
+
+/* Media queries for different screen sizes */
+
+/* Medium devices (tablets) */
+@media (max-width: 992px) {
+    .admin-nav-container {
+        justify-content: flex-start;
+        overflow-x: auto;
+        padding-bottom: 5px;
+    }
+
+    h1 {
+        font-size: 1.6rem;
+    }
+
+    .color-variants-list {
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    }
+
+    .contact-filters,
+    .contact-pagination {
+        justify-content: center;
+    }
+
+    #contact-search {
+        width: 100%;
+        max-width: none;
+    }
+}
+
+/* Small devices (landscape phones) */
+@media (max-width: 768px) {
+    h1 {
+        font-size: 1.4rem;
+    }
+
+    .admin-nav-btn {
+        padding: 6px 10px;
+        font-size: 0.85rem;
+    }
+
+    .color-variants-list {
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    }
+
+    /* Simplify table display on small screens */
+    .mobile-optimized-table th:nth-child(n+4),
+    .mobile-optimized-table td:nth-child(n+4) {
+        display: none;
+    }
+
+    .mobile-optimized-table th:last-child,
+    .mobile-optimized-table td:last-child {
+        display: table-cell;
+    }
+
+    /* Adjust contact section */
+    .contact-filters {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    #contact-search {
+        margin-left: 0 !important;
+        max-width: none;
+    }
+
+    /* Adjust form layouts */
+    .form-actions {
+        flex-direction: column;
+    }
+
+    .form-actions button {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+
+    /* Adjust modals */
+    #contact-detail-modal > div,
+    #admin-mail-modal > div,
+    #user-detail-modal > div {
+        min-width: auto !important;
+        width: 90% !important;
+        max-height: 80vh;
+        overflow-y: auto;
+    }
+}
+
+/* Extra small devices (phones) */
+@media (max-width: 576px) {
+    body {
+        padding: 5px;
+    }
+
+    h1 {
+        font-size: 1.2rem;
+    }
+
+    .admin-nav-btn {
+        padding: 5px 8px;
+        font-size: 0.8rem;
+    }
+
+    .admin-nav-btn i {
+        margin-right: 2px;
+    }
+
+    .admin-controls button {
+        padding: 5px 8px;
+        font-size: 0.8rem;
+    }
+
+    .color-variants-list {
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    }
+
+    /* Further simplify tables on very small screens */
+    .mobile-optimized-table th:nth-child(n+3),
+    .mobile-optimized-table td:nth-child(n+3) {
+        display: none;
+    }
+
+    .mobile-optimized-table th:last-child,
+    .mobile-optimized-table td:last-child {
+        display: table-cell;
+    }
+
+    /* Adjust modal sizing */
+    .modal-content {
+        padding: 15px;
+    }
+
+    /* Make buttons more touch-friendly */
+    button, .btn {
+        min-height: 40px;
+        min-width: 40px;
+    }
+
+    /* Adjust contact pagination */
+    .contact-pagination {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    #contact-pagination-info {
+        text-align: center;
+        margin-bottom: 10px;
+        margin-right: 0 !important;
+    }
+
+    /* Adjust order filters */
+    .orders-filters > div {
+        flex-direction: column !important;
+    }
+
+    .orders-filters > div > div {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+
+    /* Adjust media gallery */
+    .media-upload-controls {
+        flex-direction: column;
+    }
+
+    .media-upload-controls > div {
+        margin-left: 0 !important;
+        margin-top: 10px;
+    }
+}

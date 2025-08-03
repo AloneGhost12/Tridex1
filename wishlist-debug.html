@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wishlist Debug - Tridex</title>
+    
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="css/wishlist.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+        .debug-info {
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .debug-success {
+            background: #d4edda;
+            border-color: #c3e6cb;
+            color: #155724;
+        }
+        .debug-error {
+            background: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+        }
+        .wishlist-page {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+        .wishlist-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #f1f3f4;
+        }
+        .wishlist-header h1 {
+            margin: 0;
+            color: #333;
+            font-size: 28px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .wishlist-header h1 i {
+            color: #e74c3c;
+        }
+        #create-wishlist-btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+        #create-wishlist-btn:hover {
+            background: #0056b3;
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+    <div class="debug-info" id="debug-log">
+        <strong>Debug Log:</strong><br>
+        Initializing...
+    </div>
+
+    <div class="wishlist-page">
+        <!-- Wishlist Header -->
+        <div class="wishlist-header">
+            <h1><i class="fas fa-heart"></i> My Wishlist (Debug Mode)</h1>
+            <button id="create-wishlist-btn">
+                <i class="fas fa-plus"></i>
+                Create New Wishlist
+            </button>
+        </div>
+
+        <!-- Wishlists Container -->
+        <div id="wishlists-container">
+            <!-- Wishlists will be loaded here dynamically -->
+            <p>Loading wishlists...</p>
+        </div>
+    </div>
+
+    <script>
+        // Debug logging function
+        function debugLog(message, isError = false) {
+            const debugDiv = document.getElementById('debug-log');
+            const timestamp = new Date().toLocaleTimeString();
+            debugDiv.innerHTML += `<br>[${timestamp}] ${message}`;
+            debugDiv.className = `debug-info ${isError ? 'debug-error' : 'debug-success'}`;
+            console.log(`[WISHLIST DEBUG] ${message}`);
+        }
+
+        // Set up test user
+        localStorage.setItem('userId', '682450cab3ab649b5b17ec78');
+        localStorage.setItem('isLoggedIn', 'true');
+        localStorage.setItem('username', 'TestUser');
+
+        debugLog('✅ User authentication set');
+
+        // Load wishlist script
+        function loadWishlistScript() {
+            debugLog('📦 Loading wishlist script...');
+            
+            const script = document.createElement('script');
+            script.src = 'js/wishlist.js';
+            
+            script.onload = function() {
+                debugLog('✅ Wishlist script loaded successfully');
+                initializeWishlistManager();
+            };
+            
+            script.onerror = function() {
+                debugLog('❌ Failed to load wishlist script', true);
+            };
+            
+            document.head.appendChild(script);
+        }
+
+        // Initialize wishlist manager
+        function initializeWishlistManager() {
+            debugLog('🚀 Initializing WishlistManager...');
+            
+            if (typeof WishlistManager === 'undefined') {
+                debugLog('❌ WishlistManager class not found', true);
+                return;
+            }
+
+            try {
+                window.wishlistManager = new WishlistManager();
+                debugLog('✅ WishlistManager instance created');
+
+                // Load user wishlists
+                debugLog('📋 Loading user wishlists...');
+                wishlistManager.loadUserWishlists().then(() => {
+                    debugLog(`✅ Wishlists loaded: ${wishlistManager.wishlists ? wishlistManager.wishlists.length : 0} found`);
+                    
+                    // Check if delete buttons are rendered
+                    setTimeout(() => {
+                        const deleteButtons = document.querySelectorAll('.delete-wishlist');
+                        debugLog(`🗑️ Delete buttons found: ${deleteButtons.length}`);
+                        
+                        if (deleteButtons.length > 0) {
+                            debugLog('✅ Delete buttons are properly rendered!');
+                        } else {
+                            debugLog('❌ No delete buttons found in DOM', true);
+                        }
+                    }, 1000);
+                }).catch(error => {
+                    debugLog(`❌ Error loading wishlists: ${error.message}`, true);
+                });
+
+                // Set up create wishlist button
+                const createBtn = document.getElementById('create-wishlist-btn');
+                if (createBtn) {
+                    createBtn.addEventListener('click', () => {
+                        debugLog('➕ Create wishlist button clicked');
+                        wishlistManager.showCreateWishlistModal();
+                    });
+                    debugLog('✅ Create button event listener attached');
+                }
+
+            } catch (error) {
+                debugLog(`❌ Error initializing WishlistManager: ${error.message}`, true);
+            }
+        }
+
+        // Test API connectivity
+        async function testAPI() {
+            debugLog('🌐 Testing API connectivity...');
+            
+            try {
+                const response = await fetch('http://localhost:3000/wishlists', {
+                    headers: {
+                        'userid': localStorage.getItem('userId')
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    debugLog(`✅ API working: ${data.wishlists ? data.wishlists.length : 0} wishlists found`);
+                } else {
+                    debugLog(`❌ API error: ${response.status}`, true);
+                }
+            } catch (error) {
+                debugLog(`❌ API connection failed: ${error.message}`, true);
+            }
+        }
+
+        // Initialize everything
+        document.addEventListener('DOMContentLoaded', function() {
+            debugLog('🎯 DOM loaded, starting initialization...');
+            
+            // Test API first
+            testAPI().then(() => {
+                // Load wishlist script
+                loadWishlistScript();
+            });
+        });
+
+        // Global click handler for debugging
+        document.addEventListener('click', function(e) {
+            if (e.target.closest('.delete-wishlist')) {
+                const btn = e.target.closest('.delete-wishlist');
+                const wishlistId = btn.dataset.wishlistId;
+                const wishlistName = btn.dataset.wishlistName;
+                
+                debugLog(`🗑️ Delete button clicked: ${wishlistName} (${wishlistId})`);
+                
+                // Let the normal handler process it
+                return true;
+            }
+        });
+    </script>
+</body>
+</html>

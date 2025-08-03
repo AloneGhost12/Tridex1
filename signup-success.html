@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Account Created Successfully</title>
+    <style>
+        body {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #e0f7fa 0%, #b2dfdb 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Segoe UI', Arial, sans-serif;
+        }
+        .success-container {
+            background: #fff;
+            padding: 32px 28px 24px 28px;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(44,204,64,0.10), 0 2px 8px rgba(0,0,0,0.10);
+            text-align: center;
+            max-width: 350px;
+        }
+        .success-container h2 {
+            color: #2ecc40;
+            margin-bottom: 18px;
+        }
+        .success-container button {
+            margin-top: 18px;
+            padding: 12px 0;
+            background: linear-gradient(90deg, #2ecc40 60%, #27ae38 100%);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            box-shadow: 0 2px 8px rgba(44,204,64,0.08);
+            
+        }
+        .success-container button:hover {
+            background: linear-gradient(90deg, #27ae38 60%, #2ecc40 100%);
+            box-shadow: 0 4px 16px rgba(44,204,64,0.13);
+        }
+    </style>
+</head>
+<body>
+    <div class="success-container">
+        <h2>Account Created Successfully!</h2>
+        <p>Your account has been created. You can now log in.</p>
+        <button onclick="window.location.href='login.html'">Go to Login</button>
+    </div>
+</body>
+</html>

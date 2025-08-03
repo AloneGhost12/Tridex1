@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>More About Tridex</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Include the ban system script -->
+    <script src="ban-system.js"></script>
+    <style>
+        /* Main content styles */
+        .more-container {
+            max-width: 800px;
+            margin: 40px auto 80px auto;
+            padding: 0 20px;
+        }
+
+        .section {
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            padding: 30px;
+            margin-bottom: 30px;
+        }
+
+        .section h2 {
+            color: #007bff;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .section h3 {
+            color: #333;
+            margin: 20px 0 10px 0;
+        }
+
+        .section p {
+            color: #555;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+
+        .section ul {
+            margin-left: 20px;
+            margin-bottom: 20px;
+        }
+
+        .section li {
+            margin-bottom: 8px;
+            color: #555;
+        }
+
+        .contact-info {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+
+        .contact-info p {
+            margin-bottom: 10px;
+        }
+
+        .social-links {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .social-links a {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            background: #007bff;
+            color: white;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 40px;
+            font-size: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .social-links a:hover {
+            background: #0056b3;
+            transform: translateY(-3px);
+        }
+
+        .cta-button {
+            display: inline-block;
+            background: #007bff;
+            color: white;
+            padding: 12px 25px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: bold;
+            margin-top: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .cta-button:hover {
+            background: #0056b3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .leadership-profile {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .leadership-profile img {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-bottom: 15px;
+            border: 3px solid #007bff;
+        }
+
+        /* Responsive styles */
+        @media (max-width: 768px) {
+            .more-container {
+                margin: 20px auto 70px auto;
+            }
+
+            .section {
+                padding: 20px;
+            }
+
+            .leadership-profile img {
+                width: 120px;
+                height: 120px;
+            }
+        }
+
+        /* Loading overlay */
+        #loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255,255,255,0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #007bff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading overlay -->
+    <div id="loading-overlay">
+        <div class="spinner"></div>
+    </div>
+
+    <!-- Header with navigation -->
+    <header style="background-color: #333; color: white; padding: 15px 0; position:sticky; top:0; z-index:1000;">
+        <div style="display:flex; align-items:center; justify-content:space-between; padding:0 15px;">
+            <div style="display:flex; align-items:center;">
+                <h1>Tridex</h1>
+                <span id="username-display"></span>
+            </div>
+
+            <!-- Hamburger icon for mobile -->
+            <button id="hamburger-menu" style="background:none; border:none; cursor:pointer; display:none; padding:10px; z-index:1000; position:absolute; top:15px; right:15px;">
+                <div style="width:30px; height:3px; background-color:white; margin:6px 0; transition:0.4s;"></div>
+                <div style="width:30px; height:3px; background-color:white; margin:6px 0; transition:0.4s;"></div>
+                <div style="width:30px; height:3px; background-color:white; margin:6px 0; transition:0.4s;"></div>
+            </button>
+
+            <nav id="main-nav" style="display:flex;">
+                <ul id="nav" style="display:flex; list-style:none; margin:0; padding:0; align-items:center;">
+                    <li class="nav"><a href="index.html">Home</a></li>
+                    <li class="nav"><a href="about.html">About</a></li>
+                    <li class="nav"><a href="more.html">More</a></li>
+                    <li><a href="#" class="nav-icon" id="userIcon">👤</a></li>
+                    <li style="position: relative;">
+                        <a href="#" class="nav-icon" id="mailIcon" title="Mailbox" style="position: relative;">
+                            &#9993;
+                            <span id="mail-count" style="position: absolute; top: -8px; right: -10px; background: #dc3545; color: #fff; border-radius: 50%; font-size: 0.7em; padding: 2px 6px; min-width: 18px; text-align: center;">0</span>
+                        </a>
+                    </li>
+                    <li style="position: relative;">
+                        <a href="cart.html" class="nav-icon" id="cartIcon" title="Cart" style="position: relative;">
+                            🛒<span id="cart-count" style="position: absolute; top: -8px; right: -10px; background: #dc3545; color: #fff; border-radius: 50%; font-size: 0.7em; padding: 2px 6px; min-width: 18px; text-align: center;">0</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+        <form class="search-bar" id="search-form">
+            <input type="text" id="search-input" placeholder="Search...">
+            <button type="submit">
+                <span class="search-icon">🔍</span>
+            </button>
+        </form>
+        <div class="dropdown-menu" id="userDropdown" style="display:none;">
+            <a href="login.html" class="dropdown-btn">Login</a>
+            <a href="signup.html" class="dropdown-btn">Sign Up</a>
+        </div>
+    </header>
+
+    <!-- Main content -->
+    <div class="more-container">
+        <!-- Company Information Section -->
+        <div class="section">
+            <h2>Company Information</h2>
+            <p>
+                <strong>Tridex</strong> is a cutting-edge e-commerce platform established to revolutionize the online shopping experience.
+                Founded in 2023, we've quickly grown from a small startup to a trusted marketplace connecting customers with quality products
+                from around the world.
+            </p>
+
+            <h3>Our History</h3>
+            <p>
+                Tridex began as a vision to create a more personalized and secure online shopping environment.
+                What started as a small collection of curated products has evolved into a comprehensive marketplace
+                offering thousands of items across multiple categories. Throughout our journey, we've remained committed
+                to innovation, quality, and customer satisfaction.
+            </p>
+
+            <h3>Mission Statement</h3>
+            <p>
+                To provide a seamless, secure, and enjoyable shopping experience that connects people with quality products
+                while fostering trust and innovation in e-commerce.
+            </p>
+
+            <h3>Vision</h3>
+            <p>
+                To become the most trusted e-commerce platform globally, known for exceptional customer service,
+                product quality, and technological innovation.
+            </p>
+
+            <h3>Our Values</h3>
+            <ul>
+                <li><strong>Customer First:</strong> We prioritize customer needs and satisfaction in every decision we make.</li>
+                <li><strong>Integrity:</strong> We operate with honesty, transparency, and ethical business practices.</li>
+                <li><strong>Innovation:</strong> We continuously seek new ways to improve our platform and services.</li>
+                <li><strong>Quality:</strong> We maintain high standards for all products and services we offer.</li>
+                <li><strong>Security:</strong> We are committed to protecting customer data and providing secure transactions.</li>
+            </ul>
+        </div>
+
+        <!-- Leadership Section -->
+        <div class="section">
+            <h2>Leadership</h2>
+            <div class="leadership-profile">
+                <img src="https://via.placeholder.com/150?text=A" alt="Adharsh - CEO">
+                <h3>Adharsh</h3>
+                <p><strong>CEO & Founder</strong></p>
+                <p>
+                    As the visionary founder and CEO of Tridex, Adharsh has led the company from its inception with a
+                    passion for technology and e-commerce innovation. With a background in web development and digital marketing,
+                    he has shaped Tridex into a platform that prioritizes user experience, security, and product quality.
+                </p>
+                <p>
+                    Under his leadership, Tridex continues to evolve with cutting-edge features and a customer-centric approach.
+                    Adharsh's vision is to make Tridex the most trusted name in online shopping by maintaining the highest standards
+                    of service and continuously adapting to meet customer needs.
+                </p>
+            </div>
+        </div>
+
+        <!-- Contact Information Section -->
+        <div class="section">
+            <h2>Contact Us</h2>
+            <div class="contact-info">
+                <p><strong>Email:</strong> <a href="mailto:tridex1332@gmail.com" style="color:#007bff;">tridex1332@gmail.com</a></p>
+                <p><strong>Phone:</strong> 8589838547</p>
+                <p><strong>Customer Service Hours:</strong> Monday - Friday, 9:00 AM - 6:00 PM IST</p>
+                <p><strong>Support Options:</strong></p>
+                <ul>
+                    <li>Email Support: 24/7 response within 24 hours</li>
+                    <li>Phone Support: During business hours</li>
+                    <li>Live Chat: Available on our website during business hours</li>
+                </ul>
+
+                <h3>Social Media</h3>
+                <div class="social-links">
+                    <a href="#" title="Facebook">f</a>
+                    <a href="#" title="Twitter">t</a>
+                    <a href="#" title="Instagram">i</a>
+                    <a href="#" title="LinkedIn">in</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Additional Information Section -->
+        <div class="section">
+            <h2>Additional Information</h2>
+
+            <h3>Career Opportunities</h3>
+            <p>
+                Join our growing team! We're always looking for talented individuals who are passionate about e-commerce,
+                technology, and customer service. Check back regularly for open positions or send your resume to
+                <a href="mailto:careers@tridex.com" style="color:#007bff;">careers@tridex.com</a>.
+            </p>
+
+            <h3>Legal Information</h3>
+            <p>
+                <a href="#" style="color:#007bff;">Privacy Policy</a> |
+                <a href="#" style="color:#007bff;">Terms of Service</a> |
+                <a href="#" style="color:#007bff;">Return Policy</a> |
+                <a href="#" style="color:#007bff;">Shipping Information</a>
+            </p>
+
+            <div style="text-align:center; margin-top:30px;">
+                <a href="index.html" class="cta-button">Shop Now</a>
+                <a href="mailto:tridex1332@gmail.com" class="cta-button" style="margin-left:15px;">Contact Us</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ban message overlay -->
+    <div id="ban-message" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:10000; justify-content:center; align-items:center;">
+        <div style="background:#fff; max-width:500px; width:90%; padding:32px; border-radius:10px; text-align:center;">
+            <div style="font-size:64px; margin-bottom:24px;">🚫</div>
+            <h2 style="margin-bottom:16px; color:#dc3545; font-size:1.5rem;">Account Banned</h2>
+            <p style="margin-bottom:24px; font-size:1.1em;">This account has been banned by an administrator for violating our terms of service.</p>
+            <p style="margin-bottom:24px; font-size:0.9em; color:#777;">For more information, please contact support.</p>
+            <button id="ban-ok-btn" style="padding:10px 24px; background:#dc3545; color:#fff; border:none; border-radius:5px; font-size:1rem; cursor:pointer; font-weight:bold; transition:all 0.2s ease;">OK</button>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer style="position:fixed; left:0; bottom:0; width:100vw; background:#222; color:#fff; text-align:center; padding:12px 0; font-size:1rem; z-index:9999;">
+        &copy; 2025 Tridex. All rights reserved. Made with <span style="color:#e25555;">&#10084;&#65039;</span> by Tridex.
+    </footer>
+
+    <script>
+        // --- withLoading helper for loading overlay ---
+        function withLoading(action) {
+            return async function(...args) {
+                const loadingOverlay = document.getElementById('loading-overlay');
+                if (loadingOverlay) loadingOverlay.style.display = 'flex';
+                try {
+                    await action(...args);
+                } catch (error) {
+                    console.error('Error during action:', error);
+                } finally {
+                    if (loadingOverlay) loadingOverlay.style.display = 'none';
+                }
+            };
+        }
+
+        // --- Loading overlay helpers ---
+        function showLoading() {
+            document.getElementById('loading-overlay').style.display = 'flex';
+        }
+        function hideLoading() {
+            document.getElementById('loading-overlay').style.display = 'none';
+        }
+
+        // --- Hamburger menu functionality ---
+        document.addEventListener('DOMContentLoaded', function() {
+            const hamburger = document.getElementById('hamburger-menu');
+            const nav = document.getElementById('nav');
+
+            // Function to check window size and adjust menu visibility
+            function checkWindowSize() {
+                if (window.innerWidth <= 768) {
+                    // Mobile view
+                    hamburger.style.display = 'block';
+                    nav.style.display = 'none';
+                } else {
+                    // Desktop view
+                    hamburger.style.display = 'none';
+                    nav.style.display = 'flex';
+                }
+            }
+
+            // Initial check
+            checkWindowSize();
+
+            // Check on window resize
+            window.addEventListener('resize', checkWindowSize);
+
+            // Toggle navigation when hamburger is clicked
+            hamburger.addEventListener('click', function() {
+                if (nav.style.display === 'none' || nav.style.display === '') {
+                    nav.style.display = 'flex';
+                    nav.style.position = 'absolute';
+                    nav.style.top = '60px';
+                    nav.style.left = '0';
+                    nav.style.width = '100%';
+                    nav.style.backgroundColor = '#333';
+                    nav.style.flexDirection = 'column';
+                    nav.style.zIndex = '1000';
+
+                    // Make the nav items stack vertically
+                    document.getElementById('nav').style.flexDirection = 'column';
+                    document.getElementById('nav').style.width = '100%';
+
+                    // Add some styling to nav items
+                    const navItems = document.querySelectorAll('#nav li');
+                    navItems.forEach(item => {
+                        item.style.width = '100%';
+                        item.style.textAlign = 'left';
+                        item.style.padding = '10px 0';
+                        item.style.borderBottom = '1px solid #444';
+                        item.style.position = 'relative'; // Ensure proper positioning for notification badges
+                    });
+
+                    // Ensure notification badges are visible
+                    const mailCount = document.getElementById('mail-count');
+                    const cartCount = document.getElementById('cart-count');
+                    const mailIcon = document.getElementById('mailIcon');
+                    const cartIcon = document.getElementById('cartIcon');
+
+                    // Make sure the parent elements have proper positioning
+                    if (mailIcon) {
+                        mailIcon.style.position = 'relative';
+                        mailIcon.style.display = 'inline-block';
+                    }
+
+                    if (cartIcon) {
+                        cartIcon.style.position = 'relative';
+                        cartIcon.style.display = 'inline-block';
+                    }
+
+                    // Position the notification badges
+                    if (mailCount) {
+                        mailCount.style.position = 'absolute';
+                        mailCount.style.right = '-10px';
+                        mailCount.style.top = '-8px';
+                        mailCount.style.zIndex = '1001';
+                    }
+
+                    if (cartCount) {
+                        cartCount.style.position = 'absolute';
+                        cartCount.style.right = '-10px';
+                        cartCount.style.top = '-8px';
+                        cartCount.style.zIndex = '1001';
+                    }
+                } else {
+                    nav.style.display = 'none';
+                }
+            });
+
+            // Close navigation when clicking outside
+            document.addEventListener('click', function(event) {
+                if (window.innerWidth <= 768 &&
+                    nav.style.display === 'flex' &&
+                    !nav.contains(event.target) &&
+                    event.target !== hamburger &&
+                    !hamburger.contains(event.target)) {
+                    nav.style.display = 'none';
+                }
+            });
+
+            // Close navigation when window is resized to desktop
+            window.addEventListener('resize', function() {
+                if (window.innerWidth > 992 && nav.classList.contains('show')) {
+                    nav.classList.remove('show');
+                }
+            });
+
+            // Update cart and mail counts
+            updateCartCount();
+            updateMailCount();
+        });
+
+        // Add click handler for the ban message OK button
+        document.getElementById('ban-ok-btn').addEventListener('click', function() {
+            // Clear all login data
+            localStorage.removeItem('token');
+            localStorage.removeItem('isLoggedIn');
+            localStorage.removeItem('username');
+            localStorage.removeItem('currentUser');
+
+            // Redirect to login page with banned parameter
+            window.location.href = 'login.html?banned=true';
+        });
+
+        // Cart count update function
+        function updateCartCount() {
+            const isLoggedIn = localStorage.getItem('isLoggedIn');
+            // Check for token as well (for backward compatibility)
+            const hasToken = localStorage.getItem('token');
+            // Use username from either source
+            const username = localStorage.getItem('currentUser') || localStorage.getItem('username');
+
+            // If we have a token but no isLoggedIn flag, set it
+            if (hasToken && !isLoggedIn) {
+                localStorage.setItem('isLoggedIn', 'true');
+            }
+
+            // If we have a username but no currentUser, set it
+            if (localStorage.getItem('username') && !localStorage.getItem('currentUser')) {
+                localStorage.setItem('currentUser', localStorage.getItem('username'));
+            }
+
+            // Recheck login status after potential updates
+            const isActuallyLoggedIn = localStorage.getItem('isLoggedIn') || hasToken;
+
+            if (!isActuallyLoggedIn || !username) {
+                document.getElementById('cart-count').style.display = 'none';
+                return;
+            }
+
+            // Ensure cart is isolated per user
+            const cartUser = localStorage.getItem('cartUser');
+            if (cartUser !== username) {
+                const userCart = localStorage.getItem('cart_' + username);
+                if (userCart) {
+                    localStorage.setItem('cart', userCart);
+                } else {
+                    localStorage.removeItem('cart');
+                }
+                localStorage.setItem('cartUser', username);
+            }
+
+            let cart = [];
+            try { cart = JSON.parse(localStorage.getItem('cart')) || []; } catch (e) { cart = []; }
+            const count = cart.length;
+            const cartCount = document.getElementById('cart-count');
+
+            if (count > 0) {
+                cartCount.textContent = count;
+                cartCount.style.display = '';
+            } else {
+                cartCount.style.display = 'none';
+            }
+        }
+
+        // Mail count update function
+        function updateMailCount() {
+            // Check login status with both methods
+            const isLoggedIn = localStorage.getItem('isLoggedIn');
+            const hasToken = localStorage.getItem('token');
+            const isActuallyLoggedIn = isLoggedIn || hasToken;
+
+            // Use username from either source
+            const username = localStorage.getItem('username') || localStorage.getItem('currentUser');
+
+            // If we have a token but no isLoggedIn flag, set it
+            if (hasToken && !isLoggedIn) {
+                localStorage.setItem('isLoggedIn', 'true');
+            }
+
+            if (!isActuallyLoggedIn || !username) {
+                document.getElementById('mail-count').style.display = 'none';
+                return;
+            }
+
+            const mailCount = document.getElementById('mail-count');
+
+            // Try to get unread count from local storage
+            let messages = [];
+            let unreadCount = 0;
+
+            try {
+                messages = JSON.parse(localStorage.getItem('adminMessages')) || [];
+            } catch (e) {
+                messages = [];
+            }
+
+            // Calculate unread count from local storage
+            const lastSeenKey = username ? `mailLastSeen_${username}` : 'mailLastSeen_guest';
+            const lastSeen = Number(localStorage.getItem(lastSeenKey) || 0);
+            unreadCount = Math.max(messages.length - lastSeen, 0);
+
+            // Update the badge
+            if (unreadCount > 0) {
+                mailCount.textContent = unreadCount;
+                mailCount.style.display = '';
+            } else {
+                mailCount.style.display = 'none';
+            }
+        }
+
+        // Listen for cart changes from other tabs/windows
+        window.addEventListener('storage', function(e) {
+            if (e.key === 'cart') updateCartCount();
+            if (e.key === 'adminMessages') updateMailCount();
+        });
+
+        // Cart icon click
+        document.getElementById('cartIcon').onclick = withLoading(function(e) {
+            e.preventDefault();
+            const isLoggedIn = localStorage.getItem('isLoggedIn');
+            const hasToken = localStorage.getItem('token');
+
+            // If we have a token but no isLoggedIn flag, set it
+            if (hasToken && !isLoggedIn) {
+                localStorage.setItem('isLoggedIn', 'true');
+            }
+
+            // Check login status after potential update
+            const isActuallyLoggedIn = localStorage.getItem('isLoggedIn') || hasToken;
+
+            if (!isActuallyLoggedIn) {
+                alert('You must login to view your cart.');
+                window.location.href = 'login.html';
+                return;
+            }
+
+            window.location.href = 'cart.html';
+        });
+
+        // User icon click
+        const userIcon = document.getElementById('userIcon');
+        const dropdown = document.getElementById('userDropdown');
+
+        // Fix: define verifiedUsers as an empty array to prevent JS errors
+        const verifiedUsers = [];
+
+        // Show/hide buttons based on login status
+        const isLoggedIn = localStorage.getItem('isLoggedIn');
+        const username = localStorage.getItem('username') || localStorage.getItem('currentUser');
+
+        // Display username for identification, not full name
+        if (isLoggedIn && username) {
+            document.getElementById('username-display').innerHTML =
+                `Welcome, <span style="text-transform:uppercase; letter-spacing:0.5px; font-weight:500;">${username}</span> ${verifiedUsers.includes(username) ? '<span title="Verified" style="color:#1da1f2; font-size:1.1em;">&#10004;&#65039;</span>' : ''}`;
+        }
+
+        // Hide or show login/signup in dropdown and handle profile icon click
+        document.addEventListener('DOMContentLoaded', function() {
+            if (isLoggedIn) {
+                // Remove login and signup links if logged in
+                dropdown.innerHTML = '';
+                // Redirect to profile page on profile icon click
+                userIcon.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    window.location.href = 'profile.html';
+                });
+            } else {
+                userIcon.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+                });
+            }
+        });
+
+        // Ban check logic using our ban system
+        if (window.banSystem && window.banSystem.checkCurrentUserBan()) {
+            // Show ban message
+            document.getElementById('ban-message').style.display = 'flex';
+            // Stop further script execution
+            throw new Error('User is banned');
+        }
+    </script>
+</body>
+</html>

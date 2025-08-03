@@ -1,0 +1,964 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Contact Us - Tridex</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="chatbot.css">
+    <link rel="stylesheet" href="css/responsive.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <!-- Include the ban system script -->
+    <script src="ban-system.js"></script>
+    <!-- Include enhanced chatbot scripts -->
+    <script src="chatbot.js" defer></script>
+    <script src="chatbot-ai.js" defer></script>
+    <!-- Include responsive behavior script -->
+    <script src="js/responsive.js" defer></script>
+    <!-- Include navigation state management script -->
+    <script src="js/navigation-state.js" defer></script>
+    <!-- reCAPTCHA API -->
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+    <style>
+        /* Global box-sizing */
+        * {
+            box-sizing: border-box;
+        }
+
+        /* Critical styles for hamburger menu functionality */
+        @media (max-width: 900px) {
+            #nav.show {
+                display: flex !important;
+                position: absolute !important;
+                top: 60px !important;
+                left: 0 !important;
+                width: 100% !important;
+                background: #222 !important;
+                z-index: 1050 !important;
+            }
+        }
+
+        /* Responsive Navbar */
+        @media (max-width: 900px) {
+            header > div {
+                flex-direction: column;
+                align-items: flex-start !important;
+            }
+            nav ul {
+                gap: 10px !important;
+            }
+            .search-bar {
+                max-width: 98vw !important;
+            }
+            #hamburger-menu {
+                display: flex !important;
+                position: absolute;
+                top: 15px;
+                right: 15px;
+                z-index: 1100;
+            }
+            #main-nav {
+                width: 100%;
+            }
+            #nav {
+                display: none !important; /* Force display:none by default */
+                flex-direction: column !important;
+                align-items: flex-start !important;
+                gap: 0 !important;
+                background: #222;
+                position: absolute;
+                top: 60px;
+                left: 0;
+                width: 100vw;
+                padding: 0;
+                z-index: 1050;
+                box-shadow: 0 4px 16px rgba(0,0,0,0.13);
+                overflow-y: auto;
+                max-height: calc(100vh - 60px);
+            }
+            #nav.show {
+                display: flex !important; /* Force display:flex when .show class is present */
+            }
+            #nav li {
+                width: 100%;
+                border-bottom: 1px solid #333;
+                padding: 12px 18px;
+                text-align: left;
+            }
+            #nav li:last-child {
+                border-bottom: none;
+            }
+            #nav li a {
+                width: 100%;
+                display: block;
+                color: #fff !important;
+                text-decoration: none;
+                text-align: left;
+                font-size: 1em !important;
+                padding: 8px 0;
+            }
+        }
+
+        /* Contact Page Styles */
+        .contact-container {
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+
+        .contact-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .contact-header h1 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 2.5rem;
+        }
+
+        .contact-header p {
+            color: #666;
+            font-size: 1.1rem;
+            max-width: 800px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        .contact-content {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 30px;
+        }
+
+        .contact-form-container {
+            flex: 1;
+            min-width: 300px;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            padding: 30px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .contact-info-container {
+            flex: 0 0 300px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .contact-form {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .form-group label {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            border-color: #007bff;
+            outline: none;
+        }
+
+        .form-group textarea {
+            min-height: 150px;
+            resize: vertical;
+        }
+
+        .form-group.file-upload {
+            position: relative;
+        }
+
+        .file-upload-label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 15px;
+            border: 1px dashed #007bff;
+            border-radius: 5px;
+            cursor: pointer;
+            color: #007bff;
+            transition: all 0.3s;
+        }
+
+        .file-upload-label:hover {
+            background-color: rgba(0, 123, 255, 0.05);
+        }
+
+        .file-upload input[type="file"] {
+            position: absolute;
+            width: 0;
+            height: 0;
+            opacity: 0;
+        }
+
+        .file-name {
+            margin-top: 5px;
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            margin-top: 3px;
+        }
+
+        .checkbox-group label {
+            font-size: 0.9rem;
+            color: #555;
+            line-height: 1.4;
+        }
+
+        .submit-btn {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 14px 20px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            margin-top: 10px;
+        }
+
+        .submit-btn:hover {
+            background-color: #0056b3;
+        }
+
+        .submit-btn:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+
+        .contact-info-card {
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+
+        .contact-info-card h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 10px;
+        }
+
+        .contact-info-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .contact-info-icon {
+            font-size: 1.5rem;
+            color: #007bff;
+            min-width: 30px;
+            text-align: center;
+        }
+
+        .contact-info-text h4 {
+            margin: 0 0 5px 0;
+            color: #444;
+        }
+
+        .contact-info-text p {
+            margin: 0;
+            color: #666;
+            line-height: 1.5;
+        }
+
+        .social-links {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .social-link {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            background: #007bff;
+            color: white;
+            border-radius: 50%;
+            font-size: 1.2rem;
+            transition: all 0.3s;
+        }
+
+        .social-link:hover {
+            background: #0056b3;
+            transform: translateY(-3px);
+        }
+
+        .error-message {
+            color: #dc3545;
+            font-size: 0.9rem;
+            margin-top: 5px;
+            display: none;
+        }
+
+        .success-message {
+            background-color: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .contact-header h1 {
+                font-size: 2rem;
+            }
+
+            .contact-content {
+                flex-direction: column;
+            }
+
+            .contact-info-container {
+                order: -1;
+            }
+
+            .contact-form-container {
+                padding: 20px;
+            }
+
+            .g-recaptcha {
+                transform-origin: left top;
+                transform: scale(0.9);
+            }
+        }
+
+        @media (max-width: 480px) {
+            .contact-header h1 {
+                font-size: 1.8rem;
+            }
+
+            .contact-header p {
+                font-size: 1rem;
+            }
+
+            .contact-form-container {
+                padding: 15px;
+            }
+
+            .form-group input,
+            .form-group select,
+            .form-group textarea {
+                padding: 10px;
+            }
+
+            .submit-btn {
+                padding: 12px 16px;
+            }
+
+            .g-recaptcha {
+                transform: scale(0.8);
+            }
+
+            .contact-info-card {
+                padding: 15px;
+            }
+
+            .social-link {
+                width: 36px;
+                height: 36px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header with navigation -->
+    <header style="background-color: #333; color: white; padding: 15px 0; position:sticky; top:0; z-index:1000;">
+        <div style="display:flex; align-items:center; justify-content:space-between; padding:0 15px;">
+            <div style="display:flex; align-items:center;">
+                <h1>Tridex</h1>
+                <span id="username-display"></span>
+            </div>
+
+            <!-- Hamburger menu for mobile -->
+            <button id="hamburger-menu" style="background:none; border:none; cursor:pointer; display:none; padding:10px; z-index:1100; position:absolute; top:15px; right:15px;">
+                <div style="width:30px; height:3px; background-color:white; margin:6px 0; transition:0.4s;"></div>
+                <div style="width:30px; height:3px; background-color:white; margin:6px 0; transition:0.4s;"></div>
+                <div style="width:30px; height:3px; background-color:white; margin:6px 0; transition:0.4s;"></div>
+            </button>
+
+            <nav id="main-nav" style="display:flex;">
+                <ul id="nav" style="display:flex; list-style:none; margin:0; padding:0; align-items:center;">
+                    <li class="nav"><a href="index.html">Home</a></li>
+                    <li class="nav"><a href="about.html">About</a></li>
+                    <li class="nav"><a href="more.html">More</a></li>
+                    <li class="nav"><a href="contact.html">Contact Us</a></li>
+                    <li><a href="#" class="nav-icon" id="userIcon">👤</a></li>
+                    <li style="position: relative;">
+                        <a href="#" class="nav-icon" id="mailIcon" title="Mailbox" style="position: relative;">
+                            &#9993;
+                            <span id="mail-count" style="position: absolute; top: -8px; right: -10px; background: #dc3545; color: #fff; border-radius: 50%; font-size: 0.7em; padding: 2px 6px; min-width: 18px; text-align: center;">0</span>
+                        </a>
+                    </li>
+                    <li style="position: relative;">
+                        <a href="cart.html" class="nav-icon" id="cartIcon" title="Cart" style="position: relative;">
+                            🛒<span id="cart-count" style="position: absolute; top: -8px; right: -10px; background: #dc3545; color: #fff; border-radius: 50%; font-size: 0.7em; padding: 2px 6px; min-width: 18px; text-align: center;">0</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+        <form class="search-bar" id="search-form">
+            <input type="text" id="search-input" placeholder="Search...">
+            <button type="submit">
+                <span class="search-icon">🔍</span>
+            </button>
+        </form>
+        <div class="dropdown-menu" id="userDropdown" style="display:none;">
+            <a href="login.html" class="dropdown-btn">Login</a>
+            <a href="signup.html" class="dropdown-btn">Sign Up</a>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="contact-container">
+        <div class="contact-header">
+            <h1>Contact Us</h1>
+            <p>Have questions, feedback, or need assistance? We're here to help! Fill out the form below and our team will get back to you as soon as possible.</p>
+        </div>
+
+        <div id="success-message" class="success-message">
+            Thank you for your message! We have received your inquiry and will respond to you shortly.
+        </div>
+
+        <div class="contact-content">
+            <div class="contact-form-container">
+                <form id="contact-form" class="contact-form">
+                    <div class="form-group">
+                        <label for="fullName">Full Name *</label>
+                        <input type="text" id="fullName" name="fullName" required>
+                        <div id="fullName-error" class="error-message">Please enter your full name</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="email">Email Address *</label>
+                        <input type="email" id="email" name="email" required>
+                        <div id="email-error" class="error-message">Please enter a valid email address</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="phone">Phone Number (Optional)</label>
+                        <input type="tel" id="phone" name="phone">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="subject">Subject *</label>
+                        <select id="subject" name="subject" required>
+                            <option value="" disabled selected>Select a topic</option>
+                            <option value="Product Inquiry">Product Inquiry</option>
+                            <option value="Order Issue">Order Issue</option>
+                            <option value="Technical Support">Technical Support</option>
+                            <option value="Account Help">Account Help</option>
+                            <option value="Feedback">Feedback</option>
+                            <option value="Other">Other</option>
+                        </select>
+                        <div id="subject-error" class="error-message">Please select a subject</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="message">Message *</label>
+                        <textarea id="message" name="message" required minlength="10"></textarea>
+                        <div id="message-error" class="error-message">Please enter a message (minimum 10 characters)</div>
+                    </div>
+
+                    <div class="form-group file-upload">
+                        <label>Attachment (Optional)</label>
+                        <label for="attachment" class="file-upload-label">
+                            <span>📎</span> Choose a file
+                        </label>
+                        <input type="file" id="attachment" name="attachment" accept=".jpg,.jpeg,.png,.pdf,.doc,.docx">
+                        <div class="file-name" id="file-name">No file chosen</div>
+                    </div>
+
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="acceptPolicy" name="acceptPolicy" required>
+                        <label for="acceptPolicy">I agree to the <a href="#" style="color:#007bff;">Privacy Policy</a> and consent to the processing of my personal data *</label>
+                    </div>
+                    <div id="policy-error" class="error-message">You must accept the privacy policy</div>
+
+                    <div class="g-recaptcha" data-sitekey="6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"></div>
+                    <div id="recaptcha-error" class="error-message">Please complete the reCAPTCHA</div>
+
+                    <button type="submit" class="submit-btn" id="submit-btn">Send Message</button>
+                </form>
+            </div>
+
+            <div class="contact-info-container">
+                <div class="contact-info-card">
+                    <h3>Contact Information</h3>
+
+                    <div class="contact-info-item">
+                        <div class="contact-info-icon">📧</div>
+                        <div class="contact-info-text">
+                            <h4>Email</h4>
+                            <p><a href="mailto:tridex1332@gmail.com" style="color:#007bff;">tridex1332@gmail.com</a></p>
+                        </div>
+                    </div>
+
+                    <div class="contact-info-item">
+                        <div class="contact-info-icon">📞</div>
+                        <div class="contact-info-text">
+                            <h4>Phone</h4>
+                            <p>8589838547</p>
+                        </div>
+                    </div>
+
+                    <div class="contact-info-item">
+                        <div class="contact-info-icon">🕒</div>
+                        <div class="contact-info-text">
+                            <h4>Business Hours</h4>
+                            <p>Monday - Friday: 9:00 AM - 6:00 PM IST</p>
+                            <p>Saturday: 10:00 AM - 2:00 PM IST</p>
+                            <p>Sunday: Closed</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="contact-info-card">
+                    <h3>Connect With Us</h3>
+                    <p>Follow us on social media for updates, promotions, and more!</p>
+
+                    <div class="social-links">
+                        <a href="#" class="social-link">f</a>
+                        <a href="#" class="social-link">in</a>
+                        <a href="#" class="social-link">t</a>
+                        <a href="#" class="social-link">ig</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chatbot Widget -->
+    <div id="chatbot-widget">
+        <button id="chatbot-toggle">💬</button>
+        <div id="chatbot-box">
+            <div>
+                <span>Tridex Support</span>
+                <span id="chatbot-status">Online</span>
+                <button id="chatbot-close">×</button>
+            </div>
+            <div id="chatbot-messages"></div>
+            <div id="chatbot-typing" style="display:none;">
+                <div style="display:flex; align-items:center; gap:5px;">
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                </div>
+            </div>
+            <form id="chatbot-form">
+                <input type="text" id="chatbot-input" placeholder="Type a message...">
+                <button type="submit">Send</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Ban message overlay -->
+    <div id="ban-message" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:10000; justify-content:center; align-items:center;">
+        <div style="background:#fff; max-width:500px; width:90%; padding:32px; border-radius:10px; text-align:center;">
+            <div style="font-size:64px; margin-bottom:24px;">🚫</div>
+            <h2 style="margin-bottom:16px; color:#dc3545; font-size:1.5rem;">Account Banned</h2>
+            <p style="margin-bottom:24px; font-size:1.1em;">This account has been banned by an administrator for violating our terms of service.</p>
+            <p style="margin-bottom:24px; font-size:0.9em; color:#777;">For more information, please contact support.</p>
+            <button id="ban-ok-btn" style="padding:10px 24px; background:#dc3545; color:#fff; border:none; border-radius:5px; font-size:1rem; cursor:pointer; font-weight:bold; transition:all 0.2s ease;">OK</button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Form validation and submission
+            const contactForm = document.getElementById('contact-form');
+            const fileInput = document.getElementById('attachment');
+            const fileName = document.getElementById('file-name');
+            const successMessage = document.getElementById('success-message');
+
+            // Update file name display when a file is selected
+            fileInput.addEventListener('change', function() {
+                if (this.files.length > 0) {
+                    fileName.textContent = this.files[0].name;
+                } else {
+                    fileName.textContent = 'No file chosen';
+                }
+            });
+
+            // Form validation
+            contactForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+
+                // Reset error messages
+                document.querySelectorAll('.error-message').forEach(el => el.style.display = 'none');
+
+                let isValid = true;
+
+                // Validate full name
+                const fullName = document.getElementById('fullName');
+                if (!fullName.value.trim()) {
+                    document.getElementById('fullName-error').style.display = 'block';
+                    isValid = false;
+                }
+
+                // Validate email
+                const email = document.getElementById('email');
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (!emailRegex.test(email.value.trim())) {
+                    document.getElementById('email-error').style.display = 'block';
+                    isValid = false;
+                }
+
+                // Validate subject
+                const subject = document.getElementById('subject');
+                if (!subject.value) {
+                    document.getElementById('subject-error').style.display = 'block';
+                    isValid = false;
+                }
+
+                // Validate message
+                const message = document.getElementById('message');
+                if (message.value.trim().length < 10) {
+                    document.getElementById('message-error').style.display = 'block';
+                    isValid = false;
+                }
+
+                // Validate policy acceptance
+                const acceptPolicy = document.getElementById('acceptPolicy');
+                if (!acceptPolicy.checked) {
+                    document.getElementById('policy-error').style.display = 'block';
+                    isValid = false;
+                }
+
+                // Validate reCAPTCHA
+                const recaptchaResponse = grecaptcha.getResponse();
+                if (!recaptchaResponse) {
+                    document.getElementById('recaptcha-error').style.display = 'block';
+                    isValid = false;
+                }
+
+                if (!isValid) {
+                    return;
+                }
+
+                // Prepare form data for submission
+                const formData = new FormData();
+                formData.append('fullName', fullName.value.trim());
+                formData.append('email', email.value.trim());
+                formData.append('phone', document.getElementById('phone').value.trim());
+                formData.append('subject', subject.value);
+                formData.append('message', message.value.trim());
+                formData.append('acceptedPolicy', acceptPolicy.checked);
+                formData.append('g-recaptcha-response', recaptchaResponse);
+
+                // Add file if selected
+                if (fileInput.files.length > 0) {
+                    formData.append('attachment', fileInput.files[0]);
+                }
+
+                // Add user info if logged in
+                const username = localStorage.getItem('username') || localStorage.getItem('currentUser');
+                if (username) {
+                    formData.append('username', username);
+                }
+
+                // Disable submit button during submission
+                const submitBtn = document.getElementById('submit-btn');
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Sending...';
+
+                try {
+                    // Submit the form
+                    const response = await fetch('https://tridex1.onrender.com/contact', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    if (response.ok) {
+                        // Show success message
+                        contactForm.reset();
+                        fileName.textContent = 'No file chosen';
+                        grecaptcha.reset();
+                        successMessage.style.display = 'block';
+
+                        // Scroll to success message
+                        successMessage.scrollIntoView({ behavior: 'smooth' });
+
+                        // Hide success message after 5 seconds
+                        setTimeout(() => {
+                            successMessage.style.display = 'none';
+                        }, 5000);
+                    } else {
+                        const data = await response.json();
+                        alert(`Error: ${data.message || 'Failed to submit form. Please try again.'}`);
+                    }
+                } catch (error) {
+                    console.error('Error submitting form:', error);
+                    alert('An error occurred. Please try again later.');
+                } finally {
+                    // Re-enable submit button
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Send Message';
+                }
+            });
+
+            // Hamburger menu functionality
+            const hamburger = document.getElementById('hamburger-menu');
+            const nav = document.getElementById('nav');
+
+            // Function to toggle the hamburger menu
+            function toggleHamburgerMenu(show) {
+                if (!hamburger || !nav) {
+                    console.error('Hamburger menu or navigation not found');
+                    return;
+                }
+
+                const divs = hamburger.querySelectorAll('div');
+                console.log('Toggle hamburger menu', { show, navClassList: nav.classList, hasShowClass: nav.classList.contains('show') });
+
+                if (show === undefined) {
+                    // Toggle mode
+                    nav.classList.toggle('show');
+                    console.log('After toggle:', { hasShowClass: nav.classList.contains('show') });
+
+                    if (nav.classList.contains('show')) {
+                        // X shape when menu is open
+                        divs[0].style.transform = 'rotate(-45deg) translate(-5px, 6px)';
+                        divs[1].style.opacity = '0';
+                        divs[2].style.transform = 'rotate(45deg) translate(-5px, -6px)';
+                        // Force display style
+                        nav.style.display = 'flex';
+                    } else {
+                        // Reset to hamburger shape
+                        divs[0].style.transform = 'none';
+                        divs[1].style.opacity = '1';
+                        divs[2].style.transform = 'none';
+                        // Reset display style
+                        nav.style.display = '';
+                    }
+                } else if (show) {
+                    // Show menu
+                    nav.classList.add('show');
+                    divs[0].style.transform = 'rotate(-45deg) translate(-5px, 6px)';
+                    divs[1].style.opacity = '0';
+                    divs[2].style.transform = 'rotate(45deg) translate(-5px, -6px)';
+                    // Force display style
+                    nav.style.display = 'flex';
+                } else {
+                    // Hide menu
+                    nav.classList.remove('show');
+                    divs[0].style.transform = 'none';
+                    divs[1].style.opacity = '1';
+                    divs[2].style.transform = 'none';
+                    // Reset display style
+                    nav.style.display = '';
+                }
+            }
+
+            // Add click event listener to hamburger menu
+            if (hamburger) {
+                console.log('Adding click event listener to hamburger menu');
+
+                // Remove any existing click listeners to avoid duplicates
+                hamburger.removeEventListener('click', hamburgerClickHandler);
+
+                // Define the click handler function
+                function hamburgerClickHandler(e) {
+                    console.log('Hamburger clicked');
+                    e.preventDefault();
+                    e.stopPropagation(); // Prevent event from bubbling up
+                    toggleHamburgerMenu();
+                }
+
+                // Add the click event listener
+                hamburger.addEventListener('click', hamburgerClickHandler);
+
+                // Add a direct click handler as a fallback
+                hamburger.onclick = function(e) {
+                    console.log('Hamburger onclick triggered');
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    // Direct DOM manipulation as a fallback
+                    const navElement = document.getElementById('nav');
+                    if (navElement) {
+                        if (navElement.style.display === 'flex') {
+                            navElement.style.display = 'none';
+                            // Reset hamburger icon
+                            const divs = hamburger.querySelectorAll('div');
+                            divs[0].style.transform = 'none';
+                            divs[1].style.opacity = '1';
+                            divs[2].style.transform = 'none';
+                        } else {
+                            navElement.style.display = 'flex';
+                            // X shape
+                            const divs = hamburger.querySelectorAll('div');
+                            divs[0].style.transform = 'rotate(-45deg) translate(-5px, 6px)';
+                            divs[1].style.opacity = '0';
+                            divs[2].style.transform = 'rotate(45deg) translate(-5px, -6px)';
+                        }
+                    }
+                };
+            }
+
+            // Close navigation when clicking outside
+            document.addEventListener('click', function(event) {
+                if (nav && nav.classList.contains('show') &&
+                    !hamburger.contains(event.target) &&
+                    !nav.contains(event.target)) {
+
+                    // Use our toggle function to hide the menu
+                    toggleHamburgerMenu(false);
+                }
+            });
+
+            // Close menu when a navigation link is clicked
+            const navLinks = document.querySelectorAll('#nav a');
+            navLinks.forEach(link => {
+                link.addEventListener('click', function() {
+                    if (window.innerWidth <= 900 && nav.classList.contains('show')) {
+                        toggleHamburgerMenu(false);
+                    }
+                });
+            });
+
+            // Show hamburger on mobile
+            function adjustForMobile() {
+                console.log('Adjusting for mobile, window width:', window.innerWidth);
+
+                if (window.innerWidth <= 900) {
+                    // Mobile view
+                    if (hamburger) {
+                        hamburger.style.display = 'flex';
+                        console.log('Showing hamburger menu button');
+                    }
+
+                    // Make sure the nav menu is initially hidden on mobile
+                    if (nav) {
+                        // Only hide if not explicitly shown
+                        if (!nav.classList.contains('show')) {
+                            nav.style.display = 'none';
+                        }
+                    }
+                } else {
+                    // Desktop view
+                    if (hamburger) {
+                        hamburger.style.display = 'none';
+                        console.log('Hiding hamburger menu button');
+                    }
+
+                    if (nav) {
+                        // Reset nav display for desktop
+                        nav.style.display = 'flex';
+
+                        if (nav.classList.contains('show')) {
+                            // Hide the menu when resizing to desktop
+                            toggleHamburgerMenu(false);
+                        }
+                    }
+                }
+            }
+
+            // Initial check and add resize listener
+            // Small delay to ensure all elements are loaded
+            setTimeout(() => {
+                adjustForMobile();
+
+                // Force a check of the hamburger menu state
+                if (window.innerWidth <= 900) {
+                    console.log('Initial mobile setup');
+
+                    // Make sure hamburger is visible
+                    if (hamburger) {
+                        hamburger.style.display = 'flex';
+                    }
+
+                    // Make sure nav is hidden initially
+                    if (nav) {
+                        nav.style.display = 'none';
+                        nav.classList.remove('show');
+                    }
+
+                    // Log the state of elements
+                    console.log('Initial state:', {
+                        hamburgerDisplay: hamburger ? hamburger.style.display : 'element not found',
+                        navDisplay: nav ? nav.style.display : 'element not found',
+                        navClassList: nav ? nav.classList : 'element not found'
+                    });
+                }
+            }, 100);
+
+            // Handle window resize
+            window.addEventListener('resize', adjustForMobile);
+
+            // Add a load event listener to ensure everything is set up correctly
+            window.addEventListener('load', function() {
+                console.log('Window loaded, rechecking hamburger menu');
+                adjustForMobile();
+            });
+
+            // Check for ban status
+            checkBanStatus();
+        });
+
+        // Function to check if user is banned
+        function checkBanStatus() {
+            const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+            const isBanned = localStorage.getItem('banned') === 'true';
+
+            if (isLoggedIn && isBanned) {
+                document.getElementById('ban-message').style.display = 'flex';
+            }
+        }
+
+        // Add click handler for the ban message OK button
+        document.getElementById('ban-ok-btn').addEventListener('click', function() {
+            // Clear all login data
+            localStorage.removeItem('token');
+            localStorage.removeItem('isLoggedIn');
+            localStorage.removeItem('username');
+            localStorage.removeItem('currentUser');
+
+            // Redirect to login page with banned parameter
+            window.location.href = 'login.html?banned=true';
+        });
+    </script>
+</body>
+</html>

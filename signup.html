@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta http-equiv="Cross-Origin-Opener-Policy" content="same-origin-allow-popups">
+    <title>Sign Up</title>
+    <link rel="stylesheet" href="auth.css">
+    <link rel="stylesheet" href="css/responsive.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <!-- Custom Popup System -->
+    <link rel="stylesheet" href="css/custom-popups.css">
+    <script src="js/custom-popups.js"></script>
+    <script>
+        // Fallback functions in case custom popups don't load
+        window.tridexConfirm = window.tridexConfirm || function(message) { return Promise.resolve(confirm(message)); };
+        window.tridexSuccess = window.tridexSuccess || function(message) { alert(message); return Promise.resolve(); };
+        window.tridexError = window.tridexError || function(message) { alert(message); return Promise.resolve(); };
+        window.tridexWarning = window.tridexWarning || function(message) { alert(message); return Promise.resolve(); };
+        window.tridexInfo = window.tridexInfo || function(message) { alert(message); return Promise.resolve(); };
+    </script>
+    <!-- Include responsive behavior script -->
+    <script src="js/responsive.js" defer></script>
+    <!-- Include navigation state management script -->
+    <script src="js/navigation-state.js" defer></script>
+    <style>
+        .signup-container {
+            max-width: 400px;
+            margin: 40px auto;
+            padding: 32px 24px;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .signup-container h2 {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+        .signup-form {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+        }
+        .signup-container label {
+            display: block;
+            margin-top: 14px;
+            margin-bottom: 6px;
+            font-weight: 500;
+        }
+        .signup-container input,
+        .signup-container select {
+            width: 100%;
+            padding: 8px 10px;
+            margin-bottom: 8px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 1rem;
+            box-sizing: border-box;
+        }
+        .signup-container button {
+            width: 100%;
+            padding: 10px;
+            background: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            font-size: 1rem;
+            cursor: pointer;
+            margin-top: 12px;
+        }
+        .signup-container button:hover {
+            background: #0056b3;
+        }
+        .signup-container a {
+            color: #007bff;
+            text-decoration: none;
+        }
+        .signup-container a:hover {
+            text-decoration: underline;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg);}
+            100% { transform: rotate(360deg);}
+        }
+
+        /* Responsive styles for mobile */
+        @media (max-width: 768px) {
+            .signup-container {
+                max-width: 90%;
+                margin: 20px auto;
+                padding: 20px 15px;
+            }
+
+            .signup-container h2 {
+                font-size: 1.5rem;
+                margin-bottom: 15px;
+            }
+
+            .signup-container input,
+            .signup-container select {
+                padding: 8px;
+                font-size: 0.95rem;
+            }
+
+            .signup-container button {
+                padding: 8px;
+                font-size: 0.95rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .signup-container {
+                max-width: 95%;
+                margin: 15px auto;
+                padding: 15px 10px;
+            }
+
+            .signup-container h2 {
+                font-size: 1.3rem;
+                margin-bottom: 12px;
+            }
+
+            .signup-container label {
+                margin-top: 10px;
+                margin-bottom: 4px;
+                font-size: 0.9rem;
+            }
+
+            .signup-container input,
+            .signup-container select {
+                padding: 7px;
+                font-size: 0.9rem;
+                margin-bottom: 6px;
+            }
+
+            .signup-container button {
+                padding: 8px;
+                font-size: 0.9rem;
+                margin-top: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading animation overlay -->
+    <div id="loading-overlay" style="display:flex; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(255,255,255,0.7); z-index:99999; align-items:center; justify-content:center;">
+        <div style="border:6px solid #f3f3f3; border-top:6px solid #007bff; border-radius:50%; width:48px; height:48px; animation:spin 1s linear infinite;"></div>
+    </div>
+    <div class="login-container signup-container">
+        <h2>Sign Up</h2>
+        <form id="signup-form" action="javascript:void(0);" method="post" class="signup-form">
+            <label for="name">Name</label>
+            <input type="text" id="name" name="name" required>
+            <label for="age">Age</label>
+            <input type="number" id="age" name="age" min="1" required>
+            <label for="gender">Gender</label>
+            <select id="gender" name="gender" required>
+                <option value="">Select Gender</option>
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+                <option value="other">Other</option>
+            </select>
+            <label for="new-username">Username</label>
+            <input type="text" id="new-username" name="username" required>
+            <label for="new-password">Password</label>
+            <input type="password" id="new-password" name="password" required>
+            <div style="font-size:0.8rem; color:#666; margin-top:-5px; margin-bottom:5px;">Password must be at least 6 characters long</div>
+            <label for="confirm-password">Confirm Password</label>
+            <input type="password" id="confirm-password" name="confirm-password" required>
+            <label for="email">Email</label>
+            <input type="email" id="signup-email" name="email" required>
+            <label for="phone">Phone Number</label>
+            <input type="tel" id="signup-phone" name="phone" required pattern="[0-9]{10,15}">
+            <div style="display:flex; align-items:center; margin-top:10px; margin-bottom:10px;">
+                <input type="checkbox" id="policy-acceptance" name="policy-acceptance" required style="width:auto; margin-right:10px;">
+                <label for="policy-acceptance" style="margin:0; font-size:0.9rem;">I accept the Terms of Service and Privacy Policy</label>
+            </div>
+            <button type="submit">Create Account</button>
+        </form>
+        <div id="signup-error" style="color:red; margin-top:10px; display:none;">
+            Signup error message will appear here.
+        </div>
+        <div id="signup-success" style="color:green; margin-top:10px; display:none;">Account created! <a href="login.html">Go to Login</a></div>
+        <a href="login.html" style="display:block;text-align:center;margin-top:12px;">Already have an account? Login</a>
+
+        <!-- Google Sign-Up Section - Re-enabled -->
+        <div style="text-align:center; margin: 20px 0;">
+            <div style="margin-bottom: 10px; color: #333; font-size: 0.9em;">Or sign up with Google</div>
+            <div id="google-signup-container">
+                <div id="g_id_onload"
+                     data-client_id="511326319939-431231ifhs4239598gc0d7ba2vc97lms.apps.googleusercontent.com"
+                     data-context="signup"
+                     data-ux_mode="popup"
+                     data-callback="onGoogleSignUp"
+                     data-auto_prompt="false">
+                </div>
+                <div class="g_id_signin"
+                     data-type="standard"
+                     data-shape="rectangular"
+                     data-theme="outline"
+                     data-text="signup_with"
+                     data-size="large"
+                     data-logo_alignment="left">
+                </div>
+            </div>
+            <div id="google-signup-status" style="margin-top: 10px; font-size: 0.9em; color: #666;"></div>
+        </div>
+        <!-- Google OAuth scripts -->
+        <script src="https://accounts.google.com/gsi/client" async defer></script>
+        <script src="js/config.js"></script>
+        <script>
+        // Handle COOP errors
+        window.addEventListener('error', function(e) {
+            if (e.message && e.message.includes('Cross-Origin-Opener-Policy')) {
+                console.warn('COOP error detected, this is expected and can be ignored');
+                return true; // Prevent the error from being logged
+            }
+        });
+
+        function onGoogleSignUp(response) {
+            console.log('Google Sign-Up response received');
+
+            // Show loading
+            const loadingOverlay = document.getElementById('loading-overlay');
+            if (loadingOverlay) {
+                loadingOverlay.style.display = 'flex';
+            }
+
+            // Try production server first, then fallback to localhost
+            let apiUrl = 'https://tridex1.onrender.com/auth/google';
+            console.log('Using API URL:', apiUrl);
+
+            // Send the Google token to your backend for verification (first step)
+            fetch(apiUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                mode: 'cors',
+                body: JSON.stringify({ credential: response.credential, mode: 'signup' })
+            }).catch(error => {
+                console.log('Production server failed, trying localhost...');
+                // If production fails, try localhost
+                apiUrl = 'http://localhost:3000/auth/google';
+                return fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    mode: 'cors',
+                    body: JSON.stringify({ credential: response.credential, mode: 'signup' })
+                });
+            })
+            .then(res => res.json())
+            .then(async (data) => {
+                console.log('Google signup response:', data);
+
+                // Hide loading
+                if (loadingOverlay) {
+                    loadingOverlay.style.display = 'none';
+                }
+
+                if (data.success) {
+                    if (data.needsAdditionalDetails) {
+                        // Store Google data and redirect to details form
+                        const googleData = {
+                            ...data.googleData,
+                            credential: response.credential
+                        };
+                        localStorage.setItem('googleSignupData', JSON.stringify(googleData));
+
+                        // Redirect to details form
+                        window.location.href = 'google-signup-details.html';
+                    } else {
+                        // Complete signup (shouldn't happen in new flow, but kept for compatibility)
+                        localStorage.setItem('token', data.token);
+                        localStorage.setItem('username', data.username);
+                        localStorage.setItem('currentUser', data.username);
+                        localStorage.setItem('isLoggedIn', 'true');
+                        localStorage.setItem('isAdmin', data.isAdmin ? 'true' : 'false');
+                        localStorage.setItem('verified', data.verified ? 'true' : 'false');
+                        localStorage.setItem('isGoogleUser', 'true');
+
+                        await tridexSuccess('Google sign-up successful! Welcome to Tridex!', 'Welcome');
+                        window.location.href = 'index.html';
+                    }
+                } else {
+                    // Handle different error cases
+                    if (data.message && data.message.includes('User already exists')) {
+                        // User already exists, suggest login
+                        const loginInstead = await tridexConfirm(
+                            'An account with this Google email already exists. Would you like to login instead?',
+                            'Account Already Exists'
+                        );
+                        if (loginInstead) {
+                            window.location.href = 'login.html';
+                        }
+                    } else {
+                        await tridexError(data.message || 'Google sign-up failed. Please try again.', 'Signup Failed');
+                    }
+                }
+            })
+            .catch(async (error) => {
+                console.error('Google signup error:', error);
+
+                // Hide loading
+                if (loadingOverlay) {
+                    loadingOverlay.style.display = 'none';
+                }
+
+                // Provide more specific error handling
+                if (error.message && error.message.includes('Failed to fetch')) {
+                    // Server is offline, provide fallback option
+                    const useLocalStorage = await tridexConfirm(
+                        'Server is currently offline. Would you like to continue with local storage mode?\n\nNote: Your account will only work on this device until the server comes back online.',
+                        'Server Offline'
+                    );
+
+                    if (useLocalStorage) {
+                        // Decode the Google credential to get user info
+                        try {
+                            const payload = JSON.parse(atob(response.credential.split('.')[1]));
+                            const googleUser = {
+                                email: payload.email,
+                                name: payload.name,
+                                picture: payload.picture,
+                                sub: payload.sub
+                            };
+
+                            // Check if user already exists in local storage
+                            const users = JSON.parse(localStorage.getItem('users') || '[]');
+                            const existingUser = users.find(u => u.email === googleUser.email);
+
+                            if (existingUser) {
+                                // User already exists, suggest login
+                                const loginInstead = await tridexConfirm(
+                                    'An account with this Google email already exists. Would you like to login instead?',
+                                    'Account Already Exists'
+                                );
+                                if (loginInstead) {
+                                    window.location.href = 'login.html';
+                                }
+                            } else {
+                                // Create new user in local storage
+                                const newUser = {
+                                    name: googleUser.name,
+                                    username: googleUser.email,
+                                    email: googleUser.email,
+                                    age: 25, // Default age
+                                    gender: 'other', // Default gender
+                                    phone: '', // Empty phone
+                                    password: 'google_auth', // Placeholder password
+                                    isGoogleUser: true,
+                                    googleId: googleUser.sub,
+                                    picture: googleUser.picture
+                                };
+
+                                users.push(newUser);
+                                localStorage.setItem('users', JSON.stringify(users));
+
+                                await tridexSuccess('Google sign-up successful! (Local storage mode) Please login.', 'Account Created');
+                                window.location.href = 'login.html';
+                            }
+                        } catch (decodeError) {
+                            console.error('Error decoding Google credential:', decodeError);
+                            await tridexError('Google sign-up failed: Unable to process Google account information.', 'Signup Failed');
+                        }
+                    }
+                } else if (error.message && error.message.includes('CORS')) {
+                    await tridexError('Authentication error: Please try refreshing the page and signing up again.', 'Authentication Error');
+                } else {
+                    await tridexError('Google sign-up failed: ' + (error.message || 'Unknown error. Please try again.'), 'Signup Failed');
+                }
+            });
+        }
+        </script>
+    </div>
+    <script>
+        // Check if the server is running
+        async function checkServerStatus() {
+            // Add timeout to prevent hanging requests
+            const controller = new AbortController();
+            let timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+
+            try {
+                // Use no-cors mode to check if server is reachable
+                try {
+                    console.log('Checking server with no-cors mode...');
+                    const pingResponse = await fetch('https://tridex1.onrender.com/', {
+                        method: 'GET',
+                        mode: 'no-cors', // This allows the request to be sent even if CORS is not configured
+                        signal: controller.signal
+                    });
+
+                    console.log('Server ping successful with no-cors mode');
+
+                    // Clear the timeout
+                    clearTimeout(timeoutId);
+                    timeoutId = null;
+
+                    return true; // Server is running, even with CORS issues
+                } catch (pingError) {
+                    console.error('Server completely unreachable:', pingError);
+                    // If we can't even reach with no-cors, the server is likely down
+                    clearTimeout(timeoutId);
+                    timeoutId = null;
+                    return false;
+                }
+            } catch (err) {
+                console.error('Server check failed:', err);
+                return false;
+            } finally {
+                // Make sure to clear the timeout if it still exists
+                if (timeoutId) {
+                    clearTimeout(timeoutId);
+                    timeoutId = null;
+                }
+            }
+        }
+
+        // Check server status on page load with simple message
+        checkServerStatus().then(isRunning => {
+            if (!isRunning) {
+                // Show simple server startup message
+                document.getElementById('signup-error').innerHTML = `
+                    <div style="text-align: center; padding: 15px; background: #fff3cd; border: 2px solid #ffc107; border-radius: 8px; margin: 15px 0;">
+                        <div style="font-size: 1.5em; margin-bottom: 8px;">⚠️</div>
+                        <div style="font-weight: bold; color: #856404; margin-bottom: 8px;">Server Offline</div>
+                        <div style="color: #856404; font-size: 0.9em; line-height: 1.4;">
+                            The server is currently starting up. Please try again in a moment.
+                        </div>
+                    </div>
+                `;
+                document.getElementById('signup-error').style.display = 'block';
+
+            }
+        });
+
+        document.getElementById('signup-form').onsubmit = async function(e) {
+            e.preventDefault();
+            showLoading();
+
+            // Get form values
+            const username = document.getElementById('new-username').value.trim();
+            const password = document.getElementById('new-password').value;
+            const confirmPassword = document.getElementById('confirm-password').value;
+            const email = document.getElementById('signup-email').value.trim().toLowerCase();
+            const phone = document.getElementById('signup-phone').value.trim();
+            const age = document.getElementById('age').value.trim();
+            const name = document.getElementById('name').value.trim();
+            const gender = document.getElementById('gender').value;
+
+            // Basic validation
+            if (!username || !password || !email || !phone || !age || !name || !gender) {
+                await tridexWarning('Please fill in all fields', 'Missing Information');
+                hideLoading();
+                return false;
+            }
+
+            // Password validation
+            if (password.length < 6) {
+                await tridexWarning('Password must be at least 6 characters', 'Password Too Short');
+                hideLoading();
+                return false;
+            }
+
+            // Confirm password
+            if (password !== confirmPassword) {
+                await tridexWarning('Passwords do not match!', 'Password Mismatch');
+                hideLoading();
+                return false;
+            }
+
+            // Email validation
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                await tridexWarning('Please enter a valid email address', 'Invalid Email');
+                hideLoading();
+                return false;
+            }
+
+            // Phone validation
+            const phoneRegex = /^[0-9]{10,15}$/;
+            if (!phoneRegex.test(phone)) {
+                alert('Please enter a valid phone number (10-15 digits)');
+                hideLoading();
+                return false;
+            }
+
+            // Send user data to backend
+            try {
+                // Try the production URL first
+                let res = null;
+                try {
+                    res = await fetch('https://tridex1.onrender.com/signup', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ name, age, gender, username, email, phone, password })
+                    });
+                } catch (err) {
+                    console.log('Error with production URL, trying localhost');
+                    // If production URL fails, try localhost
+                    res = await fetch('http://localhost:3000/signup', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ name, age, gender, username, email, phone, password })
+                    });
+                }
+
+                const data = await res.json();
+                if (res.ok) {
+                    document.getElementById('signup-success').style.display = 'block';
+                    await tridexSuccess('Sign up successful! Please login.', 'Account Created');
+                    window.location.href = 'login.html';
+                } else {
+                    await tridexError(data.message || 'Signup failed.', 'Signup Failed');
+                }
+            } catch (err) {
+                console.error('Signup error:', err);
+
+                // Fallback to localStorage for development/testing
+                try {
+                    let users = [];
+                    try {
+                        users = JSON.parse(localStorage.getItem('users')) || [];
+                    } catch (e) {
+                        users = [];
+                    }
+
+                    // Check if user already exists
+                    const userExists = users.some(u =>
+                        u.username === username ||
+                        (u.email && u.email.toLowerCase() === email)
+                    );
+
+                    if (userExists) {
+                        await tridexError('User with this username or email already exists', 'User Already Exists');
+                        hideLoading();
+                        return;
+                    }
+
+                    // Add new user to localStorage
+                    const newUser = { name, age, gender, username, email, phone, password };
+                    users.push(newUser);
+                    localStorage.setItem('users', JSON.stringify(users));
+
+                    document.getElementById('signup-success').style.display = 'block';
+                    await tridexSuccess('Sign up successful! (Local storage mode) Please login.', 'Account Created');
+                    window.location.href = 'login.html';
+                } catch (localErr) {
+                    await tridexError('Network error and local storage failed. Please try again.', 'Signup Failed');
+                }
+            } finally {
+                hideLoading();
+            }
+        };
+
+        function showLoading() {
+            document.getElementById('loading-overlay').style.display = 'flex';
+        }
+        function hideLoading() {
+            document.getElementById('loading-overlay').style.display = 'none';
+        }
+        window.addEventListener('load', function() {
+            hideLoading();
+        });
+        window.addEventListener('beforeunload', function() {
+            showLoading();
+        });
+    </script>
+</body>
+</html>

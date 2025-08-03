@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Complete Your Profile - Tridex</title>
+    <link rel="stylesheet" href="auth.css">
+    <link rel="stylesheet" href="css/responsive.css">
+    <!-- Custom Popup System -->
+    <link rel="stylesheet" href="css/custom-popups.css">
+    <script src="js/custom-popups.js"></script>
+    <script>
+        // Fallback functions in case custom popups don't load
+        window.tridexConfirm = window.tridexConfirm || function(message) { return Promise.resolve(confirm(message)); };
+        window.tridexSuccess = window.tridexSuccess || function(message) { alert(message); return Promise.resolve(); };
+        window.tridexError = window.tridexError || function(message) { alert(message); return Promise.resolve(); };
+        window.tridexWarning = window.tridexWarning || function(message) { alert(message); return Promise.resolve(); };
+        window.tridexInfo = window.tridexInfo || function(message) { alert(message); return Promise.resolve(); };
+    </script>
+    <style>
+        .details-container {
+            max-width: 450px;
+            margin: 40px auto;
+            padding: 32px 24px;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        }
+        .google-info {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #4285f4;
+        }
+        .google-info img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin-right: 10px;
+            vertical-align: middle;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #333;
+        }
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #4285f4;
+            box-shadow: 0 0 0 2px rgba(66, 133, 244, 0.2);
+        }
+        .submit-btn {
+            width: 100%;
+            padding: 12px;
+            background: #4285f4;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .submit-btn:hover {
+            background: #3367d6;
+        }
+        .submit-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+        .error {
+            color: #d32f2f;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="details-container">
+        <h2>Complete Your Profile</h2>
+
+        <div class="google-info">
+            <img id="profile-picture" src="" alt="Profile Picture">
+            <strong id="google-name"></strong>
+            <br>
+            <small id="google-email"></small>
+            <p style="margin: 10px 0 0 0; font-size: 14px; color: #666;">
+                ✅ Authenticated with Google
+            </p>
+        </div>
+
+        <form id="details-form">
+            <div class="form-group">
+                <label for="age">Age *</label>
+                <input type="number" id="age" name="age" min="13" max="120" required>
+            </div>
+
+            <div class="form-group">
+                <label for="gender">Gender *</label>
+                <select id="gender" name="gender" required>
+                    <option value="">Select Gender</option>
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                    <option value="other">Other</option>
+                    <option value="prefer-not-to-say">Prefer not to say</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="phone">Phone Number *</label>
+                <input type="tel" id="phone" name="phone" placeholder="Enter your phone number" required>
+                <div class="error" id="phone-error"></div>
+            </div>
+
+            <button type="submit" class="submit-btn" id="submit-btn">
+                Complete Registration
+            </button>
+        </form>
+
+        <div class="loading" id="loading">
+            <p>Creating your account...</p>
+        </div>
+
+        <div style="text-align: center; margin-top: 20px;">
+            <small style="color: #666;">
+                All fields are required to complete your registration
+            </small>
+        </div>
+    </div>
+
+    <script src="js/config.js"></script>
+    <script>
+        // Get Google data from URL parameters or localStorage
+        const urlParams = new URLSearchParams(window.location.search);
+        const googleData = JSON.parse(localStorage.getItem('googleSignupData') || '{}');
+
+        if (!googleData.email) {
+            // Redirect to signup if no Google data
+            window.location.href = 'signup.html';
+        }
+
+        // Display Google information
+        document.getElementById('google-name').textContent = googleData.name || 'Unknown';
+        document.getElementById('google-email').textContent = googleData.email || 'Unknown';
+        if (googleData.profilePicture) {
+            document.getElementById('profile-picture').src = googleData.profilePicture;
+        }
+
+        // Form submission
+        document.getElementById('details-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const age = document.getElementById('age').value;
+            const gender = document.getElementById('gender').value;
+            const phone = document.getElementById('phone').value;
+
+            // Validation
+            if (!age || !gender || !phone) {
+                await tridexWarning('Please fill in all required fields', 'Missing Information');
+                return;
+            }
+
+            // Phone validation
+            const phoneRegex = /^[0-9]{10,15}$/;
+            if (!phoneRegex.test(phone.replace(/\D/g, ''))) {
+                document.getElementById('phone-error').textContent = 'Please enter a valid phone number (10-15 digits)';
+                return;
+            } else {
+                document.getElementById('phone-error').textContent = '';
+            }
+
+            // Show loading
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('submit-btn').disabled = true;
+
+            try {
+                // Get the correct API URL based on environment
+                const apiUrl = window.API ? API.getEndpoint('auth') : 'https://tridex1.onrender.com/auth/google';
+                console.log('Using API URL:', apiUrl);
+
+                // Send complete signup request with fallback
+                let response;
+                try {
+                    response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
+                        },
+                        mode: 'cors',
+                        body: JSON.stringify({
+                            credential: googleData.credential,
+                            mode: 'signup',
+                            additionalDetails: {
+                                age: age,
+                                gender: gender,
+                                phone: phone
+                            }
+                        })
+                    });
+                } catch (fetchError) {
+                    console.log('Primary API failed, trying production server directly...');
+                    // Fallback to production server directly
+                    response = await fetch('https://tridex1.onrender.com/auth/google', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
+                        },
+                        mode: 'cors',
+                        body: JSON.stringify({
+                            credential: googleData.credential,
+                            mode: 'signup',
+                            additionalDetails: {
+                                age: age,
+                                gender: gender,
+                                phone: phone
+                            }
+                        })
+                    });
+                }
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // Save user data to localStorage
+                    localStorage.setItem('token', data.token);
+                    localStorage.setItem('username', data.username);
+                    localStorage.setItem('currentUser', data.username);
+                    localStorage.setItem('isLoggedIn', 'true');
+                    localStorage.setItem('isAdmin', data.isAdmin ? 'true' : 'false');
+                    localStorage.setItem('verified', data.verified ? 'true' : 'false');
+                    localStorage.setItem('isGoogleUser', 'true');
+
+                    // Clear temporary Google data
+                    localStorage.removeItem('googleSignupData');
+
+                    // Show success message with verification status
+                    if (data.verified) {
+                        await tridexSuccess('Account created successfully! Welcome to Tridex!', 'Welcome');
+                    } else {
+                        await tridexSuccess('Account created successfully! Your account is pending admin verification. You can still browse products while waiting for approval.', 'Account Created');
+                    }
+                    window.location.href = 'index.html';
+                } else {
+                    await tridexError(data.message || 'Registration failed. Please try again.', 'Registration Failed');
+                }
+            } catch (error) {
+                console.error('Registration error:', error);
+                await tridexError('Registration failed. Please check your connection and try again.', 'Connection Error');
+            } finally {
+                // Hide loading
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('submit-btn').disabled = false;
+            }
+        });
+
+        // Auto-format phone number
+        document.getElementById('phone').addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length > 15) {
+                value = value.substring(0, 15);
+            }
+            e.target.value = value;
+        });
+    </script>
+</body>
+</html>

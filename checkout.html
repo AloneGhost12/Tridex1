@@ -1,0 +1,1229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Checkout - Tridex</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="css/responsive.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <!-- Coupon System Styles -->
+    <link rel="stylesheet" href="css/coupon-system.css">
+    <!-- Include configuration script -->
+    <script src="js/config.js"></script>
+    <!-- Include responsive behavior script -->
+    <script src="js/responsive.js" defer></script>
+    <!-- Include navigation state management script -->
+    <script src="js/navigation-state.js" defer></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f4f9;
+            margin: 0;
+            padding-bottom: 60px;
+        }
+
+        .checkout-container {
+            max-width: 1000px;
+            margin: 40px auto;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            padding: 32px 24px;
+        }
+
+        .checkout-title {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #007bff;
+            font-size: 1.8em;
+            font-weight: 700;
+            position: relative;
+        }
+
+        .checkout-title:after {
+            content: '';
+            display: block;
+            width: 60px;
+            height: 3px;
+            background: #007bff;
+            margin: 8px auto 0;
+            border-radius: 2px;
+        }
+
+        .checkout-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+
+        .checkout-section {
+            margin-bottom: 30px;
+        }
+
+        .checkout-section h2 {
+            font-size: 1.3em;
+            margin-bottom: 15px;
+            color: #333;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #555;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1em;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
+        }
+
+        .payment-methods {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .payment-method {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .payment-method:hover {
+            border-color: #007bff;
+            background-color: #f8f9fa;
+        }
+
+        .payment-method.selected {
+            border-color: #007bff;
+            background-color: #f0f7ff;
+        }
+
+        .payment-method input[type="radio"] {
+            margin-right: 10px;
+        }
+
+        .payment-method-logo {
+            height: 30px;
+            margin-left: auto;
+        }
+
+        .order-summary {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .order-item {
+            display: flex;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .order-item img {
+            width: 60px;
+            height: 60px;
+            object-fit: contain;
+            margin-right: 15px;
+            border-radius: 5px;
+            background-color: #fff;
+            padding: 5px;
+        }
+
+        .order-item-details {
+            flex: 1;
+        }
+
+        .order-item-name {
+            font-weight: 500;
+            margin-bottom: 5px;
+        }
+
+        .order-item-price {
+            color: #007bff;
+            font-weight: 500;
+        }
+
+        .order-total {
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 2px solid #ddd;
+        }
+
+        .order-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .order-total-row {
+            font-size: 1.2em;
+            font-weight: 700;
+            color: #333;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #ddd;
+        }
+
+        .checkout-actions {
+            margin-top: 30px;
+            text-align: right;
+        }
+
+        .checkout-button {
+            background: linear-gradient(135deg, #28a745, #218838);
+            color: #fff;
+            border: none;
+            border-radius: 30px;
+            padding: 12px 28px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 10px rgba(40, 167, 69, 0.3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .checkout-button:hover {
+            background: linear-gradient(135deg, #218838, #1e7e34);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(40, 167, 69, 0.4);
+        }
+
+        .back-button {
+            background: none;
+            border: none;
+            color: #007bff;
+            font-size: 1em;
+            cursor: pointer;
+            margin-right: 15px;
+        }
+
+        .back-button:hover {
+            text-decoration: underline;
+        }
+
+        /* Loading Animation */
+        @keyframes spin {
+            0% { transform: rotate(0deg);}
+            100% { transform: rotate(360deg);}
+        }
+
+        /* Responsive Styles */
+        @media (max-width: 768px) {
+            .checkout-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .checkout-container {
+                margin: 20px auto;
+                padding: 24px 16px;
+                max-width: 90%;
+            }
+
+            .checkout-title {
+                font-size: 1.5em;
+            }
+
+            .checkout-button {
+                padding: 10px 20px;
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading animation overlay -->
+    <div id="loading-overlay" style="display:flex; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(255,255,255,0.7); z-index:99999; align-items:center; justify-content:center;">
+        <div style="border:6px solid #f3f3f3; border-top:6px solid #007bff; border-radius:50%; width:48px; height:48px; animation:spin 1s linear infinite;"></div>
+    </div>
+
+    <div class="checkout-container">
+        <h1 class="checkout-title">Checkout</h1>
+
+        <div class="checkout-grid">
+            <div>
+                <div class="checkout-section">
+                    <h2>Shipping Information</h2>
+
+                    <!-- Saved Addresses Section (will be shown if user has saved addresses) -->
+                    <div id="saved-addresses-section" style="display:none; margin-bottom:20px;">
+                        <h3 style="font-size:1.1em; margin-bottom:10px;">Your Saved Addresses</h3>
+                        <div id="saved-addresses-list" style="margin-bottom:15px;">
+                            <!-- Saved addresses will be rendered here -->
+                        </div>
+                        <div style="margin-bottom:15px;">
+                            <button id="use-new-address-btn" type="button" style="background:#6c757d; padding:8px 15px; border:none; border-radius:4px; color:white; cursor:pointer;">
+                                Enter a New Address
+                            </button>
+                        </div>
+                        <hr style="margin:20px 0; border:0; border-top:1px solid #eee;">
+                    </div>
+
+                    <!-- New Address Form -->
+                    <div id="new-address-form">
+                        <div class="form-group">
+                            <label for="fullname">Full Name</label>
+                            <input type="text" id="fullname" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="email">Email</label>
+                            <input type="email" id="email" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="phone">Phone</label>
+                            <input type="tel" id="phone" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="address">Address</label>
+                            <input type="text" id="address" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="city">City</label>
+                            <input type="text" id="city" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="state">State</label>
+                            <input type="text" id="state" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="postalCode">Postal Code</label>
+                            <input type="text" id="postalCode" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="country">Country</label>
+                            <select id="country" required>
+                                <option value="India">India</option>
+                            </select>
+                        </div>
+
+                        <!-- Save Address Checkbox -->
+                        <div class="form-group" style="margin-top:15px;">
+                            <div style="display:flex; align-items:center;">
+                                <input type="checkbox" id="save-address" checked style="margin-right:10px; width:auto;">
+                                <label for="save-address" style="margin-bottom:0;">Save this address to my profile for future orders</label>
+                            </div>
+                            <p style="margin-top:5px; font-size:0.85em; color:#666;">
+                                You can edit or manage your saved addresses anytime from your profile page.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="checkout-section">
+                    <h2>Payment Method</h2>
+                    <div class="payment-methods">
+                        <div class="payment-method selected" data-method="razorpay">
+                            <input type="radio" name="payment" id="razorpay" checked>
+                            <label for="razorpay">Razorpay (Credit/Debit Card, UPI, Netbanking)</label>
+                            <img src="https://razorpay.com/assets/razorpay-logo.svg" alt="Razorpay" class="payment-method-logo">
+                        </div>
+                        <div class="payment-method" data-method="cod">
+                            <input type="radio" name="payment" id="cod">
+                            <label for="cod">Cash on Delivery</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <div class="checkout-section">
+                    <h2>Order Summary</h2>
+                    <div class="order-summary">
+                        <div id="order-items">
+                            <!-- Order items will be rendered here -->
+                        </div>
+
+                        <!-- Coupon Section -->
+                        <div class="coupon-section" id="coupon-section" style="margin: 20px 0; background: #f8f9fa; border-radius: 8px; padding: 15px;">
+                            <h3 style="margin: 0 0 15px 0; font-size: 1.1em;">🎫 Have a Coupon?</h3>
+
+                            <!-- Coupon Input Form -->
+                            <form id="coupon-form" class="coupon-form">
+                                <input type="text" id="coupon-input" class="coupon-input" placeholder="Enter coupon code" style="text-transform: uppercase;">
+                                <button type="submit" class="apply-coupon-btn">Apply Coupon</button>
+                            </form>
+
+                            <!-- Message Display -->
+                            <div id="coupon-message" class="coupon-message"></div>
+
+                            <!-- Applied Coupons -->
+                            <div id="applied-coupons"></div>
+
+                            <!-- Available Coupons -->
+                            <div style="margin-top: 15px;">
+                                <h4 style="margin: 0 0 10px 0; font-size: 1em;">Available Offers</h4>
+                                <div id="available-coupons"></div>
+                            </div>
+                        </div>
+
+                        <div class="order-total">
+                            <div class="order-row">
+                                <span>Subtotal</span>
+                                <span id="subtotal">₹0</span>
+                            </div>
+                            <div class="order-row">
+                                <span>Shipping</span>
+                                <span id="shipping">₹0</span>
+                            </div>
+                            <div class="order-row">
+                                <span>Tax</span>
+                                <span id="tax">₹0</span>
+                            </div>
+                            <div class="order-row" id="discount-row" style="display: none;">
+                                <span>Discount</span>
+                                <span id="total-discount" class="total-discount">₹0</span>
+                            </div>
+                            <div class="order-row order-total-row">
+                                <span>Total</span>
+                                <span id="total">₹0</span>
+                            </div>
+                            <div id="total-savings" class="total-savings" style="display: none;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="checkout-actions">
+            <button class="back-button" onclick="window.location.href='cart.html'">Back to Cart</button>
+            <button class="checkout-button" id="place-order-btn">Place Order</button>
+        </div>
+    </div>
+
+    <!-- Razorpay Script -->
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+    <!-- Coupon System Script -->
+    <script src="js/coupon-system.js"></script>
+
+    <script>
+        // Global variables
+        let cart = [];
+        let subtotal = 0;
+        let shipping = 40; // Fixed shipping fee
+        let tax = 0;
+        let total = 0;
+        let selectedPaymentMethod = 'razorpay';
+
+        // Show/hide loading overlay
+        function showLoading() {
+            document.getElementById('loading-overlay').style.display = 'flex';
+        }
+
+        function hideLoading() {
+            document.getElementById('loading-overlay').style.display = 'none';
+        }
+
+        // Initialize checkout page
+        function initCheckout() {
+            // Load cart items
+            loadCart();
+
+            // Render order summary
+            renderOrderSummary();
+
+            // Pre-fill user information if logged in
+            prefillUserInfo();
+
+            // Add event listeners
+            setupEventListeners();
+
+            // Initialize coupon system after a short delay to ensure it's loaded
+            setTimeout(() => {
+                if (window.couponSystem) {
+                    console.log('✅ Coupon system initialized for checkout');
+                    // Load available coupons immediately
+                    window.couponSystem.loadAvailableCoupons();
+                } else {
+                    console.log('⚠️ Coupon system not available');
+                }
+            }, 500);
+        }
+
+        // Load cart items from localStorage
+        function loadCart() {
+            const username = localStorage.getItem('username') || localStorage.getItem('currentUser');
+            const cartUser = localStorage.getItem('cartUser');
+
+            if (cartUser !== username) {
+                const userCart = localStorage.getItem('cart_' + username);
+                if (userCart) {
+                    localStorage.setItem('cart', userCart);
+                } else {
+                    localStorage.removeItem('cart');
+                }
+                localStorage.setItem('cartUser', username);
+            }
+
+            try {
+                cart = JSON.parse(localStorage.getItem('cart')) || [];
+            } catch (e) {
+                cart = [];
+            }
+
+            // Add test items if cart is empty (for coupon testing)
+            if (cart.length === 0) {
+                console.log('🛒 Cart is empty, adding test items for coupon testing...');
+                cart = [
+                    {
+                        _id: 'test-product-1',
+                        name: 'Test Product 1',
+                        price: 299,
+                        image: 'https://via.placeholder.com/100x100?text=Product+1'
+                    },
+                    {
+                        _id: 'test-product-2',
+                        name: 'Test Product 2',
+                        price: 399,
+                        image: 'https://via.placeholder.com/100x100?text=Product+2'
+                    }
+                ];
+                // Save test cart
+                localStorage.setItem('cart', JSON.stringify(cart));
+                console.log('✅ Test items added to cart for coupon testing');
+            }
+        }
+
+        // Render order summary
+        function renderOrderSummary() {
+            const orderItemsContainer = document.getElementById('order-items');
+
+            // Clear container
+            orderItemsContainer.innerHTML = '';
+
+            // Reset totals
+            subtotal = 0;
+
+            // Render each item
+            cart.forEach(item => {
+                const itemPrice = Number(item.price) || 0;
+                subtotal += itemPrice;
+
+                const itemElement = document.createElement('div');
+                itemElement.className = 'order-item';
+                itemElement.innerHTML = `
+                    <img src="${item.image}" alt="${item.name}" onerror="this.src='https://via.placeholder.com/60?text=No+Image'">
+                    <div class="order-item-details">
+                        <div class="order-item-name">${item.name}</div>
+                        <div class="order-item-price">₹${itemPrice}</div>
+                    </div>
+                `;
+
+                orderItemsContainer.appendChild(itemElement);
+            });
+
+            // Calculate tax (5% of subtotal)
+            tax = Math.round(subtotal * 0.05);
+
+            // Calculate total (before coupons)
+            total = subtotal + shipping + tax;
+
+            // Update summary
+            document.getElementById('subtotal').textContent = `₹${subtotal}`;
+            document.getElementById('shipping').textContent = `₹${shipping}`;
+            document.getElementById('tax').textContent = `₹${tax}`;
+            document.getElementById('total').textContent = `₹${total}`;
+
+            // Initialize coupon system with cart data
+            if (window.couponSystem) {
+                const cartItems = cart.map(item => ({
+                    productId: item._id || item.id,
+                    quantity: 1,
+                    price: parseFloat(item.price)
+                }));
+                window.couponSystem.setCartData(cartItems, subtotal);
+
+                // Override the coupon system's updateCartTotals method for checkout
+                window.couponSystem.updateCartTotals = function() {
+                    const totalDiscount = this.getTotalDiscount();
+                    const finalTotal = Math.max(0, subtotal + shipping + tax - totalDiscount);
+
+                    // Update discount display
+                    const discountElement = document.getElementById('total-discount');
+                    const discountRow = document.getElementById('discount-row');
+                    if (discountElement && discountRow) {
+                        if (totalDiscount > 0) {
+                            discountElement.textContent = `₹${totalDiscount}`;
+                            discountRow.style.display = 'flex';
+                        } else {
+                            discountRow.style.display = 'none';
+                        }
+                    }
+
+                    // Update final total
+                    const finalTotalElement = document.getElementById('total');
+                    if (finalTotalElement) {
+                        finalTotalElement.textContent = `₹${finalTotal}`;
+                        // Update global total variable for payment processing
+                        total = finalTotal;
+                    }
+
+                    // Update savings display
+                    const savingsElement = document.getElementById('total-savings');
+                    if (savingsElement && totalDiscount > 0) {
+                        savingsElement.textContent = `You saved ₹${totalDiscount}!`;
+                        savingsElement.style.display = 'block';
+                    } else if (savingsElement) {
+                        savingsElement.style.display = 'none';
+                    }
+                };
+            }
+        }
+
+        // Pre-fill user information if logged in
+        function prefillUserInfo() {
+            const username = localStorage.getItem('username') || localStorage.getItem('currentUser');
+
+            if (username) {
+                // Fetch user profile from server
+                fetch(`https://tridex1.onrender.com/users/profile?username=${encodeURIComponent(username)}`, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                        'X-Username': username
+                    }
+                })
+                .then(response => response.json())
+                .then(user => {
+                    if (user) {
+                        // Pre-fill form fields
+                        document.getElementById('fullname').value = user.name || '';
+                        document.getElementById('email').value = user.email || '';
+                        document.getElementById('phone').value = user.phone || '';
+
+                        // Fetch saved addresses
+                        fetchSavedAddresses();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching user profile:', error);
+                });
+            }
+        }
+
+        // Fetch saved addresses
+        function fetchSavedAddresses() {
+            const username = localStorage.getItem('username') || localStorage.getItem('currentUser');
+            const token = localStorage.getItem('token');
+
+            if (!username || !token) {
+                return;
+            }
+
+            fetch('https://tridex1.onrender.com/users/addresses', {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'X-Username': username
+                }
+            })
+            .then(response => response.json())
+            .then(addresses => {
+                if (addresses && addresses.length > 0) {
+                    // Show saved addresses section
+                    document.getElementById('saved-addresses-section').style.display = 'block';
+
+                    // Render saved addresses
+                    renderSavedAddresses(addresses);
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching saved addresses:', error);
+            });
+        }
+
+        // Render saved addresses
+        function renderSavedAddresses(addresses) {
+            const addressesList = document.getElementById('saved-addresses-list');
+            addressesList.innerHTML = '';
+
+            addresses.forEach((address, index) => {
+                const addressCard = document.createElement('div');
+                addressCard.className = 'saved-address-card';
+                addressCard.style.cssText = 'border:1px solid #ddd; border-radius:8px; padding:15px; margin-bottom:10px; cursor:pointer; position:relative;';
+
+                if (address.isDefault) {
+                    addressCard.style.borderColor = '#007bff';
+                    addressCard.style.backgroundColor = '#f0f7ff';
+                }
+
+                addressCard.innerHTML = `
+                    <div style="display:flex; align-items:flex-start;">
+                        <input type="radio" name="saved-address" id="address-${index}" style="margin-right:10px; margin-top:3px;" ${address.isDefault ? 'checked' : ''}>
+                        <div>
+                            <div style="font-weight:600;">${address.name}</div>
+                            <div>${address.address}</div>
+                            <div>${address.city}, ${address.state} ${address.postalCode}</div>
+                            <div>${address.country}</div>
+                            <div>Phone: ${address.phone}</div>
+                            ${address.isDefault ? '<div style="color:#007bff; font-size:0.85em; margin-top:5px;">Default Address</div>' : ''}
+                        </div>
+                    </div>
+                `;
+
+                // Add click event to select address
+                addressCard.addEventListener('click', () => {
+                    // Select this address radio button
+                    document.getElementById(`address-${index}`).checked = true;
+
+                    // Update all address cards
+                    document.querySelectorAll('.saved-address-card').forEach(card => {
+                        card.style.borderColor = '#ddd';
+                        card.style.backgroundColor = '#fff';
+                    });
+
+                    // Highlight selected card
+                    addressCard.style.borderColor = '#007bff';
+                    addressCard.style.backgroundColor = '#f0f7ff';
+
+                    // Hide new address form
+                    document.getElementById('new-address-form').style.display = 'none';
+                });
+
+                addressesList.appendChild(addressCard);
+            });
+
+            // Add event listener for "Enter a New Address" button
+            document.getElementById('use-new-address-btn').addEventListener('click', () => {
+                // Uncheck all saved address radio buttons
+                document.querySelectorAll('input[name="saved-address"]').forEach(radio => {
+                    radio.checked = false;
+                });
+
+                // Reset address card styles
+                document.querySelectorAll('.saved-address-card').forEach(card => {
+                    card.style.borderColor = '#ddd';
+                    card.style.backgroundColor = '#fff';
+
+                    // Restore default address styling
+                    if (card.querySelector('div[style*="Default Address"]')) {
+                        card.style.borderColor = '#007bff';
+                        card.style.backgroundColor = '#f0f7ff';
+                    }
+                });
+
+                // Show new address form
+                document.getElementById('new-address-form').style.display = 'block';
+            });
+        }
+
+        // Set up event listeners
+        function setupEventListeners() {
+            // Payment method selection
+            document.querySelectorAll('.payment-method').forEach(method => {
+                method.addEventListener('click', function() {
+                    // Remove selected class from all methods
+                    document.querySelectorAll('.payment-method').forEach(m => {
+                        m.classList.remove('selected');
+                    });
+
+                    // Add selected class to clicked method
+                    this.classList.add('selected');
+
+                    // Update selected payment method
+                    selectedPaymentMethod = this.getAttribute('data-method');
+
+                    // Check the radio button
+                    this.querySelector('input[type="radio"]').checked = true;
+                });
+            });
+
+            // Place order button
+            document.getElementById('place-order-btn').addEventListener('click', placeOrder);
+        }
+
+        // Place order
+        function placeOrder() {
+            // Check if using a saved address or new address
+            const usingSavedAddress = document.querySelector('input[name="saved-address"]:checked');
+
+            // Validate form if using new address
+            if (!usingSavedAddress && !validateForm()) {
+                return;
+            }
+
+            // Show loading overlay
+            showLoading();
+
+            // Get shipping information
+            let shippingInfo = {};
+
+            if (usingSavedAddress) {
+                // Get the selected address index
+                const addressIndex = usingSavedAddress.id.split('-')[1];
+
+                // Fetch the address data from the server
+                fetch('https://tridex1.onrender.com/users/addresses', {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                        'X-Username': localStorage.getItem('username') || localStorage.getItem('currentUser')
+                    }
+                })
+                .then(response => response.json())
+                .then(addresses => {
+                    if (addresses && addresses.length > parseInt(addressIndex)) {
+                        const selectedAddress = addresses[parseInt(addressIndex)];
+
+                        // Use the selected address
+                        shippingInfo = {
+                            name: selectedAddress.name,
+                            address: selectedAddress.address,
+                            city: selectedAddress.city,
+                            state: selectedAddress.state,
+                            postalCode: selectedAddress.postalCode,
+                            country: selectedAddress.country,
+                            phone: selectedAddress.phone
+                        };
+
+                        // Continue with order processing
+                        processOrder(shippingInfo);
+                    } else {
+                        // Fall back to form data if address not found
+                        useFormDataForShipping();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching saved address:', error);
+                    // Fall back to form data if there's an error
+                    useFormDataForShipping();
+                });
+            } else {
+                // Use form data for shipping
+                useFormDataForShipping();
+            }
+
+            // Function to use form data for shipping
+            function useFormDataForShipping() {
+                shippingInfo = {
+                    name: document.getElementById('fullname').value,
+                    address: document.getElementById('address').value,
+                    city: document.getElementById('city').value,
+                    state: document.getElementById('state').value,
+                    postalCode: document.getElementById('postalCode').value,
+                    country: document.getElementById('country').value,
+                    phone: document.getElementById('phone').value
+                };
+
+                // Save address if checkbox is checked
+                const saveAddress = document.getElementById('save-address').checked;
+                if (saveAddress) {
+                    saveShippingAddress(shippingInfo);
+                }
+
+                // Continue with order processing
+                processOrder(shippingInfo);
+            }
+
+            // Function to process the order with shipping info
+            function processOrder(shipping) {
+                // Get applied coupons information
+                const appliedCoupons = window.couponSystem ? window.couponSystem.getAppliedCoupons() : [];
+                const totalDiscount = window.couponSystem ? window.couponSystem.getTotalDiscount() : 0;
+
+                // Get form data
+                const orderData = {
+                    user: {
+                        username: localStorage.getItem('username') || localStorage.getItem('currentUser'),
+                        email: document.getElementById('email').value,
+                        phone: document.getElementById('phone').value
+                    },
+                    items: cart.map(item => ({
+                        productId: item._id,
+                        name: item.name,
+                        price: Number(item.price),
+                        quantity: 1,
+                        image: item.image
+                    })),
+                    shipping: shipping,
+                    payment: {
+                        method: selectedPaymentMethod,
+                        amount: total,
+                        currency: 'INR'
+                    },
+                    totalAmount: total,
+                    shippingFee: 40, // Fixed shipping fee value
+                    tax: tax,
+                    // Add coupon information
+                    coupons: appliedCoupons.map(coupon => ({
+                        code: coupon.code,
+                        name: coupon.name,
+                        discountType: coupon.discountType,
+                        discountValue: coupon.discountValue,
+                        discount: coupon.discount
+                    })),
+                    totalDiscount: totalDiscount,
+                    subtotal: subtotal
+                };
+
+                // Process based on payment method
+                if (selectedPaymentMethod === 'razorpay') {
+                    processRazorpayPayment(orderData);
+                } else if (selectedPaymentMethod === 'cod') {
+                    processCashOnDelivery(orderData);
+                }
+            }
+        }
+
+        // Save shipping address to user profile
+        function saveShippingAddress(addressData) {
+            const username = localStorage.getItem('username') || localStorage.getItem('currentUser');
+            const token = localStorage.getItem('token');
+
+            if (!username || !token) {
+                return;
+            }
+
+            // Add default flag (first address will be default)
+            fetch('https://tridex1.onrender.com/users/addresses', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                    'X-Username': username
+                },
+                body: JSON.stringify(addressData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Address saved successfully:', data);
+            })
+            .catch(error => {
+                console.error('Error saving address:', error);
+            });
+        }
+
+        // Validate form
+        function validateForm() {
+            const requiredFields = [
+                'fullname', 'email', 'phone', 'address', 'city', 'state', 'postalCode', 'country'
+            ];
+
+            let isValid = true;
+
+            requiredFields.forEach(field => {
+                const input = document.getElementById(field);
+                if (!input.value.trim()) {
+                    input.style.borderColor = 'red';
+                    isValid = false;
+                } else {
+                    input.style.borderColor = '#ddd';
+                }
+            });
+
+            if (!isValid) {
+                alert('Please fill in all required fields');
+            }
+
+            return isValid;
+        }
+
+        // Process Razorpay payment
+        function processRazorpayPayment(orderData) {
+            // Log order data for debugging
+            console.log('Sending order data:', JSON.stringify(orderData, null, 2));
+
+            // Create order on server
+            fetch('https://tridex1.onrender.com/orders/create', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                    'X-Username': orderData.user.username
+                },
+                body: JSON.stringify(orderData)
+            })
+            .then(response => {
+                // Check if response is ok before parsing JSON
+                if (!response.ok) {
+                    console.error('Server responded with status:', response.status);
+                    return response.text().then(text => {
+                        try {
+                            // Try to parse as JSON
+                            return JSON.parse(text);
+                        } catch (e) {
+                            // If not JSON, return as text error
+                            throw new Error(`Server error: ${text || response.statusText}`);
+                        }
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+
+                console.log('Order created successfully:', data);
+
+                // Initialize Razorpay
+                const options = {
+                    key: 'rzp_test_438531956929485', // Updated Razorpay test key
+                    amount: total * 100, // Amount in paise
+                    currency: 'INR',
+                    name: 'Tridex',
+                    description: 'Purchase from Tridex',
+                    order_id: data.razorpayOrderId || data.orderId, // Use the Razorpay order ID if available
+                    handler: function(response) {
+                        // Handle successful payment
+                        handlePaymentSuccess(data.orderId, response.razorpay_payment_id);
+                    },
+                    prefill: {
+                        name: document.getElementById('fullname').value,
+                        email: document.getElementById('email').value,
+                        contact: document.getElementById('phone').value
+                    },
+                    theme: {
+                        color: '#007bff'
+                    },
+                    notes: {
+                        order_id: data.orderId // Store our internal order ID in notes
+                    },
+                    modal: {
+                        ondismiss: function() {
+                            hideLoading();
+                            console.log('Payment modal closed');
+                        }
+                    }
+                };
+
+                // Log the Razorpay options for debugging
+                console.log('Razorpay options:', options);
+
+                const rzp = new Razorpay(options);
+                rzp.open();
+                hideLoading();
+            })
+            .catch(error => {
+                console.error('Error creating order:', error);
+                alert('Error creating order. Please try again.');
+                hideLoading();
+            });
+        }
+
+        // Process Cash on Delivery
+        function processCashOnDelivery(orderData) {
+            // Log order data for debugging
+            console.log('Sending COD order data:', JSON.stringify(orderData, null, 2));
+
+            // Create order on server
+            fetch('https://tridex1.onrender.com/orders/create', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                    'X-Username': orderData.user.username
+                },
+                body: JSON.stringify(orderData)
+            })
+            .then(response => {
+                // Check if response is ok before parsing JSON
+                if (!response.ok) {
+                    console.error('Server responded with status:', response.status);
+                    return response.text().then(text => {
+                        try {
+                            // Try to parse as JSON
+                            return JSON.parse(text);
+                        } catch (e) {
+                            // If not JSON, return as text error
+                            throw new Error(`Server error: ${text || response.statusText}`);
+                        }
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+
+                console.log('COD order created successfully:', data);
+
+                // Handle successful order creation
+                handleOrderSuccess(data.orderId);
+            })
+            .catch(error => {
+                console.error('Error creating order:', error);
+                alert('Error creating order. Please try again.');
+                hideLoading();
+            });
+        }
+
+        // Handle payment success
+        function handlePaymentSuccess(orderId, paymentId) {
+            // Update order with payment information
+            fetch(`https://tridex1.onrender.com/orders/${orderId}/payment`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                    'X-Username': localStorage.getItem('username') || localStorage.getItem('currentUser')
+                },
+                body: JSON.stringify({
+                    transactionId: paymentId,
+                    status: 'completed'
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+
+                // Handle successful order
+                handleOrderSuccess(orderId);
+            })
+            .catch(error => {
+                console.error('Error updating payment:', error);
+                alert('Payment was successful, but there was an error updating your order. Please contact customer support.');
+                hideLoading();
+            });
+        }
+
+        // Handle order success
+        function handleOrderSuccess(orderId) {
+            // Check if this was a "Buy Now" purchase
+            const isBuyNow = localStorage.getItem('is_buy_now') === 'true';
+
+            if (isBuyNow) {
+                // Restore the original cart
+                const originalCart = localStorage.getItem('original_cart');
+                if (originalCart) {
+                    localStorage.setItem('cart', originalCart);
+                }
+
+                // Clear the buy now flags
+                localStorage.removeItem('is_buy_now');
+                localStorage.removeItem('original_cart');
+            } else {
+                // Clear the entire cart for normal checkout
+                localStorage.removeItem('cart');
+            }
+
+            // Show success message
+            showOrderConfirmation(orderId);
+        }
+
+        // Show order confirmation
+        function showOrderConfirmation(orderId) {
+            hideLoading();
+
+            // Create modal for order confirmation
+            const confirmationModal = document.createElement('div');
+            confirmationModal.className = 'modal-overlay';
+            confirmationModal.style.cssText = 'display:flex; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.8); z-index:999999; align-items:center; justify-content:center; opacity:0; transition:opacity 0.3s ease;';
+
+            const modalContent = document.createElement('div');
+            modalContent.className = 'modal-content';
+            modalContent.style.cssText = 'background:#fff; padding:32px 24px; border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,0.3); min-width:320px; max-width:90%; text-align:center; transform:scale(0.9); transition:transform 0.3s ease;';
+
+            modalContent.innerHTML = `
+                <div style="margin-bottom:15px; font-size:3em; color:#28a745;">✓</div>
+                <h2 style="margin-bottom:15px; color:#333; font-size:1.6em; font-weight:700;">Order Placed Successfully!</h2>
+                <p style="margin-bottom:10px; font-size:1.1em; color:#555; line-height:1.6;">Your order has been placed successfully.</p>
+                <p style="margin-bottom:24px; font-size:1em; color:#666;">Order ID: ${orderId}</p>
+                <button id="continue-shopping-btn" class="checkout-button" style="margin-top:10px;">Continue Shopping</button>
+            `;
+
+            confirmationModal.appendChild(modalContent);
+            document.body.appendChild(confirmationModal);
+
+            // Show with animation
+            setTimeout(() => {
+                confirmationModal.style.opacity = '1';
+                modalContent.style.transform = 'scale(1)';
+            }, 10);
+
+            // Add continue shopping button functionality
+            document.getElementById('continue-shopping-btn').onclick = function() {
+                window.location.href = 'index.html';
+            };
+        }
+
+        // Initialize on page load
+        window.addEventListener('load', function() {
+            hideLoading();
+            initCheckout();
+        });
+
+        // Ensure coupon system is properly initialized
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🔧 DOM loaded, checking coupon system...');
+
+            // Wait for coupon system to load
+            const checkCouponSystem = () => {
+                if (window.couponSystem) {
+                    console.log('✅ Coupon system found, loading available coupons...');
+                    // Load available coupons immediately
+                    window.couponSystem.loadAvailableCoupons();
+                } else {
+                    console.log('⏳ Waiting for coupon system...');
+                    setTimeout(checkCouponSystem, 200);
+                }
+            };
+
+            // Start checking after a short delay
+            setTimeout(checkCouponSystem, 300);
+        });
+
+        window.addEventListener('beforeunload', function() {
+            showLoading();
+        });
+
+        // Debug function for coupon system
+        window.debugCheckoutCoupons = function() {
+            console.log('🔍 Debugging Checkout Coupon System...');
+            console.log('=====================================');
+
+            console.log('📋 System Status:');
+            console.log('- CONFIG available:', typeof CONFIG !== 'undefined');
+            console.log('- CONFIG.isDevelopment:', CONFIG?.isDevelopment);
+            console.log('- Coupon System available:', typeof window.couponSystem !== 'undefined');
+            console.log('- Cart items:', cart.length);
+            console.log('- Subtotal:', subtotal);
+
+            if (window.couponSystem) {
+                console.log('🎫 Coupon System Details:');
+                console.log('- Base URL:', window.couponSystem.getBaseUrl());
+                console.log('- Available coupons:', window.couponSystem.availableCoupons?.length || 0);
+                console.log('- Cart data set:', window.couponSystem.cartItems?.length || 0);
+
+                console.log('🔄 Forcing coupon reload...');
+                window.couponSystem.loadAvailableCoupons();
+            } else {
+                console.log('❌ Coupon system not available');
+            }
+        };
+
+        // Auto-debug after page load
+        setTimeout(() => {
+            console.log('🚀 Auto-running checkout coupon debug...');
+            window.debugCheckoutCoupons();
+        }, 2000);
+    </script>
+</body>
+</html>

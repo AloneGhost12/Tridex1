@@ -1,0 +1,567 @@
+/**
+ * Tridex Mobile App-like UI - Phase 2A Implementation
+ * Enhanced mobile UI with app-like navigation, smooth transitions, and gestures
+ */
+
+/* ========== APP-LIKE NAVIGATION ========== */
+
+/* Enhanced header with app-like feel */
+header {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 1000 !important;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    background: rgba(51, 51, 51, 0.95) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.3s ease;
+}
+
+/* App-like navigation transitions */
+.nav-transition {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Enhanced hamburger menu with smooth animations */
+.hamburger {
+    position: relative;
+    z-index: 1001;
+    transition: all 0.3s ease;
+}
+
+.hamburger.active {
+    transform: rotate(90deg);
+}
+
+.hamburger div {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transform-origin: center;
+}
+
+.hamburger.active div:nth-child(1) {
+    transform: rotate(45deg) translate(6px, 6px);
+}
+
+.hamburger.active div:nth-child(2) {
+    opacity: 0;
+    transform: scale(0);
+}
+
+.hamburger.active div:nth-child(3) {
+    transform: rotate(-45deg) translate(6px, -6px);
+}
+
+/* App-like mobile navigation */
+@media (max-width: 900px) {
+    #nav {
+        position: fixed !important;
+        top: 0 !important;
+        left: -100% !important;
+        width: 280px !important;
+        height: 100vh !important;
+        background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%) !important;
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        box-shadow: 4px 0 20px rgba(0, 0, 0, 0.3) !important;
+        transition: left 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        padding-top: 80px !important;
+        overflow-y: auto !important;
+        z-index: 1000 !important;
+    }
+    
+    #nav.show {
+        left: 0 !important;
+    }
+    
+    #nav li {
+        width: 100% !important;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+        padding: 0 !important;
+        transform: translateX(-50px);
+        opacity: 0;
+        animation: slideInLeft 0.3s ease forwards;
+    }
+    
+    #nav li:nth-child(1) { animation-delay: 0.1s; }
+    #nav li:nth-child(2) { animation-delay: 0.15s; }
+    #nav li:nth-child(3) { animation-delay: 0.2s; }
+    #nav li:nth-child(4) { animation-delay: 0.25s; }
+    #nav li:nth-child(5) { animation-delay: 0.3s; }
+    #nav li:nth-child(6) { animation-delay: 0.35s; }
+    #nav li:nth-child(7) { animation-delay: 0.4s; }
+    
+    #nav li a {
+        display: flex !important;
+        align-items: center !important;
+        padding: 18px 24px !important;
+        color: #fff !important;
+        text-decoration: none !important;
+        font-size: 16px !important;
+        font-weight: 500 !important;
+        transition: all 0.3s ease !important;
+        border-radius: 0 !important;
+        position: relative !important;
+        overflow: hidden !important;
+    }
+    
+    #nav li a:before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+        transition: left 0.5s ease;
+    }
+    
+    #nav li a:hover:before {
+        left: 100%;
+    }
+    
+    #nav li a:hover {
+        background: rgba(0, 123, 255, 0.2) !important;
+        transform: translateX(8px) !important;
+        color: #007bff !important;
+    }
+    
+    /* Enhanced notification badges in mobile menu */
+    #mail-count, #cart-count, #wishlist-count {
+        position: absolute !important;
+        top: 50% !important;
+        right: 24px !important;
+        transform: translateY(-50%) !important;
+        background: #007bff !important;
+        color: white !important;
+        border-radius: 12px !important;
+        padding: 4px 8px !important;
+        font-size: 11px !important;
+        font-weight: bold !important;
+        min-width: 20px !important;
+        height: 20px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        box-shadow: 0 2px 8px rgba(0, 123, 255, 0.3) !important;
+        animation: pulse 2s infinite !important;
+    }
+}
+
+/* Mobile navigation overlay */
+.nav-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    z-index: 999;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+
+.nav-overlay.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* ========== SMOOTH TRANSITIONS ========== */
+
+/* Page transition effects */
+.page-transition {
+    animation: fadeInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Card hover effects with smooth transitions */
+.product-card, .category-card, .wishlist-card {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transform: translateZ(0); /* Enable hardware acceleration */
+}
+
+.product-card:hover, .category-card:hover, .wishlist-card:hover {
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+}
+
+/* Button press animations */
+.btn, button, .nav {
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    transform: translateZ(0);
+}
+
+.btn:active, button:active, .nav:active {
+    transform: scale(0.95);
+}
+
+/* Loading animations */
+.loading-shimmer {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+}
+
+/* ========== MOBILE GESTURES ========== */
+
+/* Swipe indicators */
+.swipe-indicator {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 40px;
+    height: 40px;
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 18px;
+    z-index: 10;
+    transition: all 0.3s ease;
+    opacity: 0;
+}
+
+.swipe-indicator.left {
+    left: 10px;
+}
+
+.swipe-indicator.right {
+    right: 10px;
+}
+
+.swipe-indicator.show {
+    opacity: 1;
+}
+
+/* Pull to refresh indicator */
+.pull-to-refresh {
+    position: absolute;
+    top: -60px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 40px;
+    height: 40px;
+    background: #007bff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 18px;
+    transition: all 0.3s ease;
+    opacity: 0;
+}
+
+.pull-to-refresh.show {
+    opacity: 1;
+    top: 20px;
+}
+
+.pull-to-refresh.loading {
+    animation: spin 1s linear infinite;
+}
+
+/* ========== ENHANCED MOBILE COMPONENTS ========== */
+
+/* App-like search bar */
+.search-bar {
+    background: rgba(255, 255, 255, 0.95) !important;
+    backdrop-filter: blur(10px) !important;
+    -webkit-backdrop-filter: blur(10px) !important;
+    border: 1px solid rgba(0, 0, 0, 0.1) !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1) !important;
+    transition: all 0.3s ease !important;
+}
+
+.search-bar:focus-within {
+    transform: scale(1.02);
+    box-shadow: 0 8px 30px rgba(0, 123, 255, 0.2) !important;
+}
+
+/* Enhanced floating action buttons */
+.fab {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 56px;
+    height: 56px;
+    background: #007bff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 24px;
+    box-shadow: 0 4px 20px rgba(0, 123, 255, 0.3);
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 1000;
+}
+
+.fab:hover {
+    transform: scale(1.1);
+    box-shadow: 0 8px 30px rgba(0, 123, 255, 0.4);
+}
+
+.fab:active {
+    transform: scale(0.95);
+}
+
+/* App-like bottom navigation (for mobile) */
+@media (max-width: 768px) {
+    .bottom-nav {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 70px;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border-top: 1px solid rgba(0, 0, 0, 0.1);
+        display: flex;
+        align-items: center;
+        justify-content: space-around;
+        z-index: 1000;
+        padding: 0 20px;
+        box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
+    }
+    
+    .bottom-nav-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-decoration: none;
+        color: #666;
+        font-size: 12px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        padding: 8px;
+        border-radius: 12px;
+        min-width: 50px;
+    }
+    
+    .bottom-nav-item.active {
+        color: #007bff;
+        background: rgba(0, 123, 255, 0.1);
+    }
+    
+    .bottom-nav-item i {
+        font-size: 20px;
+        margin-bottom: 4px;
+        transition: all 0.3s ease;
+    }
+    
+    .bottom-nav-item:hover i {
+        transform: scale(1.2);
+    }
+}
+
+/* ========== ANIMATIONS ========== */
+
+@keyframes slideInLeft {
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: -200% 0;
+    }
+    100% {
+        background-position: 200% 0;
+    }
+}
+
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.1);
+    }
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* ========== TOUCH OPTIMIZATIONS ========== */
+
+/* Larger touch targets for mobile */
+@media (max-width: 768px) {
+    .btn, button, .nav, a {
+        min-height: 44px;
+        min-width: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    /* Remove tap highlight on iOS */
+    * {
+        -webkit-tap-highlight-color: transparent;
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        user-select: none;
+    }
+    
+    /* Allow text selection for inputs */
+    input, textarea {
+        -webkit-user-select: text;
+        user-select: text;
+    }
+}
+
+/* ========== RESPONSIVE ENHANCEMENTS ========== */
+
+/* Enhanced responsive grid */
+.responsive-grid {
+    display: grid;
+    gap: 16px;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    transition: all 0.3s ease;
+}
+
+@media (max-width: 768px) {
+    .responsive-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+}
+
+@media (max-width: 480px) {
+    .responsive-grid {
+        gap: 8px;
+    }
+}
+
+/* Enhanced mobile typography */
+@media (max-width: 768px) {
+    h1 { font-size: 1.8rem; line-height: 1.2; }
+    h2 { font-size: 1.5rem; line-height: 1.3; }
+    h3 { font-size: 1.3rem; line-height: 1.4; }
+    h4 { font-size: 1.1rem; line-height: 1.4; }
+    
+    p, span, div {
+        line-height: 1.5;
+    }
+}
+
+/* ========== ACCESSIBILITY ENHANCEMENTS ========== */
+
+/* Focus indicators for keyboard navigation */
+.nav a:focus, .btn:focus, button:focus {
+    outline: 2px solid #007bff;
+    outline-offset: 2px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .nav, .btn, button {
+        border: 2px solid currentColor;
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    .search-bar {
+        background: rgba(40, 40, 40, 0.95) !important;
+        color: white !important;
+    }
+
+    .bottom-nav {
+        background: rgba(40, 40, 40, 0.95) !important;
+        border-top-color: rgba(255, 255, 255, 0.1) !important;
+    }
+
+    .bottom-nav-item {
+        color: #ccc !important;
+    }
+
+    .bottom-nav-item.active {
+        color: #007bff !important;
+    }
+}
+
+/* ========== MOBILE SPECIFIC IMPROVEMENTS ========== */
+
+/* Enhanced mobile header */
+@media (max-width: 768px) {
+    header {
+        padding: 10px 0 !important;
+    }
+
+    header h1 {
+        font-size: 1.4rem !important;
+    }
+
+    .search-bar {
+        margin: 8px auto !important;
+        max-width: calc(100vw - 30px) !important;
+    }
+}
+
+/* Mobile-optimized product cards */
+@media (max-width: 768px) {
+    .product-card {
+        border-radius: 12px;
+        overflow: hidden;
+        background: white;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+        transition: all 0.3s ease;
+    }
+
+    .product-card:active {
+        transform: scale(0.98);
+        box-shadow: 0 1px 6px rgba(0, 0, 0, 0.12);
+    }
+}
+
+/* Enhanced mobile forms */
+@media (max-width: 768px) {
+    input, textarea, select {
+        font-size: 16px !important; /* Prevent zoom on iOS */
+        padding: 12px 16px !important;
+        border-radius: 8px !important;
+        border: 1px solid #ddd !important;
+        transition: all 0.3s ease !important;
+    }
+
+    input:focus, textarea:focus, select:focus {
+        border-color: #007bff !important;
+        box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1) !important;
+        transform: scale(1.02) !important;
+    }
+}

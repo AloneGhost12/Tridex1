@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Create Tridex Favicon</title>
+</head>
+<body>
+    <h1>Tridex Favicon Creator</h1>
+    <canvas id="faviconCanvas" width="32" height="32" style="border: 1px solid #000; image-rendering: pixelated; width: 128px; height: 128px;"></canvas>
+    <br><br>
+    <button onclick="downloadFavicon()">Download as PNG</button>
+    <button onclick="copyDataURL()">Copy Data URL</button>
+    <br><br>
+    <div id="dataURL" style="word-break: break-all; font-family: monospace; font-size: 12px; background: #f0f0f0; padding: 10px; margin-top: 10px;"></div>
+
+    <script>
+        const canvas = document.getElementById('faviconCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Disable image smoothing for pixel-perfect rendering
+        ctx.imageSmoothingEnabled = false;
+        
+        function drawTridexFavicon() {
+            // Clear canvas
+            ctx.clearRect(0, 0, 32, 32);
+            
+            // Create gradient
+            const gradient = ctx.createLinearGradient(0, 0, 32, 32);
+            gradient.addColorStop(0, '#007bff');
+            gradient.addColorStop(1, '#0056b3');
+            
+            // Draw background circle
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(16, 16, 15, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            // Draw white T
+            ctx.fillStyle = '#ffffff';
+            
+            // Top bar of T (horizontal)
+            ctx.fillRect(6, 10, 20, 3);
+            
+            // Vertical bar of T
+            ctx.fillRect(14, 10, 4, 15);
+            
+            // Small decorative elements
+            ctx.fillRect(8, 20, 2, 2);
+            ctx.fillRect(22, 20, 2, 2);
+        }
+        
+        function downloadFavicon() {
+            const link = document.createElement('a');
+            link.download = 'favicon.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+        
+        function copyDataURL() {
+            const dataURL = canvas.toDataURL('image/png');
+            navigator.clipboard.writeText(dataURL).then(() => {
+                alert('Data URL copied to clipboard!');
+                document.getElementById('dataURL').textContent = dataURL;
+            });
+        }
+        
+        // Draw the favicon when page loads
+        drawTridexFavicon();
+        
+        // Show data URL
+        setTimeout(() => {
+            document.getElementById('dataURL').textContent = canvas.toDataURL('image/png');
+        }, 100);
+    </script>
+</body>
+</html>
